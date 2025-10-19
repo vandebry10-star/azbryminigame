@@ -2,152 +2,151 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nasi Uduk Clicker • Azbry Theme</title>
-  <meta name="description" content="Game clicker bertema Nasi Uduk dengan gaya Azbry — gelap elegan dan neon hijau." />
+  <title>Nasi Uduk Click — Azbry One‑Screen</title>
+  <meta name="description" content="Clicker satu layar bergaya Popcat: fokus ke klik & counter. Tema Azbry neon hijau." />
   <style>
-    :root {
-      --bg: #0b0d10;
-      --panel: #111418;
-      --muted: #99a3b8;
-      --text: #eaf2ff;
-      --accent: #22ff88;
-      --accent2: #6dffcb;
-      --accent3: #39ff14;
-      --shadow: 0 0 24px #22ff8866;
-      --radius: 16px;
-      --glow: 0 0 20px #22ff88cc, 0 0 40px #22ff8866;
-    }* { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin:0; font-family: 'Inter', system-ui, sans-serif; color:var(--text); background: radial-gradient(circle at 20% 20%, #0d1117 0%, #050709 100%);
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    :root{
+      --bg:#07090d; --panel:#0c1016; --text:#e9f5ff; --muted:#9fb0c7;
+      --neon:#39ff14; --neon2:#7dffb1; --ring:#39ff1480; --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      background:radial-gradient(1200px 800px at 20% 10%, #0b1220 0%, var(--bg) 60%);
+      overflow:hidden; /* satu layar */
+    }/* Layout utama: header kecil + area klik besar + bar bawah */
+.wrap{position:relative; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:space-between;}
+
+header{width:100%; text-align:center; padding:10px 12px;}
+.title{font-weight:900; letter-spacing:.2px; color:var(--neon2); text-shadow:0 0 18px var(--ring);}    
+.stats{display:flex; gap:10px; justify-content:center; margin-top:6px}
+.pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:rgba(12,16,22,.6); border:1px solid #1b2534; color:var(--muted)}
+
+/* Tombol klik raksasa ala Popcat */
+.stage{flex:1 1 auto; width:100%; display:flex; align-items:center; justify-content:center; position:relative}
+.clicker{
+  width:min(70vw, 360px); height:min(70vw, 360px); border-radius:50%; cursor:pointer; user-select:none;
+  background:radial-gradient(circle at 35% 30%, var(--neon2), var(--neon));
+  box-shadow:0 0 40px var(--ring), inset 0 0 20px #0006; border:none; color:#001105; font-weight:900; font-size:clamp(18px,2.2vw,22px);
+  transition: transform .03s ease;
 }
+.clicker:active{ transform:scale(.96) }
+.label{position:absolute; bottom:12%; left:50%; transform:translateX(-50%); color:#001105; font-weight:900; text-shadow:0 2px 10px #00ff8844}
 
-header { text-align:center; margin-top:20px; }
-h1 { font-weight:800; font-size:1.8rem; color:var(--accent2); text-shadow:var(--glow); margin-bottom:4px; }
-p { color:var(--muted); font-size:0.95rem; }
+/* angka utama besar di tengah atas */
+.counter{position:absolute; top:50%; left:50%; transform:translate(-50%,-70%); text-align:center}
+.count{font-size: clamp(42px, 10vw, 96px); line-height:1; font-weight:900; text-shadow:0 0 20px var(--ring)}
+.sub{color:var(--muted); margin-top:4px}
 
-.stats { display:flex; gap:20px; justify-content:center; margin:20px 0; }
-.stat { background:var(--panel); border-radius:var(--radius); padding:12px 16px; text-align:center; box-shadow:inset 0 0 8px #22ff8833; }
-.label { color:var(--muted); font-size:0.85rem; }
-.value { font-weight:800; font-size:1.2rem; color:var(--accent3); }
+/* floaty points */
+.floaty{position:absolute; pointer-events:none; font-weight:800; color:var(--neon); text-shadow:0 0 10px var(--ring)}
 
-.click-btn {
-  border:none; border-radius:50%; width:180px; height:180px; cursor:pointer; background: radial-gradient(circle at 30% 30%, var(--accent2), var(--accent3));
-  color:#000; font-size:1.1rem; font-weight:800; box-shadow:var(--shadow); transition:transform .05s ease, box-shadow .2s ease; position:relative;
-}
-.click-btn:hover { box-shadow:0 0 40px #22ff88aa; }
-.click-btn:active { transform:scale(0.97); }
+/* Bottom bar: upgrade chips minimal */
+.bar{position:absolute; left:0; right:0; bottom:0; padding:10px; display:flex; gap:10px; justify-content:center; background:linear-gradient(180deg, transparent, rgba(7,9,13,.75));}
+.chip{display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; background:var(--panel); border:1px solid #1a2433; box-shadow:0 0 14px #0008}
+.chip .name{font-weight:800; color:var(--neon2)}
+.chip button{margin-left:8px; border:none; border-radius:10px; padding:8px 10px; font-weight:800; cursor:pointer; background:linear-gradient(90deg, var(--neon2), var(--neon)); color:#001105}
+.chip button:disabled{opacity:.5}
 
-.floaty { position:absolute; font-weight:700; pointer-events:none; color:var(--accent3); text-shadow:0 0 8px #22ff8899; }
-
-.shop {
-  width:90%; max-width:600px; background:var(--panel); border-radius:var(--radius); padding:16px; margin-top:30px; box-shadow:0 0 20px #22ff8822;
-}
-.item { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #1f2530; padding:10px 0; }
-.item:last-child { border:none; }
-.item .meta { max-width:70%; }
-.item .meta .name { font-weight:700; color:var(--accent2); }
-.item .meta .desc { font-size:0.9rem; color:var(--muted); }
-.item button { background:linear-gradient(90deg,var(--accent2),var(--accent3)); color:#000; font-weight:700; border:none; border-radius:8px; padding:8px 12px; cursor:pointer; }
-.item button:disabled { opacity:0.5; cursor:not-allowed; }
-
-footer { text-align:center; color:var(--muted); margin:30px 0 20px; font-size:0.85rem; }
+footer{position:absolute; right:10px; top:10px; opacity:.6; font-size:.9rem}
 
   </style>
 </head>
 <body>
-  <header>
-    <h1>Nasi Uduk Clicker</h1>
-    <p>Masak dan upgrade dengan tema <strong>Azbry Neon</strong>.</p>
-  </header>  <div class="stats">
-    <div class="stat"><div class="label">Porsi</div><div class="value" id="stat-porsi">0</div></div>
-    <div class="stat"><div class="label">/detik</div><div class="value" id="stat-ppsec">0</div></div>
-  </div><button id="btn-cook" class="click-btn">🍚 Masak!</button>
+  <div class="wrap" role="application" aria-label="Nasi Uduk Click One Screen">
+    <header>
+      <div class="title">🍚 Nasi Uduk Click</div>
+      <div class="stats">
+        <span class="pill">Porsi: <strong id="porsi">0</strong></span>
+        <span class="pill">/detik: <strong id="pps">0</strong></span>
+        <span class="pill">/klik: <strong id="ppc">1</strong></span>
+      </div>
+    </header><div class="stage">
+  <div class="counter">
+    <div class="count" id="count">0</div>
+    <div class="sub" id="sub">Ketuk untuk menambah porsi</div>
+  </div>
+  <button id="clicker" class="clicker" aria-label="Klik untuk menambah porsi">TAP!</button>
+  <div class="label">Masak!</div>
+</div>
 
-  <section class="shop" id="shop-list"></section>  <footer>© 2025 Azbry‑MD • Neon Edition</footer>  <script>
-    const state = { porsi:0, perClick:1, perSec:0, upgrades:{} };
+<div class="bar">
+  <div class="chip"><span class="name">Kukusan</span><span>Lv <b id="lv-kukusan">0</b></span><button id="buy-kukusan">Beli (20)</button></div>
+  <div class="chip"><span class="name">Serundeng</span><span>Lv <b id="lv-serundeng">0</b></span><button id="buy-serundeng">Beli (60)</button></div>
+  <div class="chip"><span class="name">Warteg</span><span>Lv <b id="lv-warteg">0</b></span><button id="buy-warteg">Beli (200)</button></div>
+</div>
+
+<footer>Azbry Neon • One‑Screen</footer>
+
+  </div>  <script>
+    // ===== Core State =====
+    const state={ porsi:0, perClick:1, perSec:0, up:{kukusan:0,serundeng:0,warteg:0}, last: Date.now() };
     const fmt = new Intl.NumberFormat('id-ID');
 
-    const elPorsi = document.getElementById('stat-porsi');
-    const elPPsec = document.getElementById('stat-ppsec');
-    const elBtn = document.getElementById('btn-cook');
-    const elShop = document.getElementById('shop-list');
+    // DOM short-hands
+    const $=id=>document.getElementById(id);
+    const el={
+      clicker: $('clicker'), count:$('count'), sub:$('sub'),
+      porsi:$('porsi'), pps:$('pps'), ppc:$('ppc'),
+      lvK:$('lv-kukusan'), lvS:$('lv-serundeng'), lvW:$('lv-warteg'),
+      buyK:$('buy-kukusan'), buyS:$('buy-serundeng'), buyW:$('buy-warteg')
+    };
 
-    const shopData = [
-      {id:'kukusan',name:'Kukusan Anyar',desc:'Menambah porsi tiap klik.',base:20,grow:1.18,click:1},
-      {id:'serundeng',name:'Serundeng Gurih',desc:'Menambah porsi otomatis.',base:60,grow:1.16,auto:1},
-      {id:'warteg',name:'Warung Luas',desc:'Menambah pelanggan.',base:200,grow:1.2,auto:4}
-    ];
+    // Pricing
+    const cat={
+      kukusan:{base:20,g:1.18,apply(){state.perClick+=1;}},
+      serundeng:{base:60,g:1.16,apply(){state.perSec+=1;}},
+      warteg:{base:200,g:1.20,apply(){state.perSec+=4;}}
+    };
+    const price=(id)=>Math.floor(cat[id].base*Math.pow(cat[id].g, state.up[id]||0));
 
-    function renderStats(){
-      elPorsi.textContent = fmt.format(Math.floor(state.porsi));
-      elPPsec.textContent = fmt.format(state.perSec);
-    }
-
-    function clickGain(){
-      state.porsi += state.perClick;
-      renderStats();
-      spawnFloaty('+'+fmt.format(state.perClick));
-    }
-
-    elBtn.addEventListener('click', clickGain);
-    // Extra: handle tap & key press
-    document.addEventListener('keydown', e => { if(e.code==='Space'){ e.preventDefault(); clickGain(); } });
-
-    function spawnFloaty(txt){
-      const node = document.createElement('div');
-      node.className='floaty'; node.textContent=txt;
-      const rect = elBtn.getBoundingClientRect();
-      const x = Math.random()*rect.width*0.6+rect.width*0.2;
-      const y = Math.random()*rect.height*0.3+rect.height*0.2;
-      node.style.left=x+'px'; node.style.top=y+'px';
-      node.style.opacity='1'; node.style.transform='translateY(0)';
-      elBtn.appendChild(node);
-      const start=Date.now();
-      function anim(){
-        const t=(Date.now()-start)/700;
-        node.style.transform=`translateY(${-40*t}px)`;
-        node.style.opacity=String(1-t);
-        if(t<1)requestAnimationFrame(anim);else node.remove();
-      }
-      requestAnimationFrame(anim);
-    }
-
-    function renderShop(){
-      elShop.innerHTML='';
-      shopData.forEach(item=>{
-        const lvl=state.upgrades[item.id]?.lvl||0;
-        const price=Math.floor(item.base*Math.pow(item.grow,lvl));
-        const can=state.porsi>=price;
-        const div=document.createElement('div');
-        div.className='item';
-        div.innerHTML=`<div class="meta"><div class="name">${item.name} <small>Lv${lvl}</small></div><div class="desc">${item.desc}</div></div>`;
-        const btn=document.createElement('button');
-        btn.textContent=`Beli (${fmt.format(price)})`;
-        btn.disabled=!can;
-        btn.onclick=()=>buy(item);
-        div.appendChild(btn);
-        elShop.appendChild(div);
+    // Render minimal
+    function render(){
+      el.count.textContent = fmt.format(Math.floor(state.porsi));
+      el.porsi.textContent = fmt.format(Math.floor(state.porsi));
+      el.pps.textContent = fmt.format(state.perSec);
+      el.ppc.textContent = fmt.format(state.perClick);
+      el.lvK.textContent = state.up.kukusan; el.lvS.textContent = state.up.serundeng; el.lvW.textContent = state.up.warteg;
+      el.buyK.textContent = `Beli (${fmt.format(price('kukusan'))})`;
+      el.buyS.textContent = `Beli (${fmt.format(price('serundeng'))})`;
+      el.buyW.textContent = `Beli (${fmt.format(price('warteg'))})`;
+      [ ['buyK','kukusan'], ['buyS','serundeng'], ['buyW','warteg'] ].forEach(([b,id])=>{
+        el[b].disabled = state.porsi < price(id);
       });
     }
 
-    function buy(item){
-      const lvl=state.upgrades[item.id]?.lvl||0;
-      const price=Math.floor(item.base*Math.pow(item.grow,lvl));
-      if(state.porsi<price)return;
-      state.porsi-=price;
-      state.upgrades[item.id]={lvl:lvl+1};
-      if(item.click)state.perClick+=item.click;
-      if(item.auto)state.perSec+=item.auto;
-      renderStats();renderShop();
+    // Click handling (robust untuk tap/click/space)
+    function gain(n){
+      state.porsi += n; render(); floaty(`+${fmt.format(n)}`);
+    }
+    function onClick(){ gain(state.perClick); }
+    el.clicker.addEventListener('click', onClick);
+    el.clicker.addEventListener('pointerdown', e=>{ if(e.pointerType==='touch') onClick(); });
+    document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); onClick(); }});
+
+    // Floaty
+    function floaty(txt){
+      const b = el.clicker.getBoundingClientRect();
+      const node = document.createElement('div'); node.className='floaty'; node.textContent=txt;
+      node.style.left = (b.left + b.width/2 + (Math.random()-0.5)*40) + 'px';
+      node.style.top  = (b.top  + b.height/2 + (Math.random()-0.5)*40) + 'px';
+      node.style.opacity='1'; node.style.transform='translateY(0)'; node.style.position='fixed';
+      document.body.appendChild(node);
+      const t0=Date.now();
+      function anim(){ const t=(Date.now()-t0)/700; node.style.transform=`translateY(${-50*t}px)`; node.style.opacity=String(1-t); if(t<1) requestAnimationFrame(anim); else node.remove(); }
+      requestAnimationFrame(anim);
     }
 
-    setInterval(()=>{
-      state.porsi+=state.perSec/2; // update 2x per detik
-      renderStats();renderShop();
-    },500);
+    // Shop
+    function buy(id){ const p=price(id); if(state.porsi<p) return; state.porsi-=p; state.up[id]++; cat[id].apply(); render(); }
+    el.buyK.onclick=()=>buy('kukusan');
+    el.buyS.onclick=()=>buy('serundeng');
+    el.buyW.onclick=()=>buy('warteg');
 
-    renderStats();renderShop();
+    // Passive gain loop (no scroll, single screen)
+    setInterval(()=>{ const now=Date.now(); const dt=Math.max(0,(now-state.last)/1000); state.last=now; if(state.perSec>0){ state.porsi += state.perSec*dt; render(); } }, 100);
+
+    render();
   </script></body>
 </html>
