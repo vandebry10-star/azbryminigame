@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Astro Blip — Azbry-MD</title>
+<style>
+  :root{
+    --bg:#07090d; --panel:#0c1016; --text:#e6f0ff; --muted:#93a3b8;
+    --neon:#39ff14; --ring:#39ff1480;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%; background:#0b0d10 url('assets/img/bg.png') center/cover fixed no-repeat; overflow:hidden; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .hud{
+    position:fixed; inset:0; pointer-events:none;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding-top:10px;
+  }
+  .title{
+    font-weight:900; letter-spacing:.5px;
+    color:var(--neon); text-shadow:0 0 10px var(--ring);
+  }
+  .score{
+    margin-top:4px; font-size:clamp(28px,7vw,64px); font-weight:900; color:var(--neon);
+    text-shadow:0 0 14px var(--ring);
+  }
+  .toprow{
+    position:fixed; top:8px; left:0; right:0; padding:0 12px;
+    display:flex; justify-content:space-between; align-items:center; gap:8px; pointer-events:none;
+  }
+  .pill{
+    pointer-events:auto;
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 10px; border-radius:999px; background:rgba(12,16,22,.55);
+    border:1px solid #1b2534; color:var(--muted); font-weight:600;
+    backdrop-filter:blur(8px);
+  }
+  .pill b{color:var(--neon)}
+  .footer{
+    position:fixed; bottom:8px; left:0; right:0; padding:0 12px; display:flex; justify-content:space-between; align-items:center; gap:8px; pointer-events:none;
+  }
+  .hint{pointer-events:none; color:var(--muted); font-size:.9rem; background:rgba(12,16,22,.45); border:1px solid #1b2534; border-radius:10px; padding:6px 10px}
+  canvas{position:fixed; inset:0; width:100%; height:100%; touch-action:none; display:block}
+  .btn{
+    pointer-events:auto; cursor:pointer; user-select:none;
+    background:linear-gradient(180deg, rgba(12,16,22,.65), rgba(12,16,22,.3));
+    border:1px solid #1b2534; color:var(--text); border-radius:12px; padding:8px 12px; font-weight:700;
+    box-shadow:0 0 0 0 rgba(57,255,20,.35);
+    transition:transform .06s ease, box-shadow .2s ease;
+  }
+  .btn:hover{box-shadow:0 0 16px 0 rgba(57,255,20,.25)}
+  .btn:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="toprow">
+  <div class="pill">Best: <b id="best">0</b></div>
+  <div class="pill">Azbry-MD</div>
+</div>
+
+<div class="hud">
+  <div class="title">ASTRO BLIP</div>
+  <div id="score" class="score">0</div>
+</div>
+
+<div class="footer">
+  <div class="hint">Drag untuk gerak • Auto tembak</div>
+  <button id="btnPlay" class="btn">Main</button>
+</div>
+
+<script>
+(()=>{
+// ===== Helpers & Audio =====
+const $ = id => document.getElementById(id);
+const fmt = new Intl.NumberFormat('id-ID');
+const hud = { score: $('score'), best:$('best'), btn: $('btnPlay') };
+
+const AudioSys = (()=>{
+  let ctx; const ensure=()=>{ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+  function pew(){
+    ensure(); const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type='square'; o.frequency.value=880; g.gain.value=0.06; o.connect(g).connect(ctx.destination);
+    o.start(); o.frequency.exponentialRampToValueAtTime(200, ctx.currentTime+.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+.1); o.stop(ctx.currentTime+.11);
+  }
+  function boom(){
+    ensure(); const o=ctx.createOscillator(), n=ctx.createOscillator(), g=ctx.createGain();
+    o.type='sawtooth'; n.type='square'; o.frequency.value=180; n.frequency.value=90; g.gain.value=0.08;
+    o.connect(g); n.connect(g); g.connect(ctx.destination); o.start(); n.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+.2); o.stop(ctx.currentTime+.2); n.stop(ctx.currentTime+.2);
+  }
+  return { pew, boom };
+})();
+
+// ===== Canvas Setup (HiDPI) =====
+const canvas = $('game');
+const dpr = Math.max(1, Math.min(2, window.devicePixelRatio||1));
+let W=0, H=0, ctx=null;
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  W = Math.floor(r.width * dpr);
+  H = Math.floor(r.height * dpr);
+  canvas.width = W; canvas.height = H;
+  ctx = canvas.getContext('2d');
+}
+addEventListener('resize', resize, {passive:true}); resize();
+
+// ===== Game State =====
+let running=false, last=0, accum=0, spawn=0, score=0, best=Number(localStorage.getItem('astro_best')||0);
+hud.best.textContent = fmt.format(best);
+
+const player = { x: W*0.5, y: H*0.82, r: 18*dpr, speed: 0.8*dpr };
+const bullets=[], enemies=[], particles=[];
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+// ===== Spawners =====
+function spawnEnemy(){
+  const r = rand(14, 28) * dpr;
+  enemies.push({ x: rand(r, W-r), y: -r-4, r, vy: rand(0.7,1.3)*dpr });
+}
+function shoot(){
+  bullets.push({ x: player.x, y: player.y - player.r - 6*dpr, vy: 3.2*dpr });
+  AudioSys.pew();
+}
+let fireTimer=0;
+
+// ===== Particles =====
+function puff(x,y,color="#39ff14"){
+  for(let i=0;i<10;i++){
+    particles.push({x,y, vx:rand(-1.5,1.5)*dpr, vy:rand(-1.5,1.5)*dpr, life:1, color});
+  }
+}
+
+// ===== Input (drag) =====
+let dragging=false;
+function pointerPos(e){
+  const t = e.touches? e.touches[0]: e;
+  const rect = canvas.getBoundingClientRect();
+  return { x: (t.clientX-rect.left)*dpr, y: (t.clientY-rect.top)*dpr };
+}
+canvas.addEventListener('mousedown', e=>{ dragging=true; const p=pointerPos(e); player.x=p.x; player.y=p.y; });
+canvas.addEventListener('mousemove', e=>{ if(dragging){ const p=pointerPos(e); player.x=p.x; player.y=Math.max(H*0.2, Math.min(H*0.95, p.y)); }});
+addEventListener('mouseup', ()=> dragging=false);
+
+canvas.addEventListener('touchstart', e=>{ dragging=true; const p=pointerPos(e); player.x=p.x; player.y=p.y; }, {passive:true});
+canvas.addEventListener('touchmove',  e=>{ if(dragging){ const p=pointerPos(e); player.x=p.x; player.y=Math.max(H*0.2, Math.min(H*0.95, p.y)); }}, {passive:true});
+addEventListener('touchend', ()=> dragging=false);
+
+// ===== Drawing helpers =====
+function glowCircle(x,y,r,fill="#39ff14"){
+  ctx.save();
+  ctx.shadowBlur = 20*dpr; ctx.shadowColor = fill;
+  ctx.fillStyle = fill;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+function drawShip(){
+  // body
+  glowCircle(player.x, player.y, player.r, "#39ff14");
+  // halo
+  ctx.save();
+  ctx.strokeStyle = "rgba(57,255,20,.45)"; ctx.lineWidth = 3*dpr;
+  ctx.beginPath(); ctx.arc(player.x, player.y, player.r+6*dpr, 0, Math.PI*2); ctx.stroke();
+  ctx.restore();
+}
+
+// ===== Game Loop =====
+function reset(){
+  bullets.length=0; enemies.length=0; particles.length=0;
+  score=0; spawn=0; fireTimer=0;
+  player.x = W*0.5; player.y = H*0.82;
+  hud.score.textContent = "0";
+}
+function start(){ if(running) return; reset(); running=true; last=performance.now(); requestAnimationFrame(loop); }
+function stop(){
+  running=false; AudioSys.boom();
+  if(score>best){ best=score; localStorage.setItem('astro_best', String(best)); hud.best.textContent=fmt.format(best); }
+  hud.btn.textContent = "Main Lagi";
+}
+
+function loop(t){
+  if(!running) return;
+  const dt = Math.min(32, t-last); last=t;
+  // logic
+  fireTimer += dt;
+  if(fireTimer>120){ shoot(); fireTimer=0; }
+  spawn += dt;
+  if(spawn>700){ spawnEnemy(); spawn=0; }
+
+  // update bullets
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i]; b.y -= b.vy;
+    if(b.y < -20*dpr) bullets.splice(i,1);
+  }
+  // update enemies
+  for(let i=enemies.length-1;i>=0;i--){
+    const e=enemies[i]; e.y += e.vy;
+    if(e.y - e.r > H+40*dpr){ enemies.splice(i,1); continue; }
+    // collide with ship
+    const dx=e.x-player.x, dy=e.y-player.y, rr=(e.r+player.r)*(e.r+player.r);
+    if(dx*dx+dy*dy <= rr){ stop(); }
+    // collide with bullets
+    for(let j=bullets.length-1;j>=0;j--){
+      const b=bullets[j]; const bx=e.x-b.x, by=e.y-b.y, r2 = (e.r+6*dpr)*(e.r+6*dpr);
+      if(bx*bx+by*by <= r2){
+        bullets.splice(j,1); enemies.splice(i,1); puff(e.x,e.y);
+        score++; hud.score.textContent = fmt.format(score);
+        break;
+      }
+    }
+  }
+  // particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.life-=0.02;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  // draw
+  ctx.clearRect(0,0,W,H);
+  // grid glow floor
+  ctx.save();
+  const grd = ctx.createLinearGradient(0, H*0.6, 0, H);
+  grd.addColorStop(0, "rgba(57,255,20,.08)");
+  grd.addColorStop(1, "rgba(57,255,20,.02)");
+  ctx.fillStyle = grd; ctx.fillRect(0,H*0.6,W,H*0.4);
+  ctx.restore();
+
+  // bullets
+  ctx.save(); ctx.shadowBlur=12*dpr; ctx.shadowColor="#39ff14"; ctx.fillStyle="#caffc9";
+  bullets.forEach(b=>{ ctx.fillRect(b.x-2*dpr,b.y-10*dpr,4*dpr,10*dpr); });
+  ctx.restore();
+
+  // enemies
+  enemies.forEach(e=>{
+    glowCircle(e.x,e.y,e.r,"#9dffcf");
+    ctx.save();
+    ctx.strokeStyle="rgba(57,255,20,.45)"; ctx.lineWidth=2*dpr;
+    ctx.beginPath(); ctx.arc(e.x,e.y,e.r*0.55,0,Math.PI*2); ctx.stroke(); ctx.restore();
+  });
+
+  // particles
+  particles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha = Math.max(0,p.life); ctx.fillStyle=p.color; ctx.shadowBlur=8*dpr; ctx.shadowColor=p.color;
+    ctx.fillRect(p.x-2*dpr, p.y-2*dpr, 4*dpr, 4*dpr); ctx.restore();
+  });
+
+  // player
+  drawShip();
+
+  requestAnimationFrame(loop);
+}
+
+// button
+hud.btn.addEventListener('click', ()=>{ start(); }, {passive:true});
+// pause on blur
+addEventListener('visibilitychange', ()=>{ if(document.hidden && running){ stop(); } });
+
+})();
+</script>
+</body>
+</html>
