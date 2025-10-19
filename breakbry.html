@@ -4,50 +4,64 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Breakbry • Azbry-MD</title>
-  <link rel="stylesheet" href="assets/css/azbry.css">
+  <link rel="stylesheet" href="assets/css/azbry.css?v=2">
   <style>
     body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: var(--bg);
-      color: var(--text);
       overflow: hidden;
-    }
-    canvas {
-      background: #0d0f12;
-      border-radius: 20px;
-      box-shadow: 0 0 20px var(--ring);
-    }
-    #controls {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      margin-top: 15px;
-    }
-    .btn-arrow {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: none;
-      background: var(--accent);
-      box-shadow: 0 0 20px var(--ring);
-      color: #000;
-      font-size: 1.5rem;
-      font-weight: bold;
+      min-height: 100vh;
     }
     header {
       text-align: center;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 4px;
       color: var(--accent);
-      text-shadow: 0 0 12px var(--ring);
-      margin-bottom: 8px;
+      text-shadow: 0 0 10px var(--ring);
     }
     #info {
       text-align: center;
       font-size: 1rem;
+      color: var(--muted);
       margin-bottom: 10px;
+    }
+    canvas {
+      background: #0d0f12;
+      border-radius: 20px;
+      box-shadow: 0 0 18px var(--ring);
+    }
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      margin-top: 14px;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    .btn-arrow {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: none;
+      outline: none;
+      font-size: 2rem;
+      color: #0b0d10;
+      font-weight: bold;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+      box-shadow: 0 0 25px var(--ring), inset 0 0 0 1px rgba(0,0,0,.2);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-arrow:active {
+      transform: scale(0.92);
+      box-shadow: 0 0 18px var(--ring);
     }
   </style>
 </head>
@@ -56,8 +70,8 @@
   <div id="info">Level: <span id="level">1</span> | Skor: <span id="score">0</span></div>
   <canvas id="game" width="360" height="520"></canvas>
   <div id="controls">
-    <button class="btn-arrow" id="left">◀</button>
-    <button class="btn-arrow" id="right">▶</button>
+    <button class="btn-arrow" id="left">«</button>
+    <button class="btn-arrow" id="right">»</button>
   </div>
 
   <footer class="azbry-footer"></footer>
@@ -84,7 +98,7 @@
     }
 
     function drawBricks(){
-      ctx.fillStyle = "var(--accent)";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
       bricks.forEach(row=>{
         row.forEach(b=>{
           if(!b.hit){
@@ -98,7 +112,7 @@
     }
 
     function drawPaddle(){
-      ctx.fillStyle = "var(--accent)";
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
       ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
     }
 
@@ -106,7 +120,7 @@
       ctx.beginPath();
       ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
       ctx.fillStyle="#fff";
-      ctx.shadowColor="var(--accent)";
+      ctx.shadowColor=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
       ctx.shadowBlur=10;
       ctx.fill();
       ctx.closePath();
