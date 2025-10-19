@@ -1,88 +1,40 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 <title>Pulse Jumper — Azbry Portrait</title>
 <style>
-  :root{ --neon:#39ff14; --neonSoft:#9dffcf; --text:#e6f0ff; --muted:#93a3b8; }
+  :root{ --neon:#39ff14; --text:#e6f0ff; --muted:#93a3b8; }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:#000}
-  body{
-    font-family:Inter,system-ui,sans-serif; color:var(--text);
-    background:#0b0d10 url('assets/img/bg.png') center/cover no-repeat fixed;
-    overscroll-behavior:none;
-  }
-  /* Container portrait: jaga rasio 9:16 */
-  .wrap{
-    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-  }
+  body{font-family:Inter,system-ui,sans-serif;color:var(--text);overscroll-behavior:none;}
+  .wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+        padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
   .frame{
-    width:min(100vw, 420px);         /* batas max lebar hp */
-    height:min(100vh, 840px);        /* batasi ketinggian */
-    aspect-ratio: 9 / 16;
-    position:relative; border:2px solid rgba(57,255,20,.25);
-    border-radius:16px; overflow:hidden;
-    box-shadow:0 0 24px rgba(57,255,20,.25);
-    background:rgba(5,8,10,.55);
-    backdrop-filter: blur(2px);
-    touch-action: none; /* buat mencegah zoom/scroll saat tap */
+    width:min(100vw,420px); height:min(100vh,840px); aspect-ratio:9/16; position:relative;
+    border:2px solid rgba(57,255,20,.25); border-radius:16px; overflow:hidden;
+    box-shadow:0 0 24px rgba(57,255,20,.25); background:radial-gradient(120% 90% at 50% 20%, #0c1118 0%, #070b10 60%, #05080c 100%);
+    touch-action:none;
   }
-
-  /* HUD TOP: bar neon bergerak, judul, skor */
-  .hud{
-    position:absolute; top:0; left:0; right:0; padding:10px 12px 8px;
-    background:linear-gradient(180deg,rgba(5,8,12,.8),rgba(5,8,12,.1));
-    border-bottom:1px solid rgba(57,255,20,.18);
-    z-index:5;
-  }
-  .title{
-    display:flex; justify-content:space-between; align-items:center; gap:10px;
-    font-weight:900; letter-spacing:.3px;
-  }
-  .title .brand{ color:var(--neonSoft); text-shadow:0 0 10px rgba(57,255,20,.6); }
-  .title .by{ color:var(--muted); font-weight:600; font-size:.9rem; }
-  .bar{
-    margin-top:6px; height:4px; width:100%; background:rgba(57,255,20,.15); border-radius:999px;
-    overflow:hidden; position:relative;
-  }
-  .bar::before{
-    content:""; position:absolute; inset:0;
-    background:linear-gradient(90deg, transparent, rgba(57,255,20,.9), transparent);
-    width:35%; animation: sweep 1.8s linear infinite;
-  }
-  @keyframes sweep { from{transform:translateX(-40%)} to{transform:translateX(140%)} }
-
-  .stats{
-    margin-top:8px; display:flex; justify-content:space-between; font-weight:700;
-    color:var(--muted);
-  }
-  .stats b{ color:var(--neon); text-shadow:0 0 8px rgba(57,255,20,.5); }
-
-  /* SCORE besar di tengah atas */
-  .scoreBig{
-    position:absolute; top:18%; left:50%; transform:translateX(-50%);
-    font-size: clamp(2.5rem, 9vw, 4rem);
-    color:var(--neon); font-weight:900; text-shadow:0 0 14px rgba(57,255,20,.6);
-    z-index:4; pointer-events:none;
-  }
-
-  /* Canvas permainan memenuhi frame */
-  canvas{ position:absolute; inset:0; width:100%; height:100%; }
-
-  /* Tombol restart */
-  .restart{
-    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
-    background:transparent; border:1px solid var(--neon); color:var(--text);
-    padding:10px 16px; border-radius:10px; font-weight:700; display:none;
-    box-shadow:0 0 10px rgba(57,255,20,.25);
-  }
-  .restart:active{ transform:translateX(-50%) scale(.98); }
-
-  /* Floaty saat klik (opsional, kecil) */
-  .floaty{ position:absolute; pointer-events:none; color:var(--neon); font-weight:900; text-shadow:0 0 10px rgba(57,255,20,.7); }
+  .hud{position:absolute; top:0; left:0; right:0; padding:10px 12px 8px; z-index:5;
+       background:linear-gradient(180deg,rgba(5,8,12,.85),rgba(5,8,12,.2)); border-bottom:1px solid rgba(57,255,20,.18);}
+  .title{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:900;letter-spacing:.3px}
+  .title .brand{color:#9dffcf;text-shadow:0 0 10px rgba(57,255,20,.6)}
+  .title .by{color:var(--muted);font-weight:600;font-size:.9rem}
+  .bar{margin-top:6px;height:4px;width:100%;background:rgba(57,255,20,.15);border-radius:999px;overflow:hidden;position:relative}
+  .bar::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(57,255,20,.9),transparent);
+               width:35%;animation:sweep 1.8s linear infinite}
+  @keyframes sweep{from{transform:translateX(-40%)}to{transform:translateX(140%)}}
+  .stats{margin-top:8px;display:flex;justify-content:space-between;font-weight:700;color:var(--muted)}
+  .stats b{color:var(--neon);text-shadow:0 0 8px rgba(57,255,20,.5)}
+  .scoreBig{position:absolute;top:18%;left:50%;transform:translateX(-50%);font-size:clamp(2.5rem,9vw,4rem);
+            color:var(--neon);font-weight:900;text-shadow:0 0 14px rgba(57,255,20,.6);z-index:4;pointer-events:none}
+  canvas{position:absolute; inset:0; width:100%; height:100%}
+  .restart{position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+           background:transparent; border:1px solid var(--neon); color:var(--text);
+           padding:10px 16px; border-radius:10px; font-weight:700; display:none; box-shadow:0 0 10px rgba(57,255,20,.25)}
+  .restart:active{transform:translateX(-50%) scale(.98)}
 </style>
 </head>
 <body>
@@ -99,7 +51,6 @@
         <div>Best: <b id="bestSmall">0</b></div>
       </div>
     </div>
-
     <div class="scoreBig" id="scoreBig">0</div>
     <canvas id="game"></canvas>
     <button class="restart" id="restart">Restart</button>
@@ -108,7 +59,6 @@
 
 <script>
 (() => {
-  // ===== DOM refs
   const frame = document.getElementById('gameFrame');
   const cvs = document.getElementById('game');
   const ctx = cvs.getContext('2d');
@@ -117,203 +67,182 @@
   const scoreBig   = document.getElementById('scoreBig');
   const restartBtn = document.getElementById('restart');
 
-  // ===== Responsive canvas (fit frame)
   function resizeCanvas(){
-    const rect = frame.getBoundingClientRect();
-    cvs.width  = Math.floor(rect.width);
-    cvs.height = Math.floor(rect.height);
+    const r = frame.getBoundingClientRect();
+    cvs.width = Math.floor(r.width); cvs.height = Math.floor(r.height);
   }
-  resizeCanvas();
-  addEventListener('resize', resizeCanvas);
+  resizeCanvas(); addEventListener('resize', resizeCanvas);
 
-  // ===== Assets
-  const bg = new Image();    bg.src = 'assets/img/bg.png';
+  // Assets kucing
   const catOpen  = new Image(); catOpen.src  = 'assets/img/popup.png';
   const catClose = new Image(); catClose.src = 'assets/img/popin.png';
   let catImg = catClose;
 
-  // ===== Game vars (portrait tuned)
-  const groundY = () => Math.floor(cvs.height * 0.78);  // posisi tanah relatif
+  // Var game
+  const groundY = () => Math.floor(cvs.height * 0.80);
   const gravity = 0.6;
-  const jumpPower = Math.max(8, Math.min(12, cvs.height * 0.015)); // skala sesuai tinggi layar
-  let isJumping = false;
-  let score = 0;
-  let best  = Number(localStorage.getItem('pulse_best') || 0);
-  let gameOver = false;
+  const jumpPowerBase = 11;
+  let isJumping=false, score=0, best=Number(localStorage.getItem('pulse_best')||0), gameOver=false;
+  let obstacles=[], spawnTimer=0;
 
-  // Player size relatif biar proporsional portrait
   const baseUnit = Math.min(cvs.width, cvs.height);
   const player = {
     x: Math.floor(cvs.width * 0.18),
-    y: groundY(),
     w: Math.floor(baseUnit * 0.12),
     h: Math.floor(baseUnit * 0.12),
-    vy: 0
+    y: groundY(), vy:0
   };
 
-  // Obstacles
-  let obstacles = [];
-  let spawnTimer = 0;
+  // ====== LANTAI GRID NEON (CANVAS) ======
+  let gridScroll = 0;
+  function drawNeonGrid(){
+    const top = Math.floor(cvs.height * 0.55);     // mulai grid (bagian bawah layar)
+    const bottom = cvs.height;
+    // gradient glow
+    const g = ctx.createLinearGradient(0, top, 0, bottom);
+    g.addColorStop(0, 'rgba(57,255,20,0.10)');
+    g.addColorStop(1, 'rgba(57,255,20,0.00)');
+    ctx.fillStyle = g; ctx.fillRect(0, top, cvs.width, bottom-top);
 
-  // ===== Sound (tap)
-  function popSound(){
-    const ctxA = new (window.AudioContext||window.webkitAudioContext)();
-    const o=ctxA.createOscillator(), g=ctxA.createGain();
-    o.type='square'; o.frequency.value=420; g.gain.value=.08;
-    o.connect(g).connect(ctxA.destination);
-    o.start(); o.stop(ctxA.currentTime + 0.1);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(57,255,20,0.45)';
+    ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 8;
+
+    // garis horizontal (perspektif)
+    const rows = 10;
+    for(let i=0;i<=rows;i++){
+      const t = i/rows;
+      const y = top + Math.pow(t, 1.8) * (bottom-top); // semakin rapat ke bawah
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); ctx.stroke();
+    }
+
+    // garis vertikal bergerak (scroll halus)
+    gridScroll = (gridScroll + 0.8) % 40;
+    const cols = 10;
+    for(let i=-1;i<=cols;i++){
+      const x = ((i*40) - gridScroll) * (cvs.width/360) + cvs.width/2;
+      // perspektif: konvergen ke tengah atas
+      ctx.beginPath();
+      ctx.moveTo(x, bottom);
+      ctx.lineTo(cvs.width/2 + (x-cvs.width/2)*0.12, top);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // horizon glow
+    ctx.fillStyle = 'rgba(57,255,20,0.12)';
+    ctx.fillRect(0, top-6, cvs.width, 6);
   }
 
-  // ===== Draw cactus (Azbry)
-  function drawCactus(x, y, scale=1){
+  // Suara
+  function popSound(){
+    const a=new (window.AudioContext||window.webkitAudioContext)();
+    const o=a.createOscillator(), g=a.createGain();
+    o.type='square'; o.frequency.value=420; g.gain.value=.08;
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+0.1);
+  }
+
+  // Kaktus neon
+  function drawCactus(x,y,scale=1){
     ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
+    ctx.translate(x,y);
+    ctx.scale(scale,scale);
     ctx.lineWidth = Math.max(1.5, cvs.width*0.002);
-    ctx.strokeStyle = '#39ff14';
-    ctx.shadowColor = '#39ff14';
-    ctx.shadowBlur  = 10;
+    ctx.strokeStyle = '#39ff14'; ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 10;
 
     ctx.beginPath();
-    // batang
     ctx.moveTo(0,0); ctx.lineTo(0,-30);
-    // cabang kiri
     ctx.moveTo(-8,-8); ctx.lineTo(-8,-24); ctx.lineTo(-3,-24);
-    // cabang kanan
-    ctx.moveTo(8,-12); ctx.lineTo(8,-30); ctx.lineTo(3,-30);
+    ctx.moveTo( 8,-12); ctx.lineTo( 8,-30); ctx.lineTo( 3,-30);
     ctx.stroke();
 
     ctx.shadowBlur = 0;
     ctx.restore();
   }
-
-  // ===== Collision (bbox approx)
-  function collides(p, o){
-    // Perkiraan bounding box kaktus
-    const cW = 14 * o.scale;
-    const cH = 32 * o.scale;
-    return (p.x < o.x + cW) && (p.x + p.w > o.x) && (p.y + p.h > o.y - cH);
+  function collides(p,o){
+    const cW = 14*o.scale, cH = 32*o.scale;
+    return (p.x < o.x+cW) && (p.x+p.w > o.x) && (p.y - p.h + p.h > o.y - cH) && (p.y > o.y - cH);
   }
 
-  // ===== UI update
   function updateUI(){
     const s = Math.floor(score);
-    scoreSmall.textContent = s;
-    scoreBig.textContent   = s;
-    bestSmall.textContent  = best;
+    scoreSmall.textContent = s; scoreBig.textContent = s; bestSmall.textContent = best;
   }
 
-  // ===== Loop
   function loop(){
     if(gameOver) return;
     requestAnimationFrame(loop);
 
-    // Clear + bg
     ctx.clearRect(0,0,cvs.width,cvs.height);
-    ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
 
-    // Ground line (tipis neon)
-    ctx.strokeStyle = 'rgba(57,255,20,.25)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, groundY()+player.h);
-    ctx.lineTo(cvs.width, groundY()+player.h);
-    ctx.stroke();
+    // langit gelap + bintang tipis
+    ctx.fillStyle='#070b10'; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.fillStyle='rgba(130,255,170,0.08)';
+    for(let i=0;i<12;i++){ const x=(i*73)%cvs.width, y=20+(i*37)%Math.floor(cvs.height*0.5); ctx.fillRect(x,y,2,2); }
 
-    // Physics
+    // lantai grid
+    drawNeonGrid();
+
+    // garis ground
+    ctx.strokeStyle='rgba(57,255,20,.25)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0, groundY()+player.h-2); ctx.lineTo(cvs.width, groundY()+player.h-2); ctx.stroke();
+
+    // fisika
     player.y += player.vy;
     player.vy += gravity;
     const floor = groundY();
-    if(player.y > floor){
-      player.y = floor;
-      player.vy = 0;
-      isJumping = false;
-      catImg = catClose;
-    }
+    if(player.y > floor){ player.y=floor; player.vy=0; isJumping=false; catImg=catClose; }
 
-    // Player
-    ctx.save();
-    ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 14;
-    ctx.drawImage(catImg, player.x, player.y - player.h, player.w, player.h); // y pakai top-left
+    // player
+    ctx.save(); ctx.shadowColor='#39ff14'; ctx.shadowBlur=14;
+    ctx.drawImage(catImg, player.x, player.y - player.h, player.w, player.h);
     ctx.restore();
 
-    // Spawner: kecepatan, gap, skala portrait-friendly
+    // spawn obstacle (lebih pas untuk portrait)
     spawnTimer--;
-    if(spawnTimer <= 0){
-      // Cactus lebih kecil & ada variasi
-      const scale = (Math.random()*0.5 + 0.65) * (cvs.height/600); // skala relatif layar
-      const speed = Math.max(3.2, Math.min(5.5, cvs.width/160));   // kecepatan relatif lebar
-      obstacles.push({
-        x: cvs.width + 10,
-        y: floor + player.h - 8, // sedikit turun agar gap aman
-        scale, speed
-      });
-      // Interval spawn diberi jeda cukup → bisa dilompati
-      spawnTimer = Math.floor(70 + Math.random()*70);
+    if(spawnTimer<=0){
+      const scale = (Math.random()*0.45 + 0.60) * (cvs.height/600);
+      const speed = Math.max(3.1, Math.min(5.2, cvs.width/165));
+      obstacles.push({ x:cvs.width+10, y: floor + player.h - 8, scale, speed });
+      spawnTimer = Math.floor(80 + Math.random()*80);
     }
-    // Move & draw cactus
-    obstacles.forEach(o=>{
-      o.x -= o.speed;
-      drawCactus(o.x, o.y, o.scale);
-    });
-    // Keep in bounds
-    obstacles = obstacles.filter(o => o.x > -40);
+    obstacles.forEach(o=>{ o.x -= o.speed; drawCactus(o.x,o.y,o.scale); });
+    obstacles = obstacles.filter(o=>o.x>-40);
 
-    // Collision
+    // collision
     for(const o of obstacles){
-      if(collides({x:player.x, y:player.y - player.h, w:player.w, h:player.h}, o)){
-        gameOver = true;
-        restartBtn.style.display = 'block';
-        // Overlay
-        ctx.fillStyle = 'rgba(0,0,0,.45)';
-        ctx.fillRect(0,0,cvs.width,cvs.height);
-        ctx.fillStyle = '#39ff14';
-        ctx.font = 'bold 24px Inter';
-        ctx.fillText('💀 Game Over', cvs.width/2 - 70, cvs.height/2);
-        // Best
-        const s = Math.floor(score);
-        if(s > best){
-          best = s;
-          localStorage.setItem('pulse_best', best);
-        }
-        updateUI();
-        return;
+      const p = {x:player.x, y:player.y, w:player.w, h:player.h};
+      if(collides(p,o)){
+        gameOver=true; restartBtn.style.display='block';
+        ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,cvs.width,cvs.height);
+        ctx.fillStyle='#39ff14'; ctx.font='bold 24px Inter'; ctx.fillText('💀 Game Over', cvs.width/2-70, cvs.height/2);
+        const s=Math.floor(score); if(s>best){ best=s; localStorage.setItem('pulse_best',best); }
+        updateUI(); return;
       }
     }
 
-    // Score
-    score += 0.025 * (cvs.width/360); // skala ringan berdasarkan lebar
+    // score
+    score += 0.026 * (cvs.width/360);
     updateUI();
   }
 
-  // ===== Controls (single handler, anti double)
+  // kontrol
   const isCoarse = matchMedia('(pointer: coarse)').matches;
   function jump(){
     if(!isJumping && !gameOver){
-      player.vy = -jumpPower;
-      isJumping = true;
-      catImg = catOpen;
-      popSound();
+      player.vy = -(jumpPowerBase);
+      isJumping = true; catImg = catOpen; popSound();
     }
   }
-  // Gunakan satu event utama sesuai device
-  const primaryEvt = isCoarse ? 'touchstart' : 'mousedown';
-  frame.addEventListener(primaryEvt, (e)=>{ e.preventDefault(); jump(); }, {passive:true});
+  frame.addEventListener(isCoarse?'touchstart':'mousedown', e=>{ e.preventDefault(); jump(); }, {passive:true});
   addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); jump(); }});
 
-  // Restart
   restartBtn.addEventListener('click', ()=>{
-    obstacles = []; score = 0; gameOver = false;
-    player.y = groundY(); player.vy = 0; isJumping = false; catImg = catClose;
-    restartBtn.style.display = 'none';
-    updateUI();
-    loop();
+    obstacles=[]; score=0; gameOver=false; player.y=groundY(); player.vy=0; isJumping=false; catImg=catClose;
+    restartBtn.style.display='none'; updateUI(); loop();
   });
 
-  // Init
-  best  = Number(localStorage.getItem('pulse_best')||0);
-  updateUI();
-  loop();
+  updateUI(); loop();
 })();
 </script>
 </body>
