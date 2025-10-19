@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Astro Blip — Azbry-MD</title>
 
-  <!-- TEMA GLOBAL AZBRY -->
+  <!-- TEMA GLOBAL -->
   <link rel="stylesheet" href="assets/css/azbry.css">
 </head>
 <body class="azbry-theme">
@@ -19,18 +19,18 @@
     <div class="azbry-hud">
       <span class="azbry-badge">Best: <b id="best">0</b></span>
       <span class="azbry-badge">CD <span class="azbry-bar"><i id="cd"></i></span></span>
-      <a href="index.html" class="azbry-btn">← Kembali</a>
+      <a class="azbry-btn" href="index.html">← Kembali</a>
     </div>
   </header>
 
-  <!-- SCORE -->
+  <!-- SCORE BESAR -->
   <div id="score" class="azbry-score">0</div>
 
-  <!-- GAME -->
+  <!-- KANVAS GAME -->
   <canvas id="game"></canvas>
 
   <!-- PETUNJUK -->
-  <div class="azbry-hint">
+  <div class="azbry-hint" id="hint">
     🎯 Tujuan: hancurkan drone sebanyak mungkin. Seret untuk gerak, tap untuk menembak (ada cooldown).
   </div>
 
@@ -42,12 +42,7 @@
     </span>
   </footer>
 
-  <script>
-    // Tahun dinamis
-    document.getElementById('y').textContent = new Date().getFullYear();
-  </script>
-
-  <!-- GAME LOGIC YANG SUDAH ADA -->
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
   <script src="assets/js/astroblip.js"></script>
 </body>
 </html>
