@@ -119,13 +119,13 @@ const Store=(()=>{
   return{pull,add,ui};
 })();
 
-function openMouth(){
-  el.cat.src="assets/img/popup.png";
-  el.cat.style.transform="scale(0.95)";
+function openMouth() {
+  el.cat.src = "assets/img/popup.png?" + Date.now(); // paksa refresh gambar
+  el.cat.style.transform = "scale(0.95)";
 }
-function closeMouth(){
-  el.cat.src="assets/img/popin.png";
-  el.cat.style.transform="scale(1)";
+function closeMouth() {
+  el.cat.src = "assets/img/popin.png?" + Date.now(); // paksa refresh gambar
+  el.cat.style.transform = "scale(1)";
 }
 
 function handleClick(ev){
