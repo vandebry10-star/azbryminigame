@@ -1,155 +1,151 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Nasi Uduk Click — Azbry</title>
-  <style>
-    :root{
-      --bg:#07090d; --panel:#0c1016; --text:#e6f0ff; --muted:#93a3b8;
-      --neon:#39ff14; --neon2:#9dffcf; --ring:#39ff1480;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%;margin:0;padding:0;overflow:hidden}
-    body{
-      color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
-      background:#0b0d10 url("assets/img/bg.png") center/cover no-repeat fixed;
-      display:flex;align-items:center;justify-content:center;flex-direction:column;
-      position:relative;
-      -webkit-tap-highlight-color:transparent;
-    }
-
-    .topbar{position:fixed;top:0;left:0;right:0;padding:10px 12px;
-      display:flex;align-items:center;justify-content:space-between;
-      backdrop-filter:blur(6px);
-      background:linear-gradient(180deg,rgba(7,9,13,.85),rgba(7,9,13,.35));
-      border-bottom:1px solid #1b2534;z-index:10;}
-    .brand{font-weight:900;color:var(--neon2);text-shadow:0 0 14px var(--ring);}
-    .leader{display:flex;gap:10px;align-items:center;}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;
-      border-radius:999px;background:rgba(12,16,22,.6);
-      border:1px solid #1b2534;color:var(--muted);}
-    .pill b{color:var(--neon);}
-    .pill a{text-decoration:none;color:var(--neon2);}
-
-    .cat{width:min(80vw,520px);height:auto;user-select:none;-webkit-user-drag:none;
-      image-rendering:-webkit-optimize-contrast;
-      filter:drop-shadow(0 0 24px rgba(57,255,20,.25));pointer-events:none;
-      transition:transform .06s ease;}
-    .cat.active{transform:scale(0.96);}
-    .floaty{position:fixed;pointer-events:none;font-weight:900;color:var(--neon);
-      text-shadow:0 0 10px var(--ring);}
-    .help{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;
-      color:var(--muted);font-size:.95rem;background:rgba(12,16,22,.55);
-      border:1px solid #1b2534;border-radius:12px;padding:6px 10px;z-index:10;}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Popbry — Azbry Popcat</title>
+<style>
+  :root{
+    --bg:#07090d; --neon:#39ff14; --neon2:#9dffcf; --text:#e6f0ff; --muted:#93a3b8;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;padding:0;overflow:hidden}
+  body{
+    background:#0b0d10 url("assets/img/bg.png") center/cover no-repeat fixed;
+    color:var(--text);font-family:Inter,system-ui;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .topbar{
+    position:fixed;top:0;left:0;right:0;padding:10px 12px;
+    display:flex;justify-content:space-between;align-items:center;
+    background:linear-gradient(180deg,rgba(7,9,13,.85),rgba(7,9,13,.35));
+    border-bottom:1px solid #1b2534;z-index:10;
+  }
+  .brand{font-weight:900;color:var(--neon2);text-shadow:0 0 12px var(--neon);}
+  .pill{background:rgba(12,16,22,.6);border:1px solid #1b2534;
+    padding:6px 10px;border-radius:999px;color:var(--muted);margin-left:8px;}
+  .pill b{color:var(--neon);}
+  .pill a{text-decoration:none;color:var(--neon2);}
+  .cat{
+    width:min(80vw,520px);user-select:none;-webkit-user-drag:none;
+    transition:transform .07s ease;image-rendering:-webkit-optimize-contrast;
+    filter:drop-shadow(0 0 24px rgba(57,255,20,.25));pointer-events:none;
+  }
+  .floaty{position:fixed;pointer-events:none;font-weight:900;color:var(--neon);
+    text-shadow:0 0 10px var(--neon);}
+  .help{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+    color:var(--muted);background:rgba(12,16,22,.55);border:1px solid #1b2534;
+    border-radius:12px;padding:6px 10px;font-size:.9rem;}
+</style>
 </head>
 <body>
   <div class="topbar">
-    <div class="brand">AZBRY • POPCAT</div>
-    <div class="leader">
-      <span class="pill">Global: <b id="global">0</b></span>
-      <span class="pill">You: <b id="local">0</b></span>
+    <div class="brand">AZBRY • POPBRY</div>
+    <div>
+      <span class="pill">🌍 Global: <b id="global">0</b></span>
+      <span class="pill">👤 You: <b id="local">0</b></span>
       <span class="pill"><a href="leaderboard.html">🏆 Leaderboard</a></span>
     </div>
   </div>
 
-  <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Cat"/>
-  <div class="help">Tap/klik layar • suara pop & efek +1 🐱</div>
+  <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Cat" />
+  <div class="help">Tap/klik layar untuk mangap 🐱 + suara pop</div>
 
-  <script>
-    const LEADERBOARD_URL="/api/leaderboard";
-    const nameKey="azbry_name";
-    let playerName=localStorage.getItem(nameKey);
-    if(!playerName){
-      playerName=prompt("Masukkan nama kamu:");
-      if(!playerName) playerName="Anon"+Math.floor(Math.random()*9999);
-      localStorage.setItem(nameKey,playerName);
-    }
+<script>
+const LEADERBOARD_URL="/api/leaderboard";
+const nameKey="azbry_name";
+let playerName=localStorage.getItem(nameKey);
+if(!playerName){
+  playerName=prompt("Masukkan nama kamu:");
+  if(!playerName) playerName="Anon"+Math.floor(Math.random()*9999);
+  localStorage.setItem(nameKey,playerName);
+}
 
-    const el={cat:document.getElementById("cat"),g:document.getElementById("global"),l:document.getElementById("local")};
-    const fmt=new Intl.NumberFormat("id-ID");
+const el={cat:document.getElementById("cat"),g:document.getElementById("global"),l:document.getElementById("local")};
+const fmt=new Intl.NumberFormat("id-ID");
 
-    const AudioSys=(()=>{
-      let ctx=null;function ensure(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();}
-      function pop(){ensure();const o=ctx.createOscillator(),g=ctx.createGain();
-        o.type="square";o.frequency.value=520+Math.random()*40;
-        g.gain.value=.06;o.connect(g).connect(ctx.destination);
-        o.start();o.frequency.exponentialRampToValueAtTime(180,ctx.currentTime+.08);
-        g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+.09);
-        o.stop(ctx.currentTime+.1);}
-      return{pop};
-    })();
+// 🔊 Audio pop
+const AudioSys=(()=>{
+  let ctx;function ensure(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();}
+  function pop(){
+    ensure();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type="square";o.frequency.value=520+Math.random()*50;
+    g.gain.value=.05;o.connect(g).connect(ctx.destination);
+    o.start();o.frequency.exponentialRampToValueAtTime(180,ctx.currentTime+.08);
+    g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+.09);
+    o.stop(ctx.currentTime+.1);
+  }
+  return{pop};
+})();
 
-    function floaty(text,x,y){
-      const n=document.createElement("div");
-      n.className="floaty";n.textContent=text;
-      n.style.left=x+"px";n.style.top=y+"px";
-      document.body.appendChild(n);
-      const t0=Date.now();
-      (function anim(){
-        const t=(Date.now()-t0)/700;
-        n.style.transform=`translateY(${-42*t}px)`;n.style.opacity=String(1-t);
-        if(t<1)requestAnimationFrame(anim);else n.remove();
-      })();
-    }
+// 🌟 Floaty +1
+function floaty(txt,x,y){
+  const n=document.createElement("div");
+  n.className="floaty";n.textContent=txt;
+  n.style.left=x+"px";n.style.top=y+"px";n.style.opacity="1";
+  document.body.appendChild(n);
+  const t0=Date.now();
+  (function anim(){
+    const t=(Date.now()-t0)/700;
+    n.style.transform=`translateY(${-42*t}px)`;n.style.opacity=String(1-t);
+    if(t<1)requestAnimationFrame(anim);else n.remove();
+  })();
+}
 
-    const Store=(()=>{
-      const KEY="azbry_popcat_total_v1";
-      let local=Number(localStorage.getItem("azbry_local")||0);
-      let global=Number(localStorage.getItem(KEY)||0);
-      function ui(){el.g.textContent=fmt.format(global);el.l.textContent=fmt.format(local);}
-      function cache(){localStorage.setItem("azbry_local",local);localStorage.setItem(KEY,global);}
-      async function pull(){
-        try{
-          const r=await fetch(LEADERBOARD_URL);
-          const j=await r.json();
-          if(j.top){global=j.top.reduce((a,b)=>a+(b.score||0),0);}
-          ui();
-        }catch{}
-      }
-      async function add(n){
-        local+=n;global+=n;ui();cache();
-        await fetch(LEADERBOARD_URL,{
-          method:"POST",headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({name:playerName,delta:n})
-        });
-      }
-      return{pull,add,ui};
-    })();
+// 🧠 Score store
+const Store=(()=>{
+  const KEY="azbry_popcat_total_v1";
+  let local=Number(localStorage.getItem("azbry_local")||0);
+  let global=Number(localStorage.getItem(KEY)||0);
+  function ui(){el.g.textContent=fmt.format(global);el.l.textContent=fmt.format(local);}
+  function cache(){localStorage.setItem("azbry_local",local);localStorage.setItem(KEY,global);}
+  async function pull(){
+    try{
+      const r=await fetch(LEADERBOARD_URL);
+      const j=await r.json();
+      if(j.top){global=j.top.reduce((a,b)=>a+(b.score||0),0);}
+      ui();
+    }catch{}
+  }
+  async function add(n){
+    local+=n;global+=n;ui();cache();
+    fetch(LEADERBOARD_URL,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:playerName,delta:n})
+    }).catch(()=>{});
+  }
+  return{pull,add,ui};
+})();
 
-    function openMouth(){
-      el.cat.src="assets/img/popup.png";
-      el.cat.classList.add("active");
-    }
-    function closeMouth(){
-      el.cat.src="assets/img/popin.png";
-      el.cat.classList.remove("active");
-    }
+function openMouth(){
+  el.cat.src="assets/img/popup.png";
+  el.cat.style.transform="scale(0.95)";
+}
+function closeMouth(){
+  el.cat.src="assets/img/popin.png";
+  el.cat.style.transform="scale(1)";
+}
 
-    function handleClick(ev){
-      const t=ev.touches?ev.touches[0]:ev;
-      const x=t?.clientX??innerWidth/2;
-      const y=t?.clientY??innerHeight/2;
-      openMouth();
-      AudioSys.pop();
-      Store.add(1);
-      floaty("+1",x,y);
-      floaty("🐱",x+(Math.random()*30-15),y+(Math.random()*30-15));
-      setTimeout(closeMouth,110);
-    }
+function handleClick(ev){
+  const t=ev.touches?ev.touches[0]:ev;
+  const x=t?.clientX??innerWidth/2;
+  const y=t?.clientY??innerHeight/2;
+  openMouth();AudioSys.pop();Store.add(1);
+  floaty("+1",x,y);
+  setTimeout(closeMouth,120);
+}
 
-    // satu event universal — klik di mana saja
-    let isTouch=false;
-    document.body.addEventListener("touchstart",e=>{isTouch=true;handleClick(e);},{passive:true});
-    document.body.addEventListener("mousedown",e=>{if(!isTouch)handleClick(e);});
-    document.addEventListener("keydown",e=>{
-      if(e.code==="Space"){e.preventDefault();handleClick(e);}
-    });
+// 👇 seluruh layar bisa diklik
+let isTouch=false;
+document.addEventListener("touchstart",e=>{isTouch=true;handleClick(e);},{passive:true});
+document.addEventListener("mousedown",e=>{if(!isTouch)handleClick(e);});
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();handleClick(e);}
+});
 
-    el.cat.addEventListener("dragstart",e=>e.preventDefault());
-
-    Store.ui();Store.pull();setInterval(Store.pull,3000);
-  </script>
+Store.ui();Store.pull();setInterval(Store.pull,3000);
+</script>
 </body>
 </html>
