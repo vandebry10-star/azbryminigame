@@ -1,202 +1,174 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Breakbry — Azbry-MD</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Breakbry • Azbry-MD</title>
   <link rel="stylesheet" href="assets/css/azbry.css">
   <style>
-    body{
-      display:flex;align-items:center;justify-content:center;
-      height:100vh;margin:0;background:#0b0d10;color:#e6f0ff;
-      font-family:Inter,system-ui,sans-serif;overflow:hidden;
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
     }
-    .game-card{
-      width:min(90vw,600px);height:min(80vh,500px);
-      background:rgba(17,20,24,.8);
-      border:1px solid rgba(255,255,255,.08);
-      box-shadow:0 8px 40px rgba(0,0,0,.5);
-      border-radius:18px;padding:16px;display:flex;
-      flex-direction:column;align-items:center;justify-content:center;
-      position:relative;overflow:hidden;
+    canvas {
+      background: #0d0f12;
+      border-radius: 20px;
+      box-shadow: 0 0 20px var(--ring);
     }
-    canvas{background:#0f1317;border-radius:12px;}
-    h1{position:absolute;top:8px;left:16px;color:#b8ff9a;font-size:1.2rem;
-      text-shadow:0 0 10px rgba(184,255,154,.4);}
-    .level{position:absolute;top:8px;right:16px;color:#93a3b8;font-size:.9rem}
+    #controls {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 15px;
+    }
+    .btn-arrow {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      box-shadow: 0 0 20px var(--ring);
+      color: #000;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    header {
+      text-align: center;
+      font-size: 1.4rem;
+      color: var(--accent);
+      text-shadow: 0 0 12px var(--ring);
+      margin-bottom: 8px;
+    }
+    #info {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
-  <div class="game-card">
-    <h1>BREAKBRY</h1>
-    <div class="level">Level: <span id="level">1</span></div>
-    <canvas id="game" width="560" height="420"></canvas>
+  <header>🧱 BREAKBRY</header>
+  <div id="info">Level: <span id="level">1</span> | Skor: <span id="score">0</span></div>
+  <canvas id="game" width="360" height="520"></canvas>
+  <div id="controls">
+    <button class="btn-arrow" id="left">◀</button>
+    <button class="btn-arrow" id="right">▶</button>
   </div>
 
+  <footer class="azbry-footer"></footer>
+
   <script>
-  const canvas=document.getElementById('game');
-  const ctx=canvas.getContext('2d');
-  const levelEl=document.getElementById('level');
+    const c = document.getElementById("game");
+    const ctx = c.getContext("2d");
 
-  // Audio system (simple pop)
-  const AudioSys=(()=>{
-    let ctxA;function ensure(){if(!ctxA)ctxA=new(window.AudioContext||window.webkitAudioContext)();}
-    function pop(){ensure();const o=ctxA.createOscillator(),g=ctxA.createGain();
-      o.type='square';o.frequency.value=500;g.gain.value=.04;
-      o.connect(g).connect(ctxA.destination);
-      o.start();o.frequency.exponentialRampToValueAtTime(200,ctxA.currentTime+.08);
-      g.gain.exponentialRampToValueAtTime(.0001,ctxA.currentTime+.09);
-      o.stop(ctxA.currentTime+.1);}
-    return{pop};
-  })();
+    let paddle = {x: 140, y: 490, w: 80, h: 10, spd: 6};
+    let ball = {x: 180, y: 300, r: 7, dx: 3, dy: -3};
+    let bricks = [];
+    let rows = 5, cols = 7, bw = 45, bh = 15, pad = 5, topOff = 60, leftOff = 12;
+    let score = 0, level = 1;
+    let left = false, right = false;
 
-  let paddle={x:canvas.width/2-50,y:canvas.height-20,w:100,h:10,speed:7,dx:0};
-  let ball={x:canvas.width/2,y:canvas.height-40,r:8,dx:3,dy:-3,speed:4};
-  const rowCount=5,colCount=7;
-  let bricks=[];
-  let level=1; const maxLevel=30;
-
-  function createBricks(){
-    bricks=[];
-    for(let r=0;r<rowCount;r++){
-      bricks[r]=[];
-      for(let c=0;c<colCount;c++){
-        bricks[r][c]={x:c*(75+10)+35,y:r*(20+10)+30,w:75,h:20,visible:true};
+    function createBricks(){
+      bricks = [];
+      for(let r=0;r<rows;r++){
+        bricks[r]=[];
+        for(let c=0;c<cols;c++){
+          bricks[r][c]={x:c*(bw+pad)+leftOff, y:r*(bh+pad)+topOff, hit:false};
+        }
       }
     }
-  }
 
-  function drawBricks(){
-    bricks.forEach(row=>{
-      row.forEach(b=>{
-        if(b.visible){
-          ctx.beginPath();
-          ctx.rect(b.x,b.y,b.w,b.h);
-          ctx.fillStyle='#39ff14';
-          ctx.shadowColor='#39ff14';
-          ctx.shadowBlur=10;
-          ctx.fill();
-          ctx.closePath();
-        }
-      });
-    });
-  }
-
-  function drawPaddle(){
-    ctx.beginPath();
-    const grd=ctx.createLinearGradient(paddle.x,paddle.y,paddle.x+paddle.w,paddle.y);
-    grd.addColorStop(0,'#39ff14');grd.addColorStop(1,'#9dffcf');
-    ctx.fillStyle=grd;
-    ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
-    ctx.shadowColor='#39ff14';
-    ctx.shadowBlur=20;
-    ctx.closePath();
-  }
-
-  function drawBall(){
-    ctx.beginPath();
-    ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-    ctx.fillStyle='#fff';
-    ctx.shadowColor='#fff';
-    ctx.shadowBlur=12;
-    ctx.fill();
-    ctx.closePath();
-  }
-
-  function movePaddle(){
-    paddle.x+=paddle.dx;
-    if(paddle.x<0)paddle.x=0;
-    if(paddle.x+paddle.w>canvas.width)paddle.x=canvas.width-paddle.w;
-  }
-
-  function moveBall(){
-    ball.x+=ball.dx; ball.y+=ball.dy;
-    // dinding
-    if(ball.x+ball.r>canvas.width||ball.x-ball.r<0){ball.dx*=-1;AudioSys.pop();}
-    if(ball.y-ball.r<0){ball.dy*=-1;AudioSys.pop();}
-    if(ball.y+ball.r>canvas.height){resetLevel();}
-    // paddle
-    if(ball.x>paddle.x && ball.x<paddle.x+paddle.w && ball.y+ball.r>paddle.y){
-      ball.dy=-ball.speed; AudioSys.pop();
-    }
-    // brick
-    bricks.forEach(row=>{
-      row.forEach(b=>{
-        if(b.visible){
-          if(ball.x>b.x && ball.x<b.x+b.w && ball.y-ball.r<b.y+b.h && ball.y+ball.r>b.y){
-            ball.dy*=-1;b.visible=false;AudioSys.pop();
-            if(isLevelClear()){nextLevel();}
+    function drawBricks(){
+      ctx.fillStyle = "var(--accent)";
+      bricks.forEach(row=>{
+        row.forEach(b=>{
+          if(!b.hit){
+            ctx.beginPath();
+            ctx.rect(b.x,b.y,bw,bh);
+            ctx.fill();
+            ctx.closePath();
           }
-        }
+        });
       });
-    });
-  }
-
-  function isLevelClear(){
-    return bricks.flat().every(b=>!b.visible);
-  }
-
-  function nextLevel(){
-    if(level<maxLevel){
-      level++; levelEl.textContent=level;
-      ball.speed+=.4; paddle.speed+=.1;
-      ball.dx=3+(Math.random()-.5)*2; ball.dy=-ball.speed;
-      createBricks(); resetBall();
-    }else{
-      alert('🎉 Semua level selesai! Kamu menang!');
-      level=1; levelEl.textContent=level; ball.speed=4; createBricks(); resetBall();
     }
-  }
 
-  function resetLevel(){
-    ball.x=canvas.width/2; ball.y=canvas.height-40;
-    ball.dx=3; ball.dy=-ball.speed;
-    paddle.x=canvas.width/2-paddle.w/2;
-  }
+    function drawPaddle(){
+      ctx.fillStyle = "var(--accent)";
+      ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+    }
 
-  function resetBall(){resetLevel();}
+    function drawBall(){
+      ctx.beginPath();
+      ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+      ctx.fillStyle="#fff";
+      ctx.shadowColor="var(--accent)";
+      ctx.shadowBlur=10;
+      ctx.fill();
+      ctx.closePath();
+      ctx.shadowBlur=0;
+    }
 
-  function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    drawBricks(); drawPaddle(); drawBall();
-  }
+    function collision(){
+      bricks.forEach(row=>{
+        row.forEach(b=>{
+          if(!b.hit){
+            if(ball.x> b.x && ball.x < b.x+bw && ball.y > b.y && ball.y < b.y+bh){
+              ball.dy *= -1;
+              b.hit = true;
+              score += 10;
+              document.getElementById("score").textContent = score;
+            }
+          }
+        });
+      });
+    }
 
-  function update(){
-    movePaddle(); moveBall(); draw();
-    requestAnimationFrame(update);
-  }
+    function update(){
+      ctx.clearRect(0,0,c.width,c.height);
+      drawBricks();
+      drawPaddle();
+      drawBall();
+      collision();
 
-  function keyDown(e){
-    if(e.key==='ArrowRight'||e.key==='Right')paddle.dx=paddle.speed;
-    else if(e.key==='ArrowLeft'||e.key==='Left')paddle.dx=-paddle.speed;
-  }
-  function keyUp(e){
-    if(e.key==='ArrowRight'||e.key==='ArrowLeft'||e.key==='Right'||e.key==='Left')paddle.dx=0;
-  }
+      ball.x += ball.dx;
+      ball.y += ball.dy;
 
-  function handleTouch(e){
-    const touchX=e.touches[0].clientX-canvas.getBoundingClientRect().left;
-    paddle.x=touchX-paddle.w/2;
-  }
+      if(ball.x+ball.r>c.width || ball.x-ball.r<0) ball.dx*=-1;
+      if(ball.y-ball.r<0) ball.dy*=-1;
+      if(ball.y+ball.r>c.height){
+        alert("Game Over! Skor: "+score);
+        document.location.reload();
+      }
 
-  createBricks(); update();
-  document.addEventListener('keydown',keyDown);
-  document.addEventListener('keyup',keyUp);
-  canvas.addEventListener('touchmove',handleTouch,{passive:true});
-  </script>
+      if(ball.x>paddle.x && ball.x<paddle.x+paddle.w && ball.y+ball.r>paddle.y){
+        ball.dy=-ball.dy;
+      }
 
-  <script>
-  // footer otomatis
-  (function(){
-    if(document.querySelector('.azbry-footer')) return;
-    const f=document.createElement('div');
-    f.className='azbry-footer';
-    f.innerHTML=`<a class=\"azbry-cta\" href=\"https://azbry-portofolio.vercel.app/\" target=\"_blank\" rel=\"noopener\">↗ Portofolio</a>
-      <div class=\"azbry-meta\"><div class=\"azbry-license\">Lisensi MIT • © ${new Date().getFullYear()} Azbry-MD</div>
-      <div class=\"azbry-owner\">Dikelola oleh FebryWesker</div></div>
-      <div class=\"azbry-empty\" aria-hidden=\"true\"></div>`;
-    document.body.appendChild(f);
-  })();
+      if(left && paddle.x>0) paddle.x-=paddle.spd;
+      if(right && paddle.x+paddle.w<c.width) paddle.x+=paddle.spd;
+
+      if(bricks.flat().every(b=>b.hit)){
+        level++;
+        rows++;
+        createBricks();
+        document.getElementById("level").textContent = level;
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    document.getElementById("left").addEventListener("touchstart",()=>left=true);
+    document.getElementById("left").addEventListener("touchend",()=>left=false);
+    document.getElementById("right").addEventListener("touchstart",()=>right=true);
+    document.getElementById("right").addEventListener("touchend",()=>right=false);
+
+    createBricks();
+    update();
   </script>
 </body>
 </html>
