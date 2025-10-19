@@ -1,173 +1,101 @@
 /* =======================================================
-   AZBRY GLOBAL THEME (v2 Final)
-   Digunakan untuk seluruh proyek Azbry (Portofolio & Games)
-   © 2025 FebryWesker / Azbry-MD
+   AZBRY THEME — MIRROR OF YOUR INDEX (v3)
+   • Persis warna & gaya dari index kamu
+   • Tambah alias kelas untuk halaman game
    ======================================================= */
 
-:root {
-  --az-bg: #0b0d10;
-  --az-panel: #111418;
-  --az-text: #e6f0ff;
-  --az-muted: #93a3b8;
-  --az-neon: #39ff14;
-  --az-neon-soft: rgba(57,255,20,0.35);
-  --az-ring: rgba(57,255,20,0.25);
-  --az-radius: 16px;
+:root{
+  --bg:#0b0d10; --panel:#111418; --ink:#e6e8ec; --muted:#98a2b3;
+  --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.22);
+  --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
 }
 
-/* RESET */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; }
-
-/* BASE */
-body.azbry-theme {
-  font-family: "Inter", system-ui, sans-serif;
-  background: var(--az-bg) url('../img/bg.png') center/cover no-repeat fixed;
-  color: var(--az-text);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+/* Base background persis index */
+.azbry-theme{
+  color:var(--ink);
+  font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(1200px 800px at 20% -10%, rgba(184,255,154,.06), transparent 40%),
+    radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
+    linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
 }
 
-/* HEADINGS & TEXT */
-h1, h2, h3, h4, h5, h6 {
-  font-weight: 800;
-  color: var(--az-neon);
-  text-shadow: 0 0 10px var(--az-ring);
-}
-p { color: var(--az-muted); line-height: 1.6; }
+/* -------- Elements yang ada di index -------- */
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 90px}
+header,.azbry-header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px;padding:0 0}
+.brand h1,.azbry-title{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,4vw,28px);color:var(--ink);text-shadow:none}
+.sub,.azbry-sub{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.25px}
 
-/* BUTTONS */
-.azbry-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 18px;
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #0b0d10;
-  background: linear-gradient(180deg, var(--az-neon), #8eff86);
-  border-radius: 12px;
-  text-decoration: none;
-  box-shadow: 0 4px 20px var(--az-ring);
-  transition: all .2s ease;
-}
-.azbry-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 25px rgba(57,255,20,.35);
+.badge,.azbry-badge{
+  display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.09);
+  color:#dfffe0;border:1px solid var(--ring);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.3px
 }
 
-/* HEADER */
-.azbry-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
-  background: rgba(11,13,16,0.5);
-  border-bottom: 1px solid rgba(57,255,20,0.1);
-  backdrop-filter: blur(8px);
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+
+.card{
+  grid-column:span 6;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),var(--panel);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;position:relative;overflow:hidden
 }
-.azbry-sub {
-  color: var(--az-muted);
-  font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: .5px;
+.card h3{margin:4px 0 8px}
+.card p{margin:0 0 12px;color:var(--muted)}
+
+.btn,.azbry-btn{
+  display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:800;text-decoration:none;cursor:pointer;
+  color:#0b0d10;background:linear-gradient(180deg,var(--accent),var(--accent2));border:0;box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)
 }
-.azbry-title {
-  font-size: clamp(1.5rem, 6vw, 2.2rem);
-  color: var(--az-neon);
-  text-shadow: 0 0 12px var(--az-ring);
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.12);box-shadow:none}
+
+.feature{
+  grid-column:span 12;border:1px solid rgba(184,255,154,.45);
+  box-shadow:0 0 0 1px rgba(184,255,154,.18) inset, 0 20px 50px rgba(184,255,154,.13)
 }
-.azbry-hud {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.azbry-badge {
-  background: rgba(57,255,20,0.08);
-  border: 1px solid rgba(57,255,20,0.15);
-  border-radius: 999px;
-  color: var(--az-text);
-  padding: 5px 12px;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-.azbry-bar {
-  display: inline-block;
-  width: 60px;
-  height: 8px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 8px;
-  margin-left: 5px;
-  overflow: hidden;
-}
-.azbry-bar i {
-  display: block;
-  height: 100%;
-  width: 100%;
-  background: var(--az-neon);
-  transition: width .2s linear;
-  box-shadow: 0 0 10px var(--az-ring);
+.ribbon{
+  position:absolute;top:12px;right:-28px;transform:rotate(35deg);
+  background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;
+  padding:6px 48px;font-weight:900;letter-spacing:.6px;box-shadow:0 6px 22px rgba(184,255,154,.25)
 }
 
-/* SCORE */
-.azbry-score {
-  position: absolute;
-  top: 14%;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: clamp(3rem, 8vw, 7rem);
-  font-weight: 900;
-  color: var(--az-neon);
-  text-shadow: 0 0 20px var(--az-ring);
+.footer,.azbry-footer{
+  margin-top:26px;color:#b8c0cc;font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;opacity:.85;
+  /* versi game = fixed di bawah */
+}
+.azbry-footer{
+  position:fixed;left:0;right:0;bottom:0;padding:10px 16px;
+  background:rgba(11,13,16,0.3);border-top:1px solid rgba(57,255,20,0.1);backdrop-filter:blur(6px)
 }
 
-/* HINT BOX */
-.azbry-hint {
-  position: fixed;
-  bottom: 82px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 12px 16px;
-  background: rgba(11,13,16,0.65);
-  border: 1px solid rgba(57,255,20,0.15);
-  border-radius: 14px;
-  color: var(--az-text);
-  font-size: 0.9rem;
-  text-align: center;
-  max-width: 90%;
-  backdrop-filter: blur(6px);
-  box-shadow: 0 0 12px rgba(57,255,20,0.08);
+.fab{
+  position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:999px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;font-weight:800;text-decoration:none;border:0;
+  box-shadow:0 10px 30px rgba(184,255,154,.35)
 }
 
-/* FOOTER */
-.azbry-footer {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  background: rgba(11,13,16,0.4);
-  border-top: 1px solid rgba(57,255,20,0.1);
-  padding: 10px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  color: #a3b3c7;
-  font-size: 0.9rem;
-  backdrop-filter: blur(8px);
-}
-.azbry-footer a {
-  color: var(--az-neon);
-  text-decoration: none;
-  font-weight: 600;
-}
-.azbry-footer a:hover {
-  text-shadow: 0 0 10px var(--az-neon);
-}
+@media (max-width:860px){.card{grid-column:span 12}}
+.fade{opacity:0;transform:translateY(6px);animation:fade .5s ease-out forwards}
+.fade.d2{animation-delay:.07s}.fade.d3{animation-delay:.14s}.fade.d4{animation-delay:.21s}
+@keyframes fade{to{opacity:1;transform:none}}
 
-/* CANVAS GAME */
-.azbry-game canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: transparent;
+/* -------- Alias util untuk halaman game (biar gampang pakai) -------- */
+.azbry-bg{ /* body class alternatif utk game single-file */
+  background:
+    radial-gradient(1200px 800px at 20% -10%, rgba(184,255,154,.06), transparent 40%),
+    radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
+    linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
+  color:var(--ink);
 }
+.azbry-score{
+  position:fixed; top:14%; left:50%; transform:translateX(-50%);
+  font-size:clamp(3rem,8vw,7rem); font-weight:900; color:var(--accent); text-shadow:0 0 15px var(--ring);
+}
+.azbry-hint-pill{
+  position:fixed; left:50%; transform:translateX(-50%);
+  background:rgba(184,255,154,.10); border:1px solid rgba(184,255,154,.35); color:#dfffe0;
+  padding:8px 12px; border-radius:999px; font-weight:800; box-shadow:0 6px 22px rgba(184,255,154,.18)
+}
+.azbry-hint-top{ top:56px; }
+.azbry-legal-bottom{ bottom:10px; }
