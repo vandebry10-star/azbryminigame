@@ -78,10 +78,15 @@
   const catClose = new Image(); catClose.src = 'assets/img/popin.png';
   let catImg = catClose;
 
-  // Var game
-  const groundY = () => Math.floor(cvs.height * 0.80);
+  // ===== Game Constants (aman dilompati) =====
+  const groundY = () => Math.floor(cvs.height * 0.80);        // posisi dasar
   const gravity = 0.6;
-  const jumpPowerBase = 11;
+  const jumpPower = Math.max(10, Math.min(14, cvs.height*0.02)); // diskalakan layar
+  const obstacleOffset = -28;                                   // NAIKKAN obstacle (negatif = lebih tinggi)
+  const scaleMin = 0.55, scaleVar = 0.35;                       // ukuran kaktus (lebih kecil)
+  const spawnMin = 85, spawnVar = 90;                           // jeda spawn (lebih longgar)
+
+  // Var game
   let isJumping=false, score=0, best=Number(localStorage.getItem('pulse_best')||0), gameOver=false;
   let obstacles=[], spawnTimer=0;
 
@@ -93,12 +98,12 @@
     y: groundY(), vy:0
   };
 
-  // ====== LANTAI GRID NEON (CANVAS) ======
+  // ====== LANTAI GRID NEON ======
   let gridScroll = 0;
   function drawNeonGrid(){
-    const top = Math.floor(cvs.height * 0.55);     // mulai grid (bagian bawah layar)
+    const top = Math.floor(cvs.height * 0.55);
     const bottom = cvs.height;
-    // gradient glow
+
     const g = ctx.createLinearGradient(0, top, 0, bottom);
     g.addColorStop(0, 'rgba(57,255,20,0.10)');
     g.addColorStop(1, 'rgba(57,255,20,0.00)');
@@ -108,20 +113,17 @@
     ctx.strokeStyle = 'rgba(57,255,20,0.45)';
     ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 8;
 
-    // garis horizontal (perspektif)
     const rows = 10;
     for(let i=0;i<=rows;i++){
       const t = i/rows;
-      const y = top + Math.pow(t, 1.8) * (bottom-top); // semakin rapat ke bawah
+      const y = top + Math.pow(t, 1.8) * (bottom-top);
       ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); ctx.stroke();
     }
 
-    // garis vertikal bergerak (scroll halus)
     gridScroll = (gridScroll + 0.8) % 40;
     const cols = 10;
     for(let i=-1;i<=cols;i++){
       const x = ((i*40) - gridScroll) * (cvs.width/360) + cvs.width/2;
-      // perspektif: konvergen ke tengah atas
       ctx.beginPath();
       ctx.moveTo(x, bottom);
       ctx.lineTo(cvs.width/2 + (x-cvs.width/2)*0.12, top);
@@ -129,7 +131,6 @@
     }
     ctx.restore();
 
-    // horizon glow
     ctx.fillStyle = 'rgba(57,255,20,0.12)';
     ctx.fillRect(0, top-6, cvs.width, 6);
   }
@@ -142,7 +143,7 @@
     o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+0.1);
   }
 
-  // Kaktus neon
+  // Kaktus neon (Azbry)
   function drawCactus(x,y,scale=1){
     ctx.save();
     ctx.translate(x,y);
@@ -160,8 +161,9 @@
     ctx.restore();
   }
   function collides(p,o){
-    const cW = 14*o.scale, cH = 32*o.scale;
-    return (p.x < o.x+cW) && (p.x+p.w > o.x) && (p.y - p.h + p.h > o.y - cH) && (p.y > o.y - cH);
+    const cW = 14*o.scale, cH = 32*o.scale;      // bbox kaktus
+    const px = p.x, py = p.y - p.h;              // bbox player (top-left)
+    return (px < o.x + cW) && (px + p.w > o.x) && (p.y > o.y - cH) && (py < o.y);
   }
 
   function updateUI(){
@@ -175,15 +177,15 @@
 
     ctx.clearRect(0,0,cvs.width,cvs.height);
 
-    // langit gelap + bintang tipis
+    // langit
     ctx.fillStyle='#070b10'; ctx.fillRect(0,0,cvs.width,cvs.height);
     ctx.fillStyle='rgba(130,255,170,0.08)';
     for(let i=0;i<12;i++){ const x=(i*73)%cvs.width, y=20+(i*37)%Math.floor(cvs.height*0.5); ctx.fillRect(x,y,2,2); }
 
-    // lantai grid
+    // grid
     drawNeonGrid();
 
-    // garis ground
+    // ground guide
     ctx.strokeStyle='rgba(57,255,20,.25)'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.moveTo(0, groundY()+player.h-2); ctx.lineTo(cvs.width, groundY()+player.h-2); ctx.stroke();
 
@@ -198,21 +200,24 @@
     ctx.drawImage(catImg, player.x, player.y - player.h, player.w, player.h);
     ctx.restore();
 
-    // spawn obstacle (lebih pas untuk portrait)
+    // spawn obstacle (sudah dinaikkan + kecil)
     spawnTimer--;
     if(spawnTimer<=0){
-      const scale = (Math.random()*0.45 + 0.60) * (cvs.height/600);
-      const speed = Math.max(3.1, Math.min(5.2, cvs.width/165));
-      obstacles.push({ x:cvs.width+10, y: floor + player.h - 8, scale, speed });
-      spawnTimer = Math.floor(80 + Math.random()*80);
+      const scale = (Math.random()*scaleVar + scaleMin) * (cvs.height/650);
+      const speed = Math.max(3.0, Math.min(5.0, cvs.width/170));
+      obstacles.push({
+        x: cvs.width + 10,
+        y: floor + player.h + obstacleOffset,   // << NAIK
+        scale, speed
+      });
+      spawnTimer = Math.floor(spawnMin + Math.random()*spawnVar);
     }
     obstacles.forEach(o=>{ o.x -= o.speed; drawCactus(o.x,o.y,o.scale); });
     obstacles = obstacles.filter(o=>o.x>-40);
 
     // collision
     for(const o of obstacles){
-      const p = {x:player.x, y:player.y, w:player.w, h:player.h};
-      if(collides(p,o)){
+      if(collides({x:player.x, y:player.y, w:player.w, h:player.h}, o)){
         gameOver=true; restartBtn.style.display='block';
         ctx.fillStyle='rgba(0,0,0,.45)'; ctx.fillRect(0,0,cvs.width,cvs.height);
         ctx.fillStyle='#39ff14'; ctx.font='bold 24px Inter'; ctx.fillText('💀 Game Over', cvs.width/2-70, cvs.height/2);
@@ -230,7 +235,7 @@
   const isCoarse = matchMedia('(pointer: coarse)').matches;
   function jump(){
     if(!isJumping && !gameOver){
-      player.vy = -(jumpPowerBase);
+      player.vy = -jumpPower;
       isJumping = true; catImg = catOpen; popSound();
     }
   }
