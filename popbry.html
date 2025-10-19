@@ -4,75 +4,47 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Popbry (Azbry-MD)</title>
-  <meta name="description" content="Popcat versi Azbry-MD bertema neon hijau dengan gaya klasik satu layar." />
   <style>
-    :root {
-      --bg:#07090d; --text:#e6f0ff; --muted:#93a3b8; --neon:#39ff14; --ring:#39ff1480;
-    }
+    :root {--bg:#07090d;--text:#e6f0ff;--muted:#93a3b8;--neon:#39ff14;--ring:#39ff1480;}
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden}
-    body {
-      font-family: Inter, system-ui, sans-serif;
+    body{
+      font-family:Inter,system-ui,sans-serif;
       background:#0b0d10 url('assets/img/bg.png') center/cover no-repeat fixed;
       color:var(--text);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
     }
-
-    header {
+    header{
       position:absolute;top:0;width:100%;text-align:center;
-      padding:12px 0;font-weight:900;font-size:1.6rem;letter-spacing:.5px;
+      padding:12px 0;font-weight:900;font-size:1.6rem;
       color:var(--neon);text-shadow:0 0 10px var(--ring);
     }
-    header small {
-      display:block;
-      font-size:0.85rem;
-      font-weight:500;
-      color:var(--muted);
-      margin-top:2px;
+    header small{display:block;font-size:0.85rem;font-weight:500;color:var(--muted);}
+    #score{
+      position:absolute;top:14%;
+      font-size:clamp(3rem,8vw,7rem);font-weight:900;
+      text-shadow:0 0 15px var(--ring);color:var(--neon);
     }
-
-    #score {
-      position:absolute;
-      top:14%;
-      font-size:clamp(3rem,8vw,7rem);
-      font-weight:900;
-      text-shadow:0 0 15px var(--ring);
-      color:var(--neon);
-    }
-
-    #cat {
-      width:min(80vw,480px);
-      user-select:none;
-      transition:transform .08s ease;
+    #cat{
+      width:min(80vw,480px);user-select:none;
+      transition:transform .05s ease;
       filter:drop-shadow(0 0 24px rgba(57,255,20,.25));
     }
-
-    footer {
-      position:absolute;
-      bottom:20px;
-      text-align:center;
-      font-size:1rem;
-      color:var(--muted);
-      line-height:1.4;
+    footer{
+      position:absolute;bottom:20px;text-align:center;
+      font-size:1rem;color:var(--muted);line-height:1.4;
     }
-    footer b {color:var(--neon)}
-    .floaty {
-      position:fixed;pointer-events:none;
+    footer b{color:var(--neon)}
+    .floaty{position:fixed;pointer-events:none;
       font-weight:900;color:var(--neon);
       text-shadow:0 0 10px var(--ring);
     }
   </style>
 </head>
 <body>
-  <header>
-    POPBRY <span style="font-size:0.85em;">(Azbry-MD)</span>
-    <small>by FebryWesker</small>
-  </header>
-
+  <header>POPBRY <span style="font-size:0.85em;">(Azbry-MD)</span><small>by FebryWesker</small></header>
   <div id="score">0</div>
-
   <img id="cat" src="assets/img/popin.png" alt="Popbry Cat" draggable="false" />
-
   <footer>
     <div>Your Clicks: <b id="local">0</b></div>
     <div>Global Clicks: <b id="global">0</b></div>
@@ -82,7 +54,11 @@
     const $ = id => document.getElementById(id);
     const el = { cat: $('cat'), score: $('score'), l: $('local'), g: $('global') };
 
-    // ==== SOUND ====
+    // ===== Preload both images =====
+    const imgPopin = new Image(); imgPopin.src = 'assets/img/popin.png';
+    const imgPopup = new Image(); imgPopup.src = 'assets/img/popup.png';
+
+    // ===== Pop sound =====
     const AudioSys = (() => {
       let ctx;
       function ensure(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
@@ -99,7 +75,7 @@
       return { pop };
     })();
 
-    // ==== STORE ====
+    // ===== Store =====
     const fmt = new Intl.NumberFormat('id-ID');
     const Store = (() => {
       let local = Number(localStorage.getItem('azbry_local')||0);
@@ -109,7 +85,7 @@
         el.g.textContent = fmt.format(global);
         el.score.textContent = fmt.format(local);
       }
-      setInterval(()=>{ global += Math.floor(Math.random()*3); updateUI(); save(); }, 1500);
+      setInterval(()=>{ global += Math.floor(Math.random()*2); updateUI(); save(); }, 1500);
       function save(){
         localStorage.setItem('azbry_local', local);
         localStorage.setItem('azbry_global', global);
@@ -118,7 +94,7 @@
       return { add, updateUI };
     })();
 
-    // ==== FLOATY EFFECT ====
+    // ===== Floaty effect =====
     function floaty(text, x, y){
       const n=document.createElement('div');
       n.className='floaty'; n.textContent=text;
@@ -133,13 +109,13 @@
       })();
     }
 
-    // ==== CLICK ====
+    // ===== Click logic =====
     function openMouth(){
-      el.cat.src = "assets/img/popup.png?" + Math.random(); // paksa refresh
-      el.cat.style.transform = "scale(0.95)";
+      el.cat.src = imgPopup.src;
+      el.cat.style.transform = "scale(0.93)";
     }
     function closeMouth(){
-      el.cat.src = "assets/img/popin.png?" + Math.random();
+      el.cat.src = imgPopin.src;
       el.cat.style.transform = "scale(1)";
     }
 
@@ -153,11 +129,15 @@
       setTimeout(closeMouth, 120);
     }
 
-    window.addEventListener('mousedown', handleClick);
-    window.addEventListener('touchstart', handleClick, {passive:true});
-    document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); handleClick(e); }});
-    el.cat.addEventListener('dragstart', e=>e.preventDefault());
+    // ===== Use only one click handler (avoid double) =====
+    const clickTarget = window.matchMedia('(pointer: coarse)').matches ? 'touchstart' : 'mousedown';
+    window.addEventListener(clickTarget, handleClick, {passive:true});
 
+    document.addEventListener('keydown', e=>{
+      if(e.code==='Space'){ e.preventDefault(); handleClick(e); }
+    });
+
+    el.cat.addEventListener('dragstart', e=>e.preventDefault());
     Store.updateUI();
   </script>
 </body>
