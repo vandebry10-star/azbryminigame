@@ -1,96 +1,173 @@
-/* =======================================
-   AZBRY GLOBAL THEME (v2)
-   Used for all Azbry-MD games & pages
-   ======================================= */
+/* =======================================================
+   AZBRY GLOBAL THEME (v2 Final)
+   Digunakan untuk seluruh proyek Azbry (Portofolio & Games)
+   © 2025 FebryWesker / Azbry-MD
+   ======================================================= */
 
 :root {
-  --bg:#0b0d10;
-  --panel:#111418;
-  --ink:#e6e8ec;
-  --muted:#98a2b3;
-  --accent:#39ff14;
-  --accent2:#9dffcf;
-  --ring:rgba(57,255,20,.22);
-  --radius:18px;
-  --shadow:0 8px 28px rgba(0,0,0,.4);
-  --font: 'Inter', system-ui, sans-serif;
+  --az-bg: #0b0d10;
+  --az-panel: #111418;
+  --az-text: #e6f0ff;
+  --az-muted: #93a3b8;
+  --az-neon: #39ff14;
+  --az-neon-soft: rgba(57,255,20,0.35);
+  --az-ring: rgba(57,255,20,0.25);
+  --az-radius: 16px;
 }
 
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;color:var(--ink);background:var(--bg);font-family:var(--font);}
+/* RESET */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
 
-/* -------------------- GLOBAL -------------------- */
-body.azbry-theme{
-  background:
-    radial-gradient(1000px 600px at 10% -5%, rgba(57,255,20,.06), transparent 40%),
-    radial-gradient(900px 700px at 120% 20%, rgba(57,255,20,.05), transparent 35%),
-    linear-gradient(180deg, #0b0d10 0%, #090c0e 100%);
-  overflow:hidden;
+/* BASE */
+body.azbry-theme {
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--az-bg) url('../img/bg.png') center/cover no-repeat fixed;
+  color: var(--az-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-a{color:var(--accent2);text-decoration:none;}
-a:hover{opacity:.8;text-shadow:0 0 6px var(--ring);}
-
-/* -------------------- HEADER -------------------- */
-.azbry-header{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.05);
-  backdrop-filter:blur(8px);background:rgba(11,13,16,0.4);
+/* HEADINGS & TEXT */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 800;
+  color: var(--az-neon);
+  text-shadow: 0 0 10px var(--az-ring);
 }
-.azbry-sub{font-size:0.8rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-.azbry-title{font-size:1.6rem;font-weight:800;color:var(--accent);text-shadow:0 0 10px var(--ring);}
-.azbry-hud{display:flex;align-items:center;gap:10px;}
+p { color: var(--az-muted); line-height: 1.6; }
 
-/* -------------------- BUTTON / BADGE -------------------- */
-.azbry-btn{
-  background:linear-gradient(180deg,var(--accent),var(--accent2));
-  color:#0b0d10;font-weight:800;border:0;padding:6px 14px;
-  border-radius:999px;box-shadow:0 6px 22px rgba(57,255,20,.25);
+/* BUTTONS */
+.azbry-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #0b0d10;
+  background: linear-gradient(180deg, var(--az-neon), #8eff86);
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 4px 20px var(--az-ring);
+  transition: all .2s ease;
 }
-.azbry-badge{
-  display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
-  border-radius:999px;font-weight:700;font-size:.9rem;
-  background:rgba(12,16,22,.6);border:1px solid rgba(57,255,20,.3);
-  color:var(--ink);
-}
-
-/* Progress bar (for CD) */
-.azbry-bar{display:inline-block;width:80px;height:6px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden;}
-.azbry-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:100%;transition:width .2s ease;}
-
-/* -------------------- SCORE -------------------- */
-.azbry-score{
-  position:absolute;top:15%;left:50%;transform:translateX(-50%);
-  font-size:clamp(3rem,8vw,7rem);font-weight:900;
-  color:var(--accent);text-shadow:0 0 15px var(--ring);
+.azbry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 25px rgba(57,255,20,.35);
 }
 
-/* -------------------- HINT BOX -------------------- */
-.azbry-hint{
-  position:absolute;bottom:90px;left:50%;transform:translateX(-50%);
-  background:rgba(12,16,22,0.65);border:1px solid rgba(57,255,20,.25);
-  color:var(--muted);padding:12px 14px;border-radius:12px;
-  font-size:.95rem;max-width:90%;text-align:center;
-  box-shadow:0 6px 22px rgba(0,0,0,.3);
+/* HEADER */
+.azbry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: rgba(11,13,16,0.5);
+  border-bottom: 1px solid rgba(57,255,20,0.1);
+  backdrop-filter: blur(8px);
+}
+.azbry-sub {
+  color: var(--az-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: .5px;
+}
+.azbry-title {
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+  color: var(--az-neon);
+  text-shadow: 0 0 12px var(--az-ring);
+}
+.azbry-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.azbry-badge {
+  background: rgba(57,255,20,0.08);
+  border: 1px solid rgba(57,255,20,0.15);
+  border-radius: 999px;
+  color: var(--az-text);
+  padding: 5px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.azbry-bar {
+  display: inline-block;
+  width: 60px;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 8px;
+  margin-left: 5px;
+  overflow: hidden;
+}
+.azbry-bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--az-neon);
+  transition: width .2s linear;
+  box-shadow: 0 0 10px var(--az-ring);
 }
 
-/* -------------------- FOOTER -------------------- */
-.azbry-footer{
-  position:absolute;bottom:0;left:0;width:100%;
-  display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;
-  padding:10px 16px;font-size:.9rem;color:var(--muted);
-  background:rgba(11,13,16,0.3);border-top:1px solid rgba(57,255,20,0.1);
-  backdrop-filter:blur(6px);
-}
-.azbry-footer a{color:var(--accent2);font-weight:600;}
-.azbry-footer a:hover{text-shadow:0 0 8px var(--ring);}
-
-/* -------------------- CANVAS -------------------- */
-canvas{
-  position:absolute;inset:0;width:100%;height:100%;
-  display:block;background:transparent;
+/* SCORE */
+.azbry-score {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(3rem, 8vw, 7rem);
+  font-weight: 900;
+  color: var(--az-neon);
+  text-shadow: 0 0 20px var(--az-ring);
 }
 
-/* -------------------- ANIM -------------------- */
-@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
-.fade{animation:fadeUp .5s ease-out forwards;}
+/* HINT BOX */
+.azbry-hint {
+  position: fixed;
+  bottom: 82px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 16px;
+  background: rgba(11,13,16,0.65);
+  border: 1px solid rgba(57,255,20,0.15);
+  border-radius: 14px;
+  color: var(--az-text);
+  font-size: 0.9rem;
+  text-align: center;
+  max-width: 90%;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 12px rgba(57,255,20,0.08);
+}
+
+/* FOOTER */
+.azbry-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(11,13,16,0.4);
+  border-top: 1px solid rgba(57,255,20,0.1);
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #a3b3c7;
+  font-size: 0.9rem;
+  backdrop-filter: blur(8px);
+}
+.azbry-footer a {
+  color: var(--az-neon);
+  text-decoration: none;
+  font-weight: 600;
+}
+.azbry-footer a:hover {
+  text-shadow: 0 0 10px var(--az-neon);
+}
+
+/* CANVAS GAME */
+.azbry-game canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
