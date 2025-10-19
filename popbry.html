@@ -10,36 +10,38 @@
       --neon:#39ff14; --neon2:#9dffcf; --ring:#39ff1480;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{height:100%;margin:0;padding:0;overflow:hidden}
     body{
-      margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
       background:#0b0d10 url("assets/img/bg.png") center/cover no-repeat fixed;
-      overflow:hidden;
+      display:flex;align-items:center;justify-content:center;flex-direction:column;
+      position:relative;
+      -webkit-tap-highlight-color:transparent;
     }
 
-    .topbar{position:fixed; top:0; left:0; right:0; padding:10px 12px;
-      display:flex; align-items:center; justify-content:space-between;
+    .topbar{position:fixed;top:0;left:0;right:0;padding:10px 12px;
+      display:flex;align-items:center;justify-content:space-between;
       backdrop-filter:blur(6px);
-      background:linear-gradient(180deg, rgba(7,9,13,.85), rgba(7,9,13,.35));
-      border-bottom:1px solid #1b2534;
-    }
-    .brand{font-weight:900; color:var(--neon2); text-shadow:0 0 14px var(--ring);}
-    .leader{display:flex; gap:10px; align-items:center;}
-    .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
-      border-radius:999px; background:rgba(12,16,22,.6);
-      border:1px solid #1b2534; color:var(--muted);}
+      background:linear-gradient(180deg,rgba(7,9,13,.85),rgba(7,9,13,.35));
+      border-bottom:1px solid #1b2534;z-index:10;}
+    .brand{font-weight:900;color:var(--neon2);text-shadow:0 0 14px var(--ring);}
+    .leader{display:flex;gap:10px;align-items:center;}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;
+      border-radius:999px;background:rgba(12,16,22,.6);
+      border:1px solid #1b2534;color:var(--muted);}
     .pill b{color:var(--neon);}
     .pill a{text-decoration:none;color:var(--neon2);}
 
-    .stage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center;}
-    .cat{width:min(78vw,520px);height:auto;user-select:none;-webkit-user-drag:none;
-      image-rendering:-webkit-optimize-contrast;filter:drop-shadow(0 0 24px rgba(57,255,20,.25));}
-
+    .cat{width:min(80vw,520px);height:auto;user-select:none;-webkit-user-drag:none;
+      image-rendering:-webkit-optimize-contrast;
+      filter:drop-shadow(0 0 24px rgba(57,255,20,.25));pointer-events:none;
+      transition:transform .06s ease;}
+    .cat.active{transform:scale(0.96);}
     .floaty{position:fixed;pointer-events:none;font-weight:900;color:var(--neon);
       text-shadow:0 0 10px var(--ring);}
     .help{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;
       color:var(--muted);font-size:.95rem;background:rgba(12,16,22,.55);
-      border:1px solid #1b2534;border-radius:12px;padding:6px 10px;}
+      border:1px solid #1b2534;border-radius:12px;padding:6px 10px;z-index:10;}
   </style>
 </head>
 <body>
@@ -52,9 +54,7 @@
     </div>
   </div>
 
-  <div class="stage" id="stage">
-    <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Cat" draggable="false"/>
-  </div>
+  <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Cat"/>
   <div class="help">Tap/klik layar • suara pop & efek +1 🐱</div>
 
   <script>
@@ -67,30 +67,26 @@
       localStorage.setItem(nameKey,playerName);
     }
 
-    const $=id=>document.getElementById(id);
-    const el={cat:$("cat"),g:$("global"),l:$("local")};
+    const el={cat:document.getElementById("cat"),g:document.getElementById("global"),l:document.getElementById("local")};
     const fmt=new Intl.NumberFormat("id-ID");
 
-    // Audio
     const AudioSys=(()=>{
-      let ctx=null;
-      function ensure(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();}
-      function pop(){
-        ensure();const o=ctx.createOscillator(),g=ctx.createGain();
+      let ctx=null;function ensure(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();}
+      function pop(){ensure();const o=ctx.createOscillator(),g=ctx.createGain();
         o.type="square";o.frequency.value=520+Math.random()*40;
         g.gain.value=.06;o.connect(g).connect(ctx.destination);
         o.start();o.frequency.exponentialRampToValueAtTime(180,ctx.currentTime+.08);
         g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+.09);
-        o.stop(ctx.currentTime+.1);
-      }
+        o.stop(ctx.currentTime+.1);}
       return{pop};
     })();
 
-    // Floaty
     function floaty(text,x,y){
-      const n=document.createElement("div");n.className="floaty";
-      n.textContent=text;n.style.left=x+"px";n.style.top=y+"px";
-      document.body.appendChild(n);const t0=Date.now();
+      const n=document.createElement("div");
+      n.className="floaty";n.textContent=text;
+      n.style.left=x+"px";n.style.top=y+"px";
+      document.body.appendChild(n);
+      const t0=Date.now();
       (function anim(){
         const t=(Date.now()-t0)/700;
         n.style.transform=`translateY(${-42*t}px)`;n.style.opacity=String(1-t);
@@ -122,22 +118,37 @@
       return{pull,add,ui};
     })();
 
-    function openMouth(){el.cat.src="assets/img/popup.png";}
-    function closeMouth(){el.cat.src="assets/img/popin.png";}
+    function openMouth(){
+      el.cat.src="assets/img/popup.png";
+      el.cat.classList.add("active");
+    }
+    function closeMouth(){
+      el.cat.src="assets/img/popin.png";
+      el.cat.classList.remove("active");
+    }
+
     function handleClick(ev){
       const t=ev.touches?ev.touches[0]:ev;
       const x=t?.clientX??innerWidth/2;
       const y=t?.clientY??innerHeight/2;
-      openMouth();AudioSys.pop();Store.add(1);
-      floaty("+1",x,y);floaty("🐱",x+(Math.random()*30-15),y+(Math.random()*30-15));
+      openMouth();
+      AudioSys.pop();
+      Store.add(1);
+      floaty("+1",x,y);
+      floaty("🐱",x+(Math.random()*30-15),y+(Math.random()*30-15));
       setTimeout(closeMouth,110);
     }
 
+    // satu event universal — klik di mana saja
     let isTouch=false;
-    window.addEventListener("touchstart",e=>{isTouch=true;handleClick(e);},{passive:true});
-    window.addEventListener("mousedown",e=>{if(!isTouch)handleClick(e);});
-    document.addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();handleClick(e);}});
+    document.body.addEventListener("touchstart",e=>{isTouch=true;handleClick(e);},{passive:true});
+    document.body.addEventListener("mousedown",e=>{if(!isTouch)handleClick(e);});
+    document.addEventListener("keydown",e=>{
+      if(e.code==="Space"){e.preventDefault();handleClick(e);}
+    });
+
     el.cat.addEventListener("dragstart",e=>e.preventDefault());
+
     Store.ui();Store.pull();setInterval(Store.pull,3000);
   </script>
 </body>
