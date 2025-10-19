@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azbry-MD • Mini Games</title>
+<meta name="description" content="Koleksi mini game bertema Azbry: Tap Runner, Aim Mafia, Connect Blocks, GameHack, Morse Suite, Tic-Tac-Toe.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d10; --panel:#111418; --ink:#e6e8ec; --muted:#98a2b3;
+  --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.22);
+  --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(1200px 800px at 20% -10%, rgba(184,255,154,.06), transparent 40%),
+    radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
+    linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
+}
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 90px}
+header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px}
+.brand h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,4vw,28px)}
+.sub{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.25px}
+.badge{
+  display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.09);
+  color:#dfffe0;border:1px solid var(--ring);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.3px
+}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{
+  grid-column:span 6;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),var(--panel);
+  border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;position:relative;overflow:hidden
+}
+.card h3{margin:4px 0 8px}
+.card p{margin:0 0 12px;color:var(--muted)}
+.btn{
+  display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:800;text-decoration:none;cursor:pointer;
+  color:#0b0d10;background:linear-gradient(180deg,var(--accent),var(--accent2));border:0;box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)
+}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid rgba(255,255,255,.12);box-shadow:none}
+.feature{
+  grid-column:span 12;border:1px solid rgba(184,255,154,.45);
+  box-shadow:0 0 0 1px rgba(184,255,154,.18) inset, 0 20px 50px rgba(184,255,154,.13)
+}
+.ribbon{
+  position:absolute;top:12px;right:-28px;transform:rotate(35deg);
+  background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;
+  padding:6px 48px;font-weight:900;letter-spacing:.6px;box-shadow:0 6px 22px rgba(184,255,154,.25)
+}
+.footer{margin-top:26px;color:#b8c0cc;font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;opacity:.85}
+.fab{
+  position:fixed;right:16px;bottom:16px;padding:10px 14px;border-radius:999px;
+  background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;font-weight:800;text-decoration:none;border:0;
+  box-shadow:0 10px 30px rgba(184,255,154,.35)
+}
+@media (max-width:860px){.card{grid-column:span 12}}
+.fade{opacity:0;transform:translateY(6px);animation:fade .5s ease-out forwards}
+.fade.d2{animation-delay:.07s}.fade.d3{animation-delay:.14s}.fade.d4{animation-delay:.21s}
+@keyframes fade{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="fade">
+      <div class="brand">
+        <div class="sub">AZBRY-MD • MINI GAMES</div>
+        <h1>Game Hub</h1>
+      </div>
+      <span class="badge">Neon Night • Elegant</span>
+    </header>
+
+    <!-- FEATURED: TAP RUNNER -->
+    <section class="grid fade d2">
+      <article class="card feature">
+        <div class="ribbon">FEATURED</div>
+        <h3>🕊️ Tap Runner — Neon</h3>
+        <p>Terbang melewati rintangan. Capai skor <b>50</b> untuk membuka <b>reward</b> khusus “x1 Nasi Uduk”. Kontrol sekali tap, fisik ringan, tema neon hijau.</p>
+        <a class="btn" href="https://azbrymd-nasiuduk.vercel.app/" target="_blank" rel="noopener">Mainkan</a>
+      </article>
+    </section>
+
+    <!-- LIST GAME LAIN -->
+    <section class="grid fade d3">
+      <article class="card">
+        <h3>🎯 Aim — Mafia Hat</h3>
+        <p>Empat orang tampil: <b>3 mafia</b> & <b>1 orang baik</b>. Mereka diacak lalu ditutup topi—tinggal siluet topinya. Kamu punya <b>3 peluru</b> untuk menebak siapa mafia. Fokus & ingat posisi!</p>
+        <a class="btn" href="aim.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>🍚 Nasi Uduk Click</h3>
+        <p>Tap or Click sebanyak-banyaknya untuk mendapatkan reward.</p>
+        <a class="btn" href="udukclick.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>🤖 GameHack </h3>
+        <p> Terdapat 15 angka yang akan muncul satu persatu, hafalkan semuanya!.</p>
+        <a class="btn" href="gamehack.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>📡 Morse Suite</h3>
+        <p>All-in-one morse: Decode, Type Transmission, & Signal Lock. LED & tone opsional, mode belajar + tantangan.</p>
+        <a class="btn" href="morse.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>❌⭕ Tic-Tac-Toe (Impossible)</h3>
+        <p>AI minimax tingkat dewa. Pilih siapa duluan, catat skor, dan coba minimal seri lawan algoritma.</p>
+        <a class="btn" href="tictactoe.html">Mainkan</a>
+      </article>
+    </section>
+
+    <footer class="footer fade d4">
+      <span>© <span id="y"></span> Azbry-MD</span>
+      <span style="color:#b8c0cc">Lisensi MIT • warna lisensi sengaja abu-abu muda</span>
+    </footer>
+  </div>
+
+  <!-- Portofolio -->
+  <a class="fab" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+
+<script>
+document.getElementById('y').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>

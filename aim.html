@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Azbry–MD • Shooting Mafia</title>
+<meta name="description" content="Shooting Mafia — tembak mafianya, jangan sampai melukai orang baik. 3 peluru saja!">
+
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#111418;
+    --muted:#a9b3c1;
+    --text:#e7eaee;
+    --accent:#b8ff9a;
+    --accent2:#8ee887;
+    --ring:rgba(184,255,154,.18);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:radial-gradient(900px 600px at 120% -10%,rgba(184,255,154,.06),transparent 40%),var(--bg);
+    color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    user-select:none; -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+  .wrap{max-width:940px;margin:0 auto;padding:18px}
+  header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 14px}
+  .brand{display:flex;gap:10px;align-items:center}
+  .dot{width:9px;height:9px;border-radius:999px;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+  .brand h1{font-size:clamp(18px,4vw,22px);margin:0;font-weight:800}
+  .brand small{color:var(--muted);font-weight:700;letter-spacing:.2px}
+  .cta a{font-weight:700;color:#0b0d10;text-decoration:none;background:linear-gradient(180deg,var(--accent),var(--accent2));padding:8px 12px;border-radius:10px}
+
+  .board{
+    background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 50%),var(--panel);
+    border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px;box-shadow:0 8px 22px rgba(0,0,0,.35);
+  }
+
+  .hud{display:flex;justify-content:space-between;align-items:center;margin:2px 2px 12px}
+  .tag{display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.1);border:1px solid var(--ring);color:#dfffe0;padding:4px 8px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+  .bullets{display:flex;gap:6px}
+  .bullet{
+    width:16px;height:26px;border-radius:4px 4px 2px 2px;background:linear-gradient(#d9e6d1,#b8ff9a);
+    border:1px solid rgba(184,255,154,.45);box-shadow:inset 0 -4px 0 rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.25);
+    opacity:.95; transition:.2s;
+  }
+  .bullet.used{opacity:.22;filter:grayscale(1)}
+  .msg{color:var(--muted);font-weight:600}
+
+  .stage{
+    position:relative;aspect-ratio:9/16; /* biar tampilan HP tinggi */
+    width:min(100%,540px);margin:0 auto;border-radius:14px;overflow:hidden;
+    background:
+      linear-gradient(transparent 75%, rgba(184,255,154,.07) 75%) repeat-y,
+      linear-gradient(90deg, rgba(184,255,154,.07) 1px, transparent 1px) repeat-x,
+      #0d1014;
+    background-size:100% 24px, 24px 100%;
+    border:1px solid rgba(255,255,255,.06);
+  }
+
+  /* area topi */
+  .hats{
+    position:absolute;left:0;right:0;top:18px;display:flex;justify-content:space-around;padding:0 12px;
+  }
+  .hat{
+    width:20%;max-width:110px;min-width:68px;aspect-ratio:1/1.05;
+    display:grid;place-items:center;border-radius:12px;padding:8px;cursor:pointer;
+    background:rgba(255,255,255,.02);border:1px dashed rgba(184,255,154,.18);
+    transition:transform .08s ease, filter .2s ease, background .2s ease;
+  }
+  .hat.locked{cursor:default;filter:grayscale(.6);opacity:.7}
+  .hat .emoji{font-size:clamp(36px,6.4vw,54px);filter:drop-shadow(0 2px 8px rgba(184,255,154,.25))}
+  .hat.shake{animation:shake .28s ease}
+  @keyframes shake{
+    10%{transform:translateX(-3px) rotate(-2deg)}
+    30%{transform:translateX(3px) rotate(2deg)}
+    50%{transform:translateX(-2px) rotate(-1deg)}
+    70%{transform:translateX(2px) rotate(1deg)}
+    100%{transform:none}
+  }
+
+  /* area pistol */
+  .gun{
+    position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+    width:min(58%,360px);height:120px;border-radius:18px;background:rgba(184,255,154,.05);
+    border:1px solid rgba(184,255,154,.15);display:flex;align-items:center;justify-content:center;gap:14px;
+  }
+  .gun .barrel{width:18px;height:48px;border-radius:6px;background:#0b0d10;border:2px solid var(--accent2);box-shadow:0 0 10px rgba(184,255,154,.35) inset}
+  .gun .hands{display:flex;gap:10px}
+  .gun .hand{width:76px;height:44px;background:linear-gradient(#20262b,#111418);border-radius:10px;border:1px solid rgba(255,255,255,.04)}
+
+  /* overlay start & result */
+  .overlay{
+    position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),rgba(0,0,0,.6));
+    display:grid;place-items:center;backdrop-filter:saturate(120%) blur(1px);opacity:0;pointer-events:none;transition:.25s;
+  }
+  .overlay.show{opacity:1;pointer-events:auto}
+  .panel{
+    width:min(90%,520px);background:var(--panel);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.45);text-align:center
+  }
+  h2{margin:0 0 6px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;
+    background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;font-weight:800;
+    padding:12px 18px;border-radius:12px;border:0;text-decoration:none;cursor:pointer;
+    box-shadow:0 10px 30px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12);
+  }
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.09)}
+  .result.win{color:#caffb8}.result.lose{color:#ffb8b8}
+
+  footer{margin:14px 2px 4px;color:#9aa6b2;font-size:12px;display:flex;justify-content:space-between;gap:10px}
+  .mono{opacity:.9}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <span class="dot"></span>
+        <div>
+          <h1>Azbry-MD • Shooting Mafia</h1>
+          <small>Azbry-MD • FebryWesker</small>
+        </div>
+      </div>
+      <div class="cta"><a href="https://azbry-portofolio.vercel.app" target="_blank" rel="noopener">Portofolio</a></div>
+    </header>
+
+    <div class="board">
+      <div class="hud">
+        <span class="tag">Azbry-Theme</span>
+        <div class="msg" id="message">Tap topinya—jangan sampai orang baik!</div>
+        <div class="bullets" id="bullets"></div>
+      </div>
+
+      <div class="stage" id="stage">
+        <!-- topi -->
+        <div class="hats" id="hats"></div>
+
+        <!-- pistol dummy -->
+        <div class="gun">
+          <div class="hands">
+            <div class="hand"></div><div class="hand"></div>
+          </div>
+          <div class="barrel"></div>
+        </div>
+
+        <!-- overlay start -->
+        <div class="overlay show" id="startOv">
+          <div class="panel">
+            <h2>Siap Menembak?</h2>
+            <p class="mono">Ada <b>3 Mafia</b> & <b>1 Orang Baik</b>. Kamu hanya punya <b>3 peluru</b>.<br>Temukan dan tembak semua mafia — jangan lukai orang baik!</p>
+            <button class="btn" id="btnStart">Mulai</button>
+          </div>
+        </div>
+
+        <!-- overlay hasil -->
+        <div class="overlay" id="endOv">
+          <div class="panel" id="endPanel">
+            <h2 id="endTitle">Game Over</h2>
+            <p id="endDesc" class="mono">Kamu menembak orang baik. Hati-hati lain kali.</p>
+            <button class="btn" id="btnReplay">Main Lagi</button>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <span>© <span id="y"></span> Azbry-MD • Game by FebryWesker</span>
+        <span class="mono">License: MIT</span>
+      </footer>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const hatsEl = document.getElementById('hats');
+  const msgEl  = document.getElementById('message');
+  const bulletsEl = document.getElementById('bullets');
+  const startOv = document.getElementById('startOv');
+  const endOv   = document.getElementById('endOv');
+  const endTitle= document.getElementById('endTitle');
+  const endDesc = document.getElementById('endDesc');
+  const btnStart= document.getElementById('btnStart');
+  const btnReplay=document.getElementById('btnReplay');
+
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  let state = 'idle'; // idle | playing | ended
+  let bullets = 3;
+  let roles = [];     // array of 'mafia' | 'civil'
+
+  function drawBullets(n){
+    bulletsEl.innerHTML='';
+    for(let i=0;i<3;i++){
+      const b = document.createElement('div');
+      b.className='bullet'+(i>=n?' used':'');
+      bulletsEl.appendChild(b);
+    }
+  }
+
+  // buat 4 topi
+  function buildHats(){
+    hatsEl.innerHTML='';
+    const order = shuffle([0,1,2,3]);
+    // assign role: 3 mafia, 1 civil
+    roles = ['mafia','mafia','mafia','civil'];
+    roles = shuffle(roles);
+
+    order.forEach(i=>{
+      const hat = document.createElement('div');
+      hat.className='hat';
+      hat.dataset.idx = i;
+      hat.dataset.role = roles[i];
+      hat.innerHTML = `<div class="emoji">🤠</div>`;
+      hat.addEventListener('click',()=>onHatClick(hat));
+      hatsEl.appendChild(hat);
+    });
+  }
+
+  function shuffle(arr){
+    for (let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function startGame(){
+    state='playing';
+    bullets=3;
+    drawBullets(bullets);
+    msgEl.textContent='Tembak mafianya. Jangan mengenai orang baik!';
+    startOv.classList.remove('show');
+    endOv.classList.remove('show');
+    buildHats();
+  }
+
+  function endGame(win, reason=''){
+    state='ended';
+    endTitle.textContent = win ? 'Kamu Menang!' : 'Game Over';
+    endTitle.className = 'result '+(win?'win':'lose');
+    endDesc.textContent = win
+      ? 'Semua mafia tertangkap. Keren!'
+      : (reason || 'Kamu menembak orang baik. Hati-hati lain kali.');
+    endOv.classList.add('show');
+    // kunci semua topi
+    document.querySelectorAll('.hat').forEach(h=>h.classList.add('locked'));
+  }
+
+  function onHatClick(hat){
+    if(state!=='playing') return;
+    if(hat.classList.contains('locked')) return;
+    if(bullets<=0) return;
+
+    hat.classList.add('shake'); setTimeout(()=>hat.classList.remove('shake'),280);
+
+    bullets--;
+    drawBullets(bullets);
+
+    const role = hat.dataset.role;
+    // reveal kecil (ubah emoji)
+    hat.querySelector('.emoji').textContent = (role==='mafia') ? '😈' : '🕊️';
+    hat.classList.add('locked');
+
+    if(role==='civil'){
+      endGame(false,'Aduh—yang baik tertembak.');
+      return;
+    }
+    // cek sisa mafia
+    const left = [...document.querySelectorAll('.hat')]
+      .filter(h=>h.dataset.role==='mafia' && !h.classList.contains('locked')).length;
+
+    if(left===0){
+      endGame(true);
+      return;
+    }
+    if(bullets===0){
+      endGame(false,'Pelurumu habis. Mafia masih berkeliaran.');
+    }
+  }
+
+  btnStart.addEventListener('click', startGame);
+  btnReplay.addEventListener('click', startGame);
+
+  // pertama kali: tampilkan overlay start + draw UI
+  drawBullets(3);
+  buildHats();
+})();
+</script>
+</body>
+</html>

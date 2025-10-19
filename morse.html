@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Azbry-MD • Morse Lab</title>
+<meta name="description" content="Morse Lab: Learn, Transmit Challenge (20 level), dan Challenge Beep — Tema Azbry." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#111418;
+    --muted:#a6b0bf;
+    --text:#e6e8ec;
+    --accent:#b8ff9a;
+    --accent2:#8ee887;
+    --ring:rgba(184,255,154,.18);
+    --err:#ff5b6e;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:radial-gradient(1000px 700px at 15% -10%,rgba(184,255,154,.06),transparent 40%),
+              radial-gradient(900px 600px at 120% 30%,rgba(184,255,154,.04),transparent 35%),
+              var(--bg);
+    color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:24px 16px 80px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+  .title{font-weight:800;letter-spacing:.2px}
+  .title span{color:var(--accent)}
+  .muted{color:var(--muted)}
+  .tag{display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.10);border:1px solid var(--ring);
+       padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:#dfffe0}
+  .panel{background:var(--panel);border:1px solid rgba(255,255,255,.05);box-shadow:0 8px 28px rgba(0,0,0,.35);
+         border-radius:14px;padding:16px}
+  .menu-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .col-12{grid-column:span 12}
+  .col-6{grid-column:span 6}
+  .col-4{grid-column:span 4}
+  @media(max-width:800px){.col-6,.col-4{grid-column:span 12}}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border-radius:12px;
+       font-weight:800; text-decoration:none; cursor:pointer; user-select:none; border:0; color:#071008;
+       background:linear-gradient(180deg,var(--accent),var(--accent2)); box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.09)}
+  .btn.full{width:100%}
+  .btn.small{padding:8px 12px;border-radius:10px;font-weight:700}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  h2,h3{margin:6px 0 10px}
+  .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}.mt20{margin-top:20px}.mt24{margin-top:24px}
+  .mb12{margin-bottom:12px}
+  .center{text-align:center}
+  .grid-keys{display:grid;gap:10px}
+  .kbd{display:inline-flex;align-items:center;justify-content:center;padding:14px 0;border-radius:12px;font-weight:800;cursor:pointer;
+       background:#161a1f;border:1px solid rgba(255,255,255,.08); color:var(--text); user-select:none}
+  .kbd.pri{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#061008}
+  .kbd.warn{background:#1d1113;border-color:#36171b;color:#ffd9de}
+  .kbd.good{background:#111c14;border-color:#18231a;color:#caffe0}
+
+  /* tables */
+  table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;text-align:left}
+  th{background:#0e1115;color:#c9d3e1;font-weight:800}
+  tr:nth-child(even) td{background:#0f1317}
+  tr:nth-child(odd) td{background:#11161b}
+
+  /* sections visibility */
+  .hide{display:none}
+
+  /* beep indicator (bulat) */
+  .beep-dot{width:25px;height:25px;border-radius:999px;background:#0f1512;border:3px solid var(--accent2);box-shadow:0 0 0 2px rgba(184,255,154,.2) inset}
+  .beep-dot.on {
+  background: var(--accent2);
+  box-shadow:
+    0 0 20px 5px rgba(184, 255, 154, 0.8),
+    0 0 0 3px rgba(184, 255, 154, 0.3) inset;
+  transform: scale(1.1);
+  transition: all 0.15s ease;
+  }
+
+  footer{margin-top:32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;color:#b9c3d4}
+  .license{color:#cfd7e6;opacity:.9}
+  .right{display:flex;gap:10px;align-items:center}
+  .link{color:var(--accent);text-decoration:none;font-weight:700;border-bottom:1px dashed rgba(184,255,154,.35)}
+  .err{color:var(--err);font-weight:700}
+  .ok{color:#a9ffc8;font-weight:700}
+
+  /* level pill */
+  .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ring);padding:6px 10px;border-radius:999px;background:rgba(184,255,154,.08);color:#dfffe0;font-weight:800}
+/* ====== Warna teks input jawaban (Challenge Beep) ====== */
+#bp-ans{
+  color:#fff !important;
+  background:#0f1418;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  font-weight:600;
+  font-size:15px;
+  padding:10px 12px;
+  outline:none;
+  box-shadow:inset 0 0 5px rgba(184,255,154,.1);
+}
+#bp-ans::placeholder{ color:rgba(255,255,255,.45); }
+#bp-ans:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(184,255,154,.2);
+}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="tag">Azbry • Morse</div>
+        <h1 class="title">Morse Lab <span>Azbry-MD</span></h1>
+        <div class="muted">Learn • Transmit Challenge (20) • Challenge Beep</div>
+      </div>
+      <div class="right">
+        <a href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener" class="btn small">Portofolio</a>
+      </div>
+    </header>
+
+    <!-- MENU -->
+    <section id="menu" class="panel">
+      <h2 class="mb12">Pilih Mode</h2>
+      <div class="menu-grid">
+        <div class="col-12 panel" style="background:#0f1317;border:1px solid rgba(255,255,255,.06)">
+          <h3>📘 Learn (Referensi)</h3>
+          <p class="muted">Tabel huruf (A-Z) & angka (0-9) dalam Morse. Tanpa simbol agar sederhana.</p>
+          <button class="btn" onclick="goto('learn')">Mulai Learn</button>
+        </div>
+        <div class="col-6 panel" style="background:#0f1317;border:1px solid rgba(255,255,255,.06)">
+          <h3>📡 Transmit Challenge</h3>
+          <p class="muted">Ketik Morse (. dan -) untuk <b>20 kata</b> dari pendek → panjang. Selamat mengerjakan.</p>
+          <div class="row">
+            <span class="pill">Level: <b id="tx-level-pill">1</b>/20</span>
+            <button class="btn" onclick="startTransmit()">Mulai</button>
+          </div>
+        </div>
+        <div class="col-6 panel" style="background:#0f1317;border:1px solid rgba(255,255,255,.06)">
+          <h3>🎯 Challenge Beep</h3>
+          <p class="muted">Dengar beep Morse (lebih <b>lambat</b>) lalu tebak huruf/angka. Indikator visual berbentuk <b>bulat</b>.</p>
+          <div class="row" style="align-items:center">
+            <div class="beep-dot" id="beepDot" title="Beep Indicator"></div>
+            <button class="btn" onclick="startBeep()">Mulai</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LEARN -->
+    <section id="learn" class="panel hide">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 class="mb12">📘 Learn (Referensi)</h2>
+        <button class="btn ghost small" onclick="goto('menu')">← Kembali</button>
+      </div>
+      <p class="muted">Huruf & angka saja (tanpa simbol) untuk memudahkan pemula.</p>
+      <div class="row mt12">
+        <div class="col-6">
+          <h3>Huruf (A-Z)</h3>
+          <table id="tbl-letters"><thead><tr><th>Huruf</th><th>Morse</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class="col-6">
+          <h3>Angka (0-9)</h3>
+          <table id="tbl-digits"><thead><tr><th>Angka</th><th>Morse</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRANSMIT CHALLENGE -->
+    <section id="transmit" class="panel hide">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 class="mb12">📡 Transmit Challenge</h2>
+        <div class="row">
+          <span class="pill">Level <b id="tx-level">1</b>/20</span>
+          <button class="btn ghost small" onclick="goto('menu')">← Menu</button>
+        </div>
+      </div>
+      <p class="muted">Ketik Morse untuk kata target dengan tombol <b>.</b> & <b>-</b>. Gunakan <i>Spasi Huruf</i>, <i>Spasi Kata</i>, dan <i>Enter</i> untuk mengirim jawaban. Layout keypad tidak diubah.</p>
+
+      <div class="panel" style="margin-top:8px;background:#0f1418">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <div>Target: <b id="tx-target">—</b></div>
+          <div>Status: <b id="tx-status" class="muted">Siap</b></div>
+        </div>
+        <div class="mt12">
+          Morse Kamu:
+          <div id="tx-morse" class="panel" style="margin-top:6px;min-height:56px;background:#0e1317;border:1px dashed rgba(255,255,255,.08);display:flex;align-items:center;padding:10px 12px;overflow:auto"></div>
+        </div>
+      </div>
+
+      <!-- Keypad (dipertahankan layout sebelumnya) -->
+      <div class="grid-keys mt16" style="grid-template-columns:1fr 1fr 1fr;align-items:stretch">
+        <div class="kbd" id="tx-space-word">Spasi Kata</div>
+        <div class="kbd pri" id="tx-dot">.</div>
+        <div class="kbd" id="tx-del">Hapus</div>
+
+        <div class="kbd" id="tx-space">Spasi</div>
+        <div class="kbd pri" id="tx-dash">-</div>
+        <div class="kbd" id="tx-enter">Enter</div>
+      </div>
+
+      <div class="row mt12">
+        <div class="muted">Benar: <b id="tx-correct">0</b> • Salah: <b id="tx-wrong">0</b></div>
+      </div>
+    </section>
+
+    <!-- CHALLENGE BEEP -->
+    <section id="beep" class="panel hide">
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <h2 class="mb12">🎯 Challenge Beep</h2>
+        <button class="btn ghost small" onclick="goto('menu')">← Menu</button>
+      </div>
+      <p class="muted">Dengar beep (lebih lambat) lalu tebak huruf/angka. Indikator bulat akan berkedip saat nada diputar.</p>
+
+      <div class="panel" style="background:#0f1418">
+        <div class="row" style="align-items:center;gap:12px">
+          <div class="beep-dot" id="beepDot2"></div>
+          <div class="pill">Soal: <b id="bp-q">0</b></div>
+          <div class="pill">Skor: <b id="bp-score">0</b></div>
+          <button class="btn small" id="bp-next">Putar Beep</button>
+        </div>
+        <div class="row mt12">
+          <input id="bp-ans" class="panel" placeholder="Jawaban huruf/angka…" style="flex:1;outline:none;border:1px solid rgba(255,255,255,.08)">
+          <button class="btn" id="bp-submit">Kirim</button>
+        </div>
+        <div class="mt8 muted" id="bp-msg">Siap!</div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="license" style="color:#c9d3e1">Lisensi: <b style="color:#dfe9f7">MIT</b> • © <span id="y"></span> Azbry-MD</div>
+      <a class="link" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
+    </footer>
+  </div>
+
+<script>
+  // ====== Morse Maps (letters + digits only) ======
+  const MORSE = {
+    A:'.-',   B:'-...', C:'-.-.', D:'-..',  E:'.',    F:'..-.',
+    G:'--.',  H:'....', I:'..',   J:'.---', K:'-.-',  L:'.-..',
+    M:'--',   N:'-.',   O:'---',  P:'.--.', Q:'--.-', R:'.-.',
+    S:'...',  T:'-',    U:'..-',  V:'...-', W:'.--',  X:'-..-',
+    Y:'-.--', Z:'--..',
+    0:'-----',1:'.----',2:'..---',3:'...--',4:'....-',5:'.....',
+    6:'-....',7:'--...',8:'---..',9:'----.'
+  };
+  const REV = {}; Object.entries(MORSE).forEach(([k,v])=>REV[v]=k);
+
+  // ====== Routing ======
+  const $ = s => document.querySelector(s);
+  const show = id => { ['menu','learn','transmit','beep'].forEach(i=>$('#'+i).classList.add('hide')); $('#'+id).classList.remove('hide') }
+  const goto = id => show(id);
+
+  // ====== Learn table ======
+  function populateLearn() {
+    const L = $('#tbl-letters tbody'); L.innerHTML='';
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><b>${ch}</b></td><td>${MORSE[ch]}</td>`;
+      L.appendChild(tr);
+    });
+    const D = $('#tbl-digits tbody'); D.innerHTML='';
+    '0123456789'.split('').forEach(ch=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><b>${ch}</b></td><td>${MORSE[ch]}</td>`;
+      D.appendChild(tr);
+    });
+  }
+
+  // ====== Transmit Challenge (30 level) ======
+  // 30 kata dari pendek → panjang
+  const TX_WORDS = [
+  // 🏕️ Kepramukaan (14 soal = 70%)
+  'HI','SOS','API','TUNAS','REGU','SIAGA','KOMPAS','APIUNGGUN','SCOUT','SEMANGAT',
+  'PRAMUKA','SETIA','GERAKAN','PENGGALANG',
+  
+  // 🤖 Azbry-MD & Teknologi (6 soal = 30%)
+  'AZBRY','BOT','CODE','SYSTEM','SMART','AUTOMATION'
+];
+  let txLevel=1, txIdx=0, txCorrect=0, txWrong=0, txBuffer=[];
+  function startTransmit(){
+    txLevel=1; txIdx=0; txCorrect=0; txWrong=0; txBuffer=[];
+    $('#tx-correct').textContent=txCorrect; $('#tx-wrong').textContent=txWrong;
+    $('#tx-level').textContent=txLevel; $('#tx-level-pill').textContent=txLevel;
+    show('transmit');
+    loadTx();
+  }
+  function loadTx(){
+    const target = TX_WORDS[txIdx] || TX_WORDS[TX_WORDS.length-1];
+    $('#tx-target').textContent = target;
+    $('#tx-status').textContent = 'Ketik Morse';
+    $('#tx-morse').textContent = '';
+    txBuffer=[];
+  }
+  function txAppend(s){ txBuffer.push(s); $('#tx-morse').textContent = txBuffer.join(''); }
+  function txSpace(){ txBuffer.push(' '); $('#tx-morse').textContent = txBuffer.join(''); }
+  function txSpaceWord(){ txBuffer.push('   '); $('#tx-morse').textContent = txBuffer.join(''); } // 3 spasi pemisah kata
+  function txDel(){
+    if (!txBuffer.length) return;
+    // hapus item terakhir atau satu char
+    let last = txBuffer.pop();
+    if (last.length>1){ last = last.slice(0,-1); if (last) txBuffer.push(last); }
+    $('#tx-morse').textContent = txBuffer.join('');
+  }
+  function decodeMorse(morse){
+    // kata dipisah 3 spasi, huruf 1 spasi
+    return morse.trim().split(/\s{3}/).map(word=>{
+      return word.trim().split(/\s/).map(ch=>REV[ch]||'?').join('')
+    }).join(' ');
+  }
+  function txEnter(){
+    const target = ($('#tx-target').textContent||'').trim().toUpperCase();
+    const userMorse = txBuffer.join('');
+    const decoded = decodeMorse(userMorse);
+    if (decoded === target){
+      txCorrect++; $('#tx-correct').textContent=txCorrect;
+      $('#tx-status').innerHTML = '<span class="ok">Benar</span>';
+      // next
+      txIdx++; txLevel = Math.min(20, txIdx+1);
+      $('#tx-level').textContent=txLevel; $('#tx-level-pill').textContent=txLevel;
+      if (txIdx >= 20){ // selesai 30 level
+        $('#tx-status').innerHTML = '<span class="ok">Selesai 20 Level! Keren 🎉</span>';
+      } else {
+        loadTx();
+      }
+    } else {
+      txWrong++; $('#tx-wrong').textContent=txWrong;
+      $('#tx-status').innerHTML = `<span class="err">Salah</span> (Kamu: <b>${decoded}</b>)`;
+    }
+  }
+  // Keypad bindings (layout dipertahankan)
+  $('#tx-dot').addEventListener('click',()=>txAppend('.'));
+  $('#tx-dash').addEventListener('click',()=>txAppend('-'));
+  $('#tx-space').addEventListener('click',txSpace);
+  $('#tx-space-word').addEventListener('click',txSpaceWord);
+  $('#tx-del').addEventListener('click',txDel);
+  $('#tx-enter').addEventListener('click',txEnter);
+
+  // ====== Challenge Beep (lambat + indikator bulat) ======
+let audioCtx = null;
+function ac() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function beep(duration = 120, freq = 700) {
+  const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type = 'sine'; o.frequency.value = freq; g.gain.value = 0.2; // volume sedang
+  o.start(); setTimeout(() => { o.stop() }, duration);
+}
+
+const UNIT_TIME = 350; // lebih lambat
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function morseBeepPlay(seq, dotEl) {
+  return new Promise(async resolve => {
+    for (let i = 0; i < seq.length; i++) {
+      const ch = seq[i];
+      if (ch === '.' || ch === '-') {
+        dotEl.classList.add('on');
+        beep(ch === '.' ? UNIT_TIME : UNIT_TIME * 3);
+        await sleep(ch === '.' ? UNIT_TIME : UNIT_TIME * 3);
+        dotEl.classList.remove('on');
+        await sleep(UNIT_TIME);
+      } else if (ch === ' ') {
+        await sleep(UNIT_TIME * 3);
+      } else if (ch === '/') {
+        await sleep(UNIT_TIME * 7);
+      }
+    }
+    resolve();
+  });
+}
+
+// ====== Logic Soal ======
+let bpQ = 0, bpScore = 0, bpTarget = '';
+function randChar() {
+  const pool = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// mulai challenge
+async function startBeep() {
+  bpQ = 0; bpScore = 0; bpTarget = '';
+  $('#bp-q').textContent = bpQ;
+  $('#bp-score').textContent = bpScore;
+  $('#bp-msg').textContent = 'Siap! Tekan "Putar Beep" untuk mulai.';
+  show('beep');
+}
+
+// buat soal baru (huruf baru)
+async function newQuestion(autoPlay = false) {
+  bpQ++; $('#bp-q').textContent = bpQ;
+  bpTarget = randChar();
+  $('#bp-ans').value = '';
+  $('#bp-msg').textContent = 'Dengar beep dan jawab.';
+  if (autoPlay) {
+    const m = MORSE[bpTarget];
+    const dot = $('#beepDot2');
+    await morseBeepPlay(m.replace(/\s{3}/g, '/'), dot);
+  }
+}
+
+// replay beep (soal yang sama)
+async function replayBeep() {
+  if (!bpTarget) return newQuestion(true);
+  const m = MORSE[bpTarget];
+  const dot = $('#beepDot2');
+  await morseBeepPlay(m.replace(/\s{3}/g, '/'), dot);
+  $('#bp-msg').textContent = 'Beep diulang. Tebak huruf/angka-nya.';
+}
+
+// tombol "Putar Beep" -> ulang soal yang sama
+$('#bp-next').addEventListener('click', replayBeep);
+
+// tombol "Kirim" -> periksa jawaban & lanjut soal baru
+$('#bp-submit').addEventListener('click', async () => {
+  const a = ($('#bp-ans').value || '').trim().toUpperCase();
+  if (!a) return;
+  if (a === bpTarget) {
+    bpScore++; $('#bp-score').textContent = bpScore;
+    $('#bp-msg').innerHTML = '<span class="ok">Benar!</span>';
+  } else {
+    $('#bp-msg').innerHTML = `<span class="err">Salah</span> (Jawaban: <b>${bpTarget}</b>)`;
+  }
+  // lanjut soal baru otomatis setelah 1 detik
+  setTimeout(() => newQuestion(true), 1000);
+});
+
+  // ====== Menu helpers ======
+  document.getElementById('y').textContent = new Date().getFullYear();
+  populateLearn();
+</script>
+</body>
+</html>

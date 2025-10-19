@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Azbry-MD — Memory Tap</title>
+<meta name="description" content="Game hafalan angka sederhana: tekan Start, hafalkan urutan, lalu ketik ulang. Goal 15 untuk hadiah 24 Jam jadi user Premium Azbry-MD.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d10;
+    --panel:#111418;
+    --text:#e6e8ec;
+    --muted:#99a3ad;
+    --accent:#b8ff9a;
+    --accent-2:#84f08a;
+    --ring:rgba(184,255,154,.25);
+    --radius:16px;
+    --shadow:0 8px 28px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px
+  }
+  .brand{font-weight:800;font-size:clamp(18px,3.8vw,22px);letter-spacing:.3px}
+  .brand em{font-style:normal;color:var(--accent)}
+  .goal{
+    color:var(--muted);font-weight:700;
+    background:rgba(184,255,154,.08); border:1px solid var(--ring);
+    padding:6px 10px;border-radius:999px
+  }
+
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:16px; margin-bottom:14px
+  }
+
+  .info{
+    display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between
+  }
+  .pill{background:#0f1216;border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:8px 12px;color:var(--muted);font-weight:700}
+  .pill strong{color:var(--text)}
+
+  .display{
+    text-align:center; padding:16px 12px; border-radius:12px;
+    border:1px dashed rgba(255,255,255,.1); background:#0e1115
+  }
+  #sequenceShow{font-size:clamp(28px,6vw,36px);font-weight:800;letter-spacing:.2em}
+  #inputShow{margin-top:8px;color:var(--muted);font-size:clamp(14px,3.4vw,16px)}
+  .hint{margin-top:6px;color:var(--muted);font-size:13px}
+
+  .start-wrap{display:flex;justify-content:center;margin:14px 0 10px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    font-weight:800; letter-spacing:.3px; cursor:pointer; user-select:none;
+    padding:14px 22px; border-radius:14px; border:0; color:#0b0d10;
+    background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    box-shadow:0 8px 28px rgba(184,255,154,.3), inset 0 0 0 1px rgba(0,0,0,.14);
+    transition:transform .06s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{
+    background:transparent;color:var(--text);
+    border:1px solid rgba(255,255,255,.12); box-shadow:none
+  }
+
+  /* keypad */
+  .keypad{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:8px
+  }
+  .key{
+    display:flex;align-items:center;justify-content:center;
+    min-height:78px; border-radius:14px; font-weight:800; font-size:clamp(20px,5.6vw,26px);
+    background:#13171c; color:var(--text);
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);
+    touch-action:manipulation;
+  }
+  .key.action{
+    background:rgba(184,255,154,.08); border-color:var(--ring); color:#dfffe0;
+  }
+
+  /* modal (win/lose) */
+  .center{
+    position:fixed; inset:0; display:flex;align-items:center;justify-content:center;
+    padding:20px; background:rgba(0,0,0,.5); backdrop-filter:blur(2px); z-index:20; visibility:hidden; opacity:0;
+    transition:opacity .2s ease, visibility .2s step-end;
+  }
+  .center.show{visibility:visible; opacity:1; transition:opacity .2s ease}
+  .modal{
+    width:min(520px,92vw);
+    background:var(--panel); border:1px solid rgba(255,255,255,.08);
+    border-radius:20px; box-shadow:var(--shadow); padding:18px
+  }
+  .modal h3{margin:0 0 8px;font-size:clamp(20px,4.8vw,24px)}
+  .modal p{margin:0;color:var(--muted)}
+  .reward{
+    margin-top:10px; padding:10px 12px; border-radius:12px;
+    background:rgba(184,255,154,.08); border:1px solid var(--ring);
+    font-weight:800; color:#dfffe0;
+  }
+
+  /* credit + link */
+  .credits{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:10px; color:var(--muted); font-size:13px
+  }
+  .credits a{color:var(--text);text-decoration:none;border:1px solid rgba(255,255,255,.12);
+    padding:8px 12px;border-radius:10px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">Azbry-MD <em>• Memory Tap</em></div>
+      <div class="goal">Goal: 15</div>
+    </div>
+
+    <div class="card info">
+      <div class="pill">Skor: <strong id="score">0</strong></div>
+      <div class="pill">Terbaik: <strong id="best">0</strong></div>
+      <div class="pill">Status: <strong id="status">Siap</strong></div>
+    </div>
+
+    <div class="card">
+      <div class="display">
+        <div id="sequenceShow">Tekan START</div>
+        <div id="inputShow">Masukkan ulang urutan angka setelah tampil.</div>
+        <div class="hint">Tip: Gunakan <b>Enter</b> untuk kirim, <b>⌫</b> untuk hapus.</div>
+      </div>
+      <div class="start-wrap">
+        <button id="btnStart" class="btn">START</button>
+      </div>
+      <div class="keypad" id="keypad" aria-hidden="true">
+        <!-- 1..9 -->
+        <button class="key" data-k="1">1</button>
+        <button class="key" data-k="2">2</button>
+        <button class="key" data-k="3">3</button>
+        <button class="key" data-k="4">4</button>
+        <button class="key" data-k="5">5</button>
+        <button class="key" data-k="6">6</button>
+        <button class="key" data-k="7">7</button>
+        <button class="key" data-k="8">8</button>
+        <button class="key" data-k="9">9</button>
+        <!-- last row -->
+        <button class="key action" data-act="back">⌫</button>
+        <button class="key" data-k="0">0</button>
+        <button class="key action" data-act="enter">Enter</button>
+      </div>
+    </div>
+
+    <div class="credits">
+      <div>© <span id="y"></span> Azbry-MD • FebryWesker</div>
+      <a href="https://azbry-portofolio.vercel.app" target="_blank" rel="noopener">Portfolio</a>
+    </div>
+  </div>
+
+  <!-- modal -->
+  <div id="popup" class="center" role="dialog" aria-modal="true">
+    <div class="modal">
+      <h3 id="popTitle">Game Over</h3>
+      <p id="popDesc">Skor kamu: <b id="popScore">0</b></p>
+      <div id="rewardBox" class="reward" style="display:none">🎁 x1 Nasi Uduk Mama Alpi</div>
+      <div style="margin-top:12px;display:flex;gap:10px;justify-content:flex-end">
+        <button id="btnClose" class="btn ghost">Tutup</button>
+        <button id="btnRestart" class="btn">Main Lagi</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const GOAL = 15
+  const FLASH_MS = 650       // durasi tiap angka muncul
+  const GAP_MS = 180         // jeda antar angka
+  const HIDE_DELAY = 250     // delay sembunyikan setelah selesai flash
+
+  // state
+  let sequence = []
+  let input = []
+  let score = 0
+  let best = +localStorage.getItem('memorytap_best') || 0
+  let flashing = false
+  let playing = false
+
+  // el
+  const elSequence = document.getElementById('sequenceShow')
+  const elInput = document.getElementById('inputShow')
+  const elScore = document.getElementById('score')
+  const elBest = document.getElementById('best')
+  const elStatus = document.getElementById('status')
+  const elStart = document.getElementById('btnStart')
+  const keypad = document.getElementById('keypad')
+  const popup = document.getElementById('popup')
+  const popTitle = document.getElementById('popTitle')
+  const popDesc = document.getElementById('popDesc')
+  const popScore = document.getElementById('popScore')
+  const rewardBox = document.getElementById('rewardBox')
+  const btnClose = document.getElementById('btnClose')
+  const btnRestart = document.getElementById('btnRestart')
+
+  elBest.textContent = best
+
+  function randDigit(){
+    return Math.floor(Math.random()*10) // 0..9
+  }
+
+  async function flashSequence(){
+    flashing = true
+    elStatus.textContent = 'Menghafal…'
+    elInput.textContent = 'Tunggu sampai urutan selesai.'
+    // tampilkan tiap angka bergantian
+    for (let i=0;i<sequence.length;i++){
+      elSequence.textContent = sequence[i]
+      await wait(FLASH_MS)
+      elSequence.textContent = '•'
+      await wait(GAP_MS)
+    }
+    await wait(HIDE_DELAY)
+    elSequence.textContent = 'Ketik urutan'
+    elInput.textContent = ''
+    flashing = false
+    elStatus.textContent = 'Input'
+  }
+
+  function wait(ms){ return new Promise(r=>setTimeout(r,ms)) }
+
+  async function startGame(){
+    playing = true
+    score = 0
+    sequence = []
+    input = []
+    elScore.textContent = score
+    elStatus.textContent = 'Mulai'
+    elStart.disabled = true
+    keypad.setAttribute('aria-hidden','false')
+    nextRound()
+  }
+
+  async function nextRound(){
+    input = []
+    sequence.push(randDigit())
+    await flashSequence()
+    renderInput()
+  }
+
+  function renderInput(){
+    elInput.textContent = input.join(' ')
+  }
+
+  function handleKey(k){
+    if (!playing || flashing) return
+    if (typeof k === 'number'){
+      input.push(k)
+      renderInput()
+    }
+  }
+
+  function backspace(){
+    if (!playing || flashing) return
+    input.pop()
+    renderInput()
+  }
+
+  function submit(){
+    if (!playing || flashing) return
+    // cek sama panjang dulu
+    if (input.length !== sequence.length) {
+      return end(false)
+    }
+    // cek isi
+    for (let i=0;i<sequence.length;i++){
+      if (sequence[i] !== input[i]) return end(false)
+    }
+    // benar
+    score++
+    elScore.textContent = score
+    if (score > best){
+      best = score
+      localStorage.setItem('memorytap_best', best)
+      elBest.textContent = best
+    }
+    if (score >= GOAL) return end(true)
+    nextRound()
+  }
+
+  function end(win){
+    playing = false
+    elStart.disabled = false
+    elStatus.textContent = win ? 'Selesai!' : 'Gagal'
+    popTitle.textContent = win ? 'Selamat! 🎉' : 'Game Over'
+    popScore.textContent = score
+    popDesc.innerHTML = `Skor kamu: <b id="popScore">${score}</b>`
+    rewardBox.style.display = win ? '' : 'none'
+    popup.classList.add('show')
+  }
+
+  function closePopup(){
+    popup.classList.remove('show')
+  }
+
+  // events
+  elStart.addEventListener('click', startGame)
+  btnRestart.addEventListener('click', ()=>{ closePopup(); startGame() })
+  btnClose.addEventListener('click', closePopup)
+
+  keypad.addEventListener('click', e=>{
+    const k = e.target.closest('.key')
+    if (!k) return
+    const dk = k.dataset.k
+    const act = k.dataset.act
+    if (dk != null) handleKey(+dk)
+    else if (act === 'back') backspace()
+    else if (act === 'enter') submit()
+  })
+
+  // keyboard fisik (opsional)
+  window.addEventListener('keydown', e=>{
+    if (e.key >= '0' && e.key <= '9') handleKey(+e.key)
+    else if (e.key === 'Backspace') backspace()
+    else if (e.key === 'Enter') submit()
+  })
+
+  // init
+  document.getElementById('y').textContent = new Date().getFullYear()
+})();
+</script>
+</body>
+</html>

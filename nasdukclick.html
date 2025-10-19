@@ -1,0 +1,473 @@
+<!DOCTYPE html><html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nasi Uduk Clicker (Versi Sementara)</title>
+  <meta name="description" content="Game clicker sederhana bertema Nasi Uduk. Satu file HTML, tanpa assets eksternal." />
+  <style>
+    :root {
+      --bg: #0f172a;        /* slate-900 */
+      --panel: #111827cc;   /* gray-900 with alpha */
+      --muted: #94a3b8;     /* slate-400 */
+      --text: #e5e7eb;      /* gray-200 */
+      --brand: #22c55e;     /* green-500 */
+      --brand-2: #a3e635;   /* lime-400 */
+      --accent: #f59e0b;    /* amber-500 */
+      --danger: #ef4444;    /* red-500 */
+      --card: #0b1220;      /* slightly lighter bg */
+      --ring: #22c55e55;
+    }* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  color: var(--text); background: radial-gradient(1200px 800px at 10% 10%, #0b1220 0%, var(--bg) 60%);
+}
+a { color: var(--brand-2); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container {
+  max-width: 1100px; margin: 0 auto; padding: 24px; display: grid; gap: 16px;
+  grid-template-columns: 1fr; align-items: start;
+}
+@media (min-width: 960px) {
+  .container { grid-template-columns: 1fr 360px; gap: 24px; }
+}
+
+header {
+  display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  background: linear-gradient(180deg, #121a2e 0%, #0b1220 100%); border: 1px solid #1f2937; border-radius: 16px; padding: 16px 18px;
+  box-shadow: 0 10px 30px #0008;
+}
+.brand { display:flex; gap:12px; align-items:center; }
+.logo {
+  width: 44px; height: 44px; border-radius: 12px; background: conic-gradient(from 180deg at 50% 50%, var(--brand), var(--brand-2), var(--accent), var(--brand));
+  filter: saturate(1.2) drop-shadow(0 6px 18px #22c55e33);
+}
+.title { line-height:1.1; }
+.title h1 { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: 0.2px; }
+.title p { margin: 2px 0 0 0; color: var(--muted); font-size: 0.95rem; }
+
+.stats {
+  display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(120px,1fr)); align-items: center;
+}
+.stat {
+  background: #0a1020; border: 1px solid #1f2937; padding: 10px 12px; border-radius: 12px; text-align: center;
+}
+.stat .label { color: var(--muted); font-size: 0.8rem; }
+.stat .value { font-weight: 800; font-size: 1.2rem; }
+
+.panel {
+  background: linear-gradient(180deg, #101629 0%, #0a1020 100%); border: 1px solid #1f2937; border-radius: 16px; padding: 18px;
+  box-shadow: 0 12px 32px #0007;
+}
+
+.primary {
+  display: grid; gap: 18px;
+}
+
+.big-btn {
+  display:block; width:100%; aspect-ratio: 16/9; min-height: 220px; border-radius: 20px; border: 2px solid #1f2937;
+  background: radial-gradient(900px 500px at 70% 0%, #12213f 0%, #0b1327 55%, #0a1020 100%);
+  color: #eaffef; font-weight: 900; font-size: clamp(1.4rem, 2.2vw + 1rem, 2.2rem);
+  letter-spacing: 0.3px; cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: inset 0 0 0 1px #22c55e22, 0 30px 60px #0008; transition: transform .08s ease, filter .08s ease; user-select: none;
+}
+.big-btn:hover { filter: brightness(1.05); }
+.big-btn:active { transform: translateY(1px) scale(0.997); }
+.big-btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--ring); }
+.big-btn .badge {
+  position: absolute; top: 16px; right: 16px; background: #0a1020; border: 1px solid #1f2937; padding: 6px 10px; border-radius: 999px;
+  color: var(--brand-2); font-weight: 800; font-size: 0.9rem; box-shadow: 0 6px 20px #0008;
+}
+.big-btn .hint { position:absolute; bottom:16px; left:16px; font-size:0.9rem; color:#cbd5e1; opacity:0.85; }
+
+.floaty { position:absolute; pointer-events:none; font-weight: 800; text-shadow: 0 2px 6px #000a; }
+
+.cols { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 720px) {
+  .cols { grid-template-columns: 1fr 1fr; }
+}
+
+.shop h3, .achv h3, .settings h3 { margin: 0 0 8px 0; font-size: 1.05rem; letter-spacing: 0.3px; }
+
+.item {
+  display:flex; align-items:center; gap:12px; padding: 12px; border: 1px solid #1f2937; border-radius: 14px; background: #0b1220;
+}
+.item .meta { flex:1 1 auto; }
+.item .meta .name { font-weight: 700; }
+.item .meta .desc { color: var(--muted); font-size: 0.9rem; }
+.item .meta .effect { color: #86efac; font-size: 0.9rem; }
+.item .price { font-weight: 800; }
+.item button {
+  border: 1px solid #1f2937; background: linear-gradient(180deg, #17243d 0%, #0d1830 100%);
+  color: #e5ffe9; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-weight: 800; letter-spacing: 0.3px;
+}
+.item button:disabled { opacity: 0.45; cursor: not-allowed; }
+.item button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
+
+.pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#0a1020; border:1px solid #1f2937; }
+
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+.brand { color: var(--brand-2); }
+
+footer { opacity: 0.8; margin-top: 12px; font-size: 0.9rem; text-align: center; color: var(--muted); }
+
+.danger { background: linear-gradient(180deg, #2a1212 0%, #1f0c0c 100%); border: 1px solid #7f1d1d; }
+.danger:hover { filter: brightness(1.05); }
+
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Nasi Uduk Clicker">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>Nasi Uduk Clicker</h1>
+          <p>Versi sementara – satu file HTML, tanpa aset. Simpan otomatis & progres offline.</p>
+        </div>
+      </div>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><div class="label">Porsi</div><div class="value" id="stat-porsi">0</div></div>
+        <div class="stat"><div class="label">/detik</div><div class="value" id="stat-ppsec">0</div></div>
+      </div>
+    </header><main class="primary panel">
+  <button id="btn-cook" class="big-btn" aria-label="Masak Nasi Uduk (klik)">
+    <span class="badge" id="badge-click">+1 / klik</span>
+    🍚 Masak Nasi Uduk!
+    <span class="hint">Klik / tekan spasi</span>
+  </button>
+
+  <div class="cols">
+    <section class="shop panel" aria-labelledby="heading-toko">
+      <h3 id="heading-toko">Toko Upgrade</h3>
+
+      <div class="row muted" style="margin-bottom:8px">
+        <span class="pill">Saldo: <strong id="saldo">0</strong> porsi</span>
+        <span class="pill">Harga naik dinamis</span>
+      </div>
+
+      <div id="shop-list" class="col" aria-live="polite" aria-busy="false" style="display:grid; gap:10px"></div>
+    </section>
+
+    <section class="panel achv" aria-labelledby="heading-achv">
+      <h3 id="heading-achv">Pencapaian</h3>
+      <div id="achv-list" class="col muted" style="display:grid; gap:8px">
+        <span class="muted">Belum ada pencapaian. Masak dulu~</span>
+      </div>
+
+      <hr style="border-color:#1f2937; opacity:0.4; margin:14px 0"/>
+
+      <section class="settings" aria-labelledby="heading-settings">
+        <h3 id="heading-settings">Pengaturan & Simpan</h3>
+        <div class="row">
+          <button id="btn-save">Simpan Sekarang</button>
+          <button id="btn-export">Ekspor Save</button>
+          <button id="btn-import">Impor Save</button>
+          <button id="btn-reset" class="danger">Reset Data</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label class="pill" for="toggle-sound">
+            <input id="toggle-sound" type="checkbox" /> Suara klik
+          </label>
+          <label class="pill" for="toggle-effects">
+            <input id="toggle-effects" type="checkbox" checked /> Efek visual
+          </label>
+        </div>
+        <p class="muted" id="save-status" role="status" aria-live="polite" style="margin-top:6px">Auto-save tiap 10 detik.</p>
+      </section>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Dibuat sebagai prototipe. Ingin fitur lain? (prestige, resep, event harian) — siap ditambah.
+</footer>
+
+  </div>  <script>
+    // ====== Util ======
+    const fmt = new Intl.NumberFormat('id-ID');
+    const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+
+    // Small event bus
+    const bus = new EventTarget();
+    const emit = (name, detail) => bus.dispatchEvent(new CustomEvent(name, { detail }));
+    const on = (name, fn) => bus.addEventListener(name, fn);
+
+    // ====== Audio (no external assets) ======
+    const AudioSys = (() => {
+      let ctx = null, enabled = false;
+      function ensureCtx() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); }
+      function clickTone() {
+        if (!enabled) return; ensureCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle'; osc.frequency.value = 540; // soft clicky
+        gain.gain.value = 0.06; // quiet
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 0.05);
+      }
+      return { setEnabled(v){ enabled = !!v; if (enabled) ensureCtx(); }, clickTone };
+    })();
+
+    // ====== Core State ======
+    const SAVE_KEY = 'nuc_save_v1';
+    const state = {
+      porsi: 0,
+      perClick: 1,
+      perSec: 0,
+      upgrades: {},
+      achv: {},
+      lastSavedAt: Date.now(),
+      lastTickAt: Date.now(),
+      settings: { sound: false, effects: true },
+    };
+
+    // ====== Upgrades Catalog ======
+    /**
+     * Each item: id, name, desc, type: 'click' | 'auto', basePrice, priceGrowth, effect
+     * effect: (level) => { perClickDelta? , perSecDelta? }
+     */
+    const CATALOG = [
+      { id: 'kukusan', name: 'Kukusan Anyar', desc: 'Kukusan baru bikin nasi matang merata.', type: 'click', basePrice: 20, priceGrowth: 1.18, effect: lvl => ({ perClickDelta: 1 }) },
+      { id: 'santan', name: 'Santan Premium', desc: 'Santan gurih nambah porsi tiap aduk.', type: 'click', basePrice: 120, priceGrowth: 1.2, effect: lvl => ({ perClickDelta: 3 }) },
+      { id: 'serundeng', name: 'Serundeng Mantap', desc: 'Taburan pedas gurih bikin pelanggan balik.', type: 'auto', basePrice: 60, priceGrowth: 1.16, effect: lvl => ({ perSecDelta: 1 }) },
+      { id: 'lauk', name: 'Lauk Variatif', desc: 'Telur, ayam, empal – rame terus!', type: 'auto', basePrice: 280, priceGrowth: 1.2, effect: lvl => ({ perSecDelta: 4 }) },
+      { id: 'warteg', name: 'Warung Lebih Luas', desc: 'Kursi nambah, antrean makin cepat.', type: 'auto', basePrice: 750, priceGrowth: 1.25, effect: lvl => ({ perSecDelta: 12 }) },
+      { id: 'marketing', name: 'Marketing RT/RW', desc: 'Pamflet dan WA grup tetangga.', type: 'auto', basePrice: 1600, priceGrowth: 1.27, effect: lvl => ({ perSecDelta: 28 }) },
+    ];
+
+    function getLevel(id){ return state.upgrades[id]?.level || 0; }
+    function getPrice(id){ const it = CATALOG.find(i=>i.id===id); const lvl = getLevel(id); return Math.floor(it.basePrice * Math.pow(it.priceGrowth, lvl)); }
+
+    // ====== DOM ======
+    const el = {
+      porsi: document.getElementById('stat-porsi'),
+      ppsec: document.getElementById('stat-ppsec'),
+      saldo: document.getElementById('saldo'),
+      btnCook: document.getElementById('btn-cook'),
+      badgeClick: document.getElementById('badge-click'),
+      shopList: document.getElementById('shop-list'),
+      achvList: document.getElementById('achv-list'),
+      btnSave: document.getElementById('btn-save'),
+      btnExport: document.getElementById('btn-export'),
+      btnImport: document.getElementById('btn-import'),
+      btnReset: document.getElementById('btn-reset'),
+      saveStatus: document.getElementById('save-status'),
+      toggleSound: document.getElementById('toggle-sound'),
+      toggleFx: document.getElementById('toggle-effects'),
+    };
+
+    // ====== Rendering ======
+    function renderStats(){
+      el.porsi.textContent = fmt.format(Math.floor(state.porsi));
+      el.saldo.textContent = fmt.format(Math.floor(state.porsi));
+      el.ppsec.textContent = fmt.format(state.perSec);
+      el.badgeClick.textContent = `+${fmt.format(state.perClick)} / klik`;
+    }
+
+    function renderShop(){
+      el.shopList.innerHTML = '';
+      CATALOG.forEach(item => {
+        const lvl = getLevel(item.id);
+        const price = getPrice(item.id);
+        const can = state.porsi >= price;
+
+        const row = document.createElement('div');
+        row.className = 'item';
+        row.innerHTML = `
+          <div class="meta">
+            <div class="name">${item.name} <span class="muted">Lv ${lvl}</span></div>
+            <div class="desc">${item.desc}</div>
+            <div class="effect">${item.type === 'click' ? `+${item.effect(lvl).perClickDelta} / klik` : `+${item.effect(lvl).perSecDelta}/detik`}</div>
+          </div>
+          <div class="price">${fmt.format(price)} porsi</div>
+        `;
+        const btn = document.createElement('button');
+        btn.textContent = can ? 'Beli' : 'Butuh porsi';
+        btn.disabled = !can;
+        btn.addEventListener('click', () => buy(item.id));
+        row.appendChild(btn);
+        el.shopList.appendChild(row);
+      });
+    }
+
+    function renderAchv(){
+      const defs = ACHIEVEMENTS;
+      const unlocked = Object.keys(state.achv).filter(k => state.achv[k]);
+      el.achvList.innerHTML = '';
+      if (unlocked.length === 0) {
+        el.achvList.innerHTML = '<span class="muted">Belum ada pencapaian. Masak dulu~</span>';
+        return;
+      }
+      unlocked.forEach(id => {
+        const a = defs.find(x=>x.id===id);
+        const tag = document.createElement('div');
+        tag.className = 'pill';
+        tag.innerHTML = `🏅 <strong>${a.name}</strong> <span class="muted">— ${a.desc}</span>`;
+        el.achvList.appendChild(tag);
+      });
+    }
+
+    // ====== Game Logic ======
+    function cookClick(mult = 1){
+      const gain = state.perClick * mult;
+      state.porsi += gain;
+      emit('gain', { amount: gain });
+      if (state.settings.effects) spawnFloaty(`+${fmt.format(gain)}`);
+      if (state.settings.sound) AudioSys.clickTone();
+      checkAchv();
+      renderStats(); renderShop();
+    }
+
+    function buy(id){
+      const item = CATALOG.find(i=>i.id===id); if (!item) return;
+      const price = getPrice(id); if (state.porsi < price) return;
+      state.porsi -= price;
+      const lvl = (state.upgrades[id]?.level || 0) + 1;
+      state.upgrades[id] = { level: lvl };
+      const eff = item.effect(lvl);
+      if (eff.perClickDelta) state.perClick += eff.perClickDelta;
+      if (eff.perSecDelta) state.perSec += eff.perSecDelta;
+      renderStats(); renderShop();
+      checkAchv();
+    }
+
+    // Passive income
+    function tick(){
+      const now = Date.now();
+      const dt = Math.max(0, (now - state.lastTickAt) / 1000);
+      state.lastTickAt = now;
+      if (state.perSec > 0 && dt > 0){
+        const gain = state.perSec * dt;
+        state.porsi += gain;
+        emit('gain', { amount: gain, passive: true });
+      }
+      renderStats();
+    }
+
+    // Offline progress on load
+    function applyOfflineProgress(savedAt){
+      const now = Date.now();
+      const secs = clamp(Math.floor((now - savedAt) / 1000), 0, 60*60*12); // cap 12h
+      if (secs > 0 && state.perSec > 0){
+        const gain = state.perSec * secs;
+        state.porsi += gain;
+        toast(`+${fmt.format(Math.floor(gain))} porsi selama offline (${fmt.format(secs)} dtk)`);
+      }
+    }
+
+    // ====== Achievements ======
+    const ACHIEVEMENTS = [
+      { id:'first10', name:'Pemula Wangi', desc:'Cetak 10 porsi.', cond: s => s.porsi >= 10 },
+      { id:'first100', name:'Kuasai Panci', desc:'Cetak 100 porsi.', cond: s => s.porsi >= 100 },
+      { id:'first1k', name:'Warteg Ramai', desc:'Cetak 1.000 porsi.', cond: s => s.porsi >= 1000 },
+      { id:'click25', name:'Tangan Gesit', desc:'Naikkan per klik hingga 25.', cond: s => s.perClick >= 25 },
+      { id:'auto25', name:'Mesin Jalan', desc:'Naikkan /detik hingga 25.', cond: s => s.perSec >= 25 },
+    ];
+    function checkAchv(){
+      ACHIEVEMENTS.forEach(a => {
+        if (!state.achv[a.id] && a.cond(state)){
+          state.achv[a.id] = true;
+          renderAchv();
+          toast(`🏅 ${a.name}!`);
+        }
+      });
+    }
+
+    // ====== Save / Load ======
+    function save(){
+      state.lastSavedAt = Date.now();
+      const data = JSON.stringify(state);
+      localStorage.setItem(SAVE_KEY, data);
+      el.saveStatus.textContent = `Tersimpan • ${new Date(state.lastSavedAt).toLocaleTimeString('id-ID')}`;
+    }
+    function load(){
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return false;
+      try {
+        const obj = JSON.parse(raw);
+        Object.assign(state, obj);
+        // Audio toggle reflects state
+        el.toggleSound.checked = !!state.settings?.sound;
+        el.toggleFx.checked = state.settings?.effects !== false;
+        state.lastTickAt = Date.now();
+        renderStats(); renderShop(); renderAchv();
+        applyOfflineProgress(obj.lastSavedAt || Date.now());
+        return true;
+      } catch(e){ console.warn('Load fail', e); return false; }
+    }
+
+    function exportSave(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'nasi-uduk-save.json'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importSave(){
+      const inp = document.createElement('input');
+      inp.type = 'file'; inp.accept = 'application/json';
+      inp.onchange = () => {
+        const file = inp.files?.[0]; if (!file) return;
+        file.text().then(text => {
+          try {
+            const obj = JSON.parse(text);
+            localStorage.setItem(SAVE_KEY, JSON.stringify(obj));
+            Object.assign(state, obj);
+            state.lastTickAt = Date.now();
+            renderStats(); renderShop(); renderAchv();
+            toast('Save diimpor.');
+          } catch(e){ toast('Gagal impor save.'); }
+        });
+      };
+      inp.click();
+    }
+
+    function resetAll(){
+      if (!confirm('Yakin reset semua data?')) return;
+      localStorage.removeItem(SAVE_KEY);
+      Object.assign(state, { porsi:0, perClick:1, perSec:0, upgrades:{}, achv:{}, lastSavedAt: Date.now(), lastTickAt: Date.now(), settings:{ sound:false, effects:true } });
+      renderStats(); renderShop(); renderAchv();
+      toast('Data direset.');
+    }
+
+    // ====== UI helpers ======
+    function spawnFloaty(text){
+      const btn = el.btnCook; const r = btn.getBoundingClientRect();
+      const node = document.createElement('div');
+      node.className = 'floaty'; node.textContent = text;
+      const x = Math.random() * (r.width - 60) + 30;
+      const y = Math.random() * (r.height - 60) + 30;
+      node.style.left = x + 'px'; node.style.top = y + 'px';
+      node.style.fontSize = (14 + Math.random()*8) + 'px';
+      node.style.opacity = '1'; node.style.transform = 'translateY(0)';
+      btn.appendChild(node);
+      const t0 = Date.now();
+      function anim(){
+        const t = (Date.now() - t0) / 600; // 0..1
+        node.style.transform = `translateY(${-24 * t}px)`;
+        node.style.opacity = String(1 - t);
+        if (t < 1) requestAnimationFrame(anim); else node.remove();
+      }
+      requestAnimationFrame(anim);
+    }
+
+    function toast(message){
+      const div = document.createElement('div');
+      div.role = 'status';
+      div.textContent = message;
+      div.style.position = 'fixed';
+      div.style.left = '50%';
+      div.style.bottom = '24px';
+      div.style.transform = 'translateX(-50%)';
+      div.style.background = '#0a1020';
+      div.style.border = '1px solid #1f2937';
+      div.style.padding = '10px 14px';
+      div.style.borderRadius = '12px';
+      div.style.boxShadow = '0 8px 24px #000a';
+      div.s

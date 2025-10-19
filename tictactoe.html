@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TicTacToe — Azbry-MD (Impossible)</title>
+<meta name="description" content="TicTacToe mode Impossible vs AI (minimax + alpha-beta) — Azbry-MD.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d10;        /* latar tema Azbry */
+    --panel:#111418;     /* panel/kartu */
+    --line:#1c222a;      /* garis halus */
+    --text:#e6e8ec;      /* teks utama */
+    --muted:#98a2b3;     /* teks sekunder */
+    --accent:#b8ff9a;    /* hijau neon */
+    --accent-2:#8ee887;  /* hijau sekunder */
+    --ring:rgba(184,255,154,.22);
+    --danger:#ff6b6b;
+    --blue:#4cc9ff;
+    --radius:16px;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;
+    background:
+      radial-gradient(1100px 700px at -10% -10%, rgba(184,255,154,.06), transparent 40%),
+      radial-gradient(900px 600px at 120% 20%, rgba(184,255,154,.04), transparent 35%),
+      var(--bg);
+    color:var(--text);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .wrap{width:min(960px,100%);}
+
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+  .brand{display:flex;flex-direction:column}
+  .brand b{font-size:20px;letter-spacing:.3px}
+  .brand small{color:var(--muted)}
+
+  .panel{
+    background:linear-gradient(180deg, rgba(255,255,255,.03), transparent 60%), var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    box-shadow:var(--shadow);
+    border-radius:var(--radius);
+    padding:16px;
+  }
+
+  .topbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tag{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(184,255,154,.1); color:#dfffe0;
+    border:1px solid var(--ring); padding:6px 10px; border-radius:999px;
+    font-size:12px;font-weight:700;letter-spacing:.35px;text-transform:uppercase
+  }
+  .btn{
+    appearance:none; border:0; cursor:pointer;
+    display:inline-flex;align-items:center;gap:10px;
+    padding:10px 14px;border-radius:12px;font-weight:700;text-decoration:none;
+    color:#0b0d10; background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12);
+  }
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(255,255,255,.1)}
+  .btn.blue{background:linear-gradient(180deg,#7ee1ff,#4cc9ff); color:#061018}
+  .btn.danger{background:linear-gradient(180deg,#ffa7a7,#ff6b6b); color:#2b0d0d}
+
+  .score{
+    display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    background:#0e1216; border:1px solid rgba(255,255,255,.06);
+    padding:8px 12px; border-radius:12px;
+  }
+  .pill{padding:6px 10px;border-radius:999px;background:#0b1116;border:1px solid var(--line);color:var(--muted);font-weight:700}
+  .pill b{color:var(--text)}
+
+  /* papan */
+  .board {
+    margin: 12px auto 10px;
+    width: min(92vw, 520px); /* responsif */
+    aspect-ratio: 1/1;       /* selalu kotak */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .cell{
+    background:#0f1419;
+    border:1px solid var(--line);
+    border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    font-size: clamp(38px, 10vw, 64px);
+    font-weight:800; cursor:pointer;
+    position:relative; overflow:hidden;
+    transition:border-color .2s ease, transform .04s ease;
+    user-select:none;
+  }
+  .cell:active{transform:scale(.98)}
+  .cell.x{color:var(--accent)}
+  .cell.o{color:var(--blue)}
+  .cell.disabled{pointer-events:none;opacity:.65}
+
+  .status{
+    text-align:center; color:var(--muted); min-height:24px; margin: 6px 0 10px;
+    font-weight:600;
+  }
+  .result{
+    text-align:center; font-weight:800; font-size:clamp(18px,4vw,22px); margin:6px 0 14px;
+  }
+  .grid-actions{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:6px}
+
+  footer{margin-top:12px; color:var(--muted); font-size:13px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+  .mono{opacity:.9}
+
+  /* efek glow isi kotak */
+  .pop{animation:pop .18s ease-out}
+  @keyframes pop{from{transform:scale(.7); opacity:.2} to{transform:scale(1); opacity:1}}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <b>Azbry-MD</b>
+        <small>TicTacToe • Mode: <span id="modeLabel">Impossible</span></small>
+      </div>
+      <div class="row">
+        <a class="btn ghost" href="index.html">← Menu Game</a>
+        <a class="btn blue" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
+      </div>
+    </header>
+
+    <div class="panel">
+      <div class="topbar">
+        <span class="tag">Impossible AI</span>
+        <div class="score">
+          <span class="pill">Player: <b id="sPlayer">0</b></span>
+          <span class="pill">Seri: <b id="sDraw">0</b></span>
+          <span class="pill">AI: <b id="sAI">0</b></span>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="startPlayer">Player Duluan</button>
+          <button class="btn" id="startAI">AI Duluan</button>
+          <button class="btn danger" id="resetScore">Reset Skor</button>
+        </div>
+      </div>
+
+      <div class="status" id="status">Pilih siapa yang mulai, lalu bermainlah.</div>
+
+      <div class="board" id="board" aria-label="Papan TicTacToe"></div>
+
+      <div class="result" id="result"></div>
+
+      <div class="grid-actions">
+        <button class="btn ghost" id="restart">Mulai Ulang</button>
+      </div>
+    </div>
+
+    <footer>
+      <span>© <span id="y"></span> FebryWesker — Azbry-MD</span>
+      <span class="mono">Made with ❤ • Monochrome + Simple</span>
+    </footer>
+  </div>
+
+<script>
+(function(){
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const resultEl = document.getElementById('result');
+  const sPlayerEl = document.getElementById('sPlayer');
+  const sAIEl = document.getElementById('sAI');
+  const sDrawEl = document.getElementById('sDraw');
+
+  const startPlayerBtn = document.getElementById('startPlayer');
+  const startAIBtn = document.getElementById('startAI');
+  const restartBtn = document.getElementById('restart');
+  const resetScoreBtn = document.getElementById('resetScore');
+
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  // Skor (persist di localStorage)
+  let score = { player:0, ai:0, draw:0 };
+  try {
+    const saved = JSON.parse(localStorage.getItem('t3_score')||'null');
+    if (saved) score = saved;
+  } catch {}
+  updateScore();
+
+  const X = 'X';   // Player
+  const O = 'O';   // AI
+  let cells = Array(9).fill(null);
+  let current = X;
+  let playing = false;
+  let aiStarts = false;
+
+  const wins = [
+    [0,1,2],[3,4,5],[6,7,8], // baris
+    [0,3,6],[1,4,7],[2,5,8], // kolom
+    [0,4,8],[2,4,6]          // diagonal
+  ];
+
+  function startGame(first = 'player'){
+    cells = Array(9).fill(null);
+    current = first === 'ai' ? O : X;
+    aiStarts = (first === 'ai');
+    playing = true;
+    resultEl.textContent = '';
+    statusEl.textContent = (current===X) ?
+      'Giliran kamu (X). Pilih kotak.' :
+      'AI memulai (O)...';
+    renderBoard(true);
+
+    if (current === O) {
+      // Sedikit jeda agar terasa natural
+      setTimeout(aiMove, 260);
+    }
+  }
+
+  function renderBoard(fresh=false){
+    boardEl.innerHTML = '';
+    cells.forEach((val, i)=>{
+      const d = document.createElement('div');
+      d.className = 'cell' + (val ? ' '+val.toLowerCase() : '');
+      d.setAttribute('role','button');
+      d.setAttribute('aria-label', `Kotak ${i+1}`);
+      d.dataset.i = i;
+      d.textContent = val ? val : '';
+      if (val) d.classList.add('pop');
+      if (!playing || val) d.classList.add('disabled');
+      d.addEventListener('click', onCell);
+      boardEl.appendChild(d);
+    });
+  }
+
+  function onCell(e){
+    if (!playing) return;
+    const i = +e.currentTarget.dataset.i;
+    if (cells[i]) return;
+    if (current !== X) return; // tunggu AI
+
+    move(i, X);
+    const end = checkEnd();
+    if (end.over) return finish(end);
+
+    // AI jalan
+    setTimeout(aiMove, 220);
+  }
+
+  function move(i, who){
+    cells[i] = who;
+    current = (who===X) ? O : X;
+    renderBoard();
+  }
+
+  function aiMove(){
+    if (!playing) return;
+    const i = bestMove(cells, O);
+    move(i, O);
+    const end = checkEnd();
+    if (end.over) return finish(end);
+    statusEl.textContent = 'Giliran kamu (X).';
+  }
+
+  function checkWin(board, who){
+    return wins.some(w => w.every(idx => board[idx] === who));
+  }
+  function available(board){
+    const arr=[]; for(let i=0;i<9;i++) if(!board[i]) arr.push(i); return arr;
+  }
+  function checkEnd(){
+    if (checkWin(cells, X)) return {over:true, winner:X};
+    if (checkWin(cells, O)) return {over:true, winner:O};
+    if (available(cells).length===0) return {over:true, winner:null};
+    return {over:false};
+  }
+
+  // Minimax + alpha-beta pruning
+  function bestMove(board, ai){
+    let bestScore = -Infinity, moveIndex = -1;
+    const av = available(board);
+    // prefer tengah/pojok bila nilai sama (sedikit heuristik)
+    const order = [4,0,2,6,8,1,3,5,7].filter(v => av.includes(v));
+    for (const idx of order){
+      const b2 = board.slice(); b2[idx] = ai;
+      const score = minimax(b2, 0, false, -Infinity, Infinity);
+      if (score > bestScore){
+        bestScore = score; moveIndex = idx;
+      }
+    }
+    return moveIndex;
+  }
+  function minimax(board, depth, isMax, alpha, beta){
+    if (checkWin(board, O)) return 10 - depth;   // AI menang: semakin cepat semakin bagus
+    if (checkWin(board, X)) return depth - 10;   // Player menang: semakin lama semakin “bagus” utk AI
+    const av = available(board);
+    if (av.length===0) return 0;                 // seri
+
+    if (isMax){
+      let best = -Infinity;
+      for (const i of av){
+        board[i]=O;
+        const val = minimax(board, depth+1, false, alpha, beta);
+        board[i]=null;
+        best = Math.max(best, val);
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const i of av){
+        board[i]=X;
+        const val = minimax(board, depth+1, true, alpha, beta);
+        board[i]=null;
+        best = Math.min(best, val);
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+  }
+
+  function finish(end){
+    playing = false;
+    renderBoard(); // disable klik
+    if (end.winner === X){
+      resultEl.textContent = 'Kamu Menang! (Luar biasa 👏)';
+      score.player++;
+    } else if (end.winner === O){
+      resultEl.textContent = 'Kamu Kalah. AI terlalu lihai 😈';
+      score.ai++;
+    } else {
+      resultEl.textContent = 'Seri. Nice try.';
+      score.draw++;
+    }
+    saveScore();
+    updateScore();
+    statusEl.textContent = aiStarts ? 'Klik “Mulai Ulang” atau pilih siapa yang mulai.' : 'Klik “Mulai Ulang” atau pilih siapa yang mulai.';
+  }
+
+  function updateScore(){
+    sPlayerEl.textContent = score.player;
+    sAIEl.textContent = score.ai;
+    sDrawEl.textContent = score.draw;
+  }
+  function saveScore(){
+    try{ localStorage.setItem('t3_score', JSON.stringify(score)); }catch{}
+  }
+
+  // Buttons
+  startPlayerBtn.addEventListener('click', ()=> startGame('player'));
+  startAIBtn.addEventListener('click', ()=> startGame('ai'));
+  restartBtn.addEventListener('click', ()=> startGame(aiStarts ? 'ai' : 'player'));
+  resetScoreBtn.addEventListener('click', ()=>{
+    score={player:0,ai:0,draw:0}; saveScore(); updateScore();
+    resultEl.textContent=''; statusEl.textContent='Skor direset. Pilih siapa yang mulai.';
+    cells=Array(9).fill(null); playing=false; renderBoard(true);
+  });
+
+  // Inisialisasi papan kosong
+  renderBoard(true);
+})();
+</script>
+</body>
+</html>
