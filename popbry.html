@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Popbry — Azbry MD</title>
-  <meta name="description" content="Popcat versi Azbry-MD dengan tema neon hijau dan gaya satu layar." />
+  <title>Popbry (Azbry-MD)</title>
+  <meta name="description" content="Popcat versi Azbry-MD bertema neon hijau dengan gaya klasik satu layar." />
   <style>
     :root {
       --bg:#07090d; --text:#e6f0ff; --muted:#93a3b8; --neon:#39ff14; --ring:#39ff1480;
@@ -18,46 +18,42 @@
       display:flex;flex-direction:column;align-items:center;justify-content:center;
     }
 
-    /* Header */
     header {
       position:absolute;top:0;width:100%;text-align:center;
-      padding:10px 0;
-      font-weight:900;font-size:1.4rem;letter-spacing:.5px;
+      padding:12px 0;font-weight:900;font-size:1.6rem;letter-spacing:.5px;
       color:var(--neon);text-shadow:0 0 10px var(--ring);
     }
     header small {
       display:block;
-      font-size:0.8rem;
+      font-size:0.85rem;
       font-weight:500;
       color:var(--muted);
       margin-top:2px;
     }
 
-    /* Score */
     #score {
       position:absolute;
-      top:12%;
+      top:14%;
       font-size:clamp(3rem,8vw,7rem);
       font-weight:900;
       text-shadow:0 0 15px var(--ring);
       color:var(--neon);
     }
 
-    /* Cat */
     #cat {
-      width:min(75vw,480px);
+      width:min(80vw,480px);
       user-select:none;
-      filter:drop-shadow(0 0 24px rgba(57,255,20,.25));
       transition:transform .08s ease;
+      filter:drop-shadow(0 0 24px rgba(57,255,20,.25));
     }
 
-    /* Footer */
     footer {
       position:absolute;
       bottom:20px;
       text-align:center;
       font-size:1rem;
       color:var(--muted);
+      line-height:1.4;
     }
     footer b {color:var(--neon)}
     .floaty {
@@ -70,7 +66,7 @@
 <body>
   <header>
     POPBRY <span style="font-size:0.85em;">(Azbry-MD)</span>
-    <small>by Vndbry Evo</small>
+    <small>by FebryWesker</small>
   </header>
 
   <div id="score">0</div>
@@ -84,27 +80,26 @@
 
   <script>
     const $ = id => document.getElementById(id);
-    const el = {cat:$('cat'), score:$('score'), l:$('local'), g:$('global')};
+    const el = { cat: $('cat'), score: $('score'), l: $('local'), g: $('global') };
 
-    // ===== Pop Sound =====
+    // ==== SOUND ====
     const AudioSys = (() => {
       let ctx;
       function ensure(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
       function pop(){
         ensure();
         const o=ctx.createOscillator(), g=ctx.createGain();
-        o.type='square'; o.frequency.value=520;
-        g.gain.value=0.06;
+        o.type='square'; o.frequency.value=520; g.gain.value=0.06;
         o.connect(g).connect(ctx.destination);
         o.start();
         o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
         g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
         o.stop(ctx.currentTime + 0.1);
       }
-      return {pop};
+      return { pop };
     })();
 
-    // ===== Data Lokal =====
+    // ==== STORE ====
     const fmt = new Intl.NumberFormat('id-ID');
     const Store = (() => {
       let local = Number(localStorage.getItem('azbry_local')||0);
@@ -123,7 +118,7 @@
       return { add, updateUI };
     })();
 
-    // ===== Floaty + Animasi =====
+    // ==== FLOATY EFFECT ====
     function floaty(text, x, y){
       const n=document.createElement('div');
       n.className='floaty'; n.textContent=text;
@@ -138,13 +133,13 @@
       })();
     }
 
-    // ===== Interaksi =====
+    // ==== CLICK ====
     function openMouth(){
-      el.cat.src = "assets/img/popup.png?v="+Math.random();
+      el.cat.src = "assets/img/popup.png?" + Math.random(); // paksa refresh
       el.cat.style.transform = "scale(0.95)";
     }
     function closeMouth(){
-      el.cat.src = "assets/img/popin.png?v="+Math.random();
+      el.cat.src = "assets/img/popin.png?" + Math.random();
       el.cat.style.transform = "scale(1)";
     }
 
@@ -155,7 +150,7 @@
       AudioSys.pop();
       Store.add(1);
       floaty('+1', x, y);
-      setTimeout(closeMouth, 110);
+      setTimeout(closeMouth, 120);
     }
 
     window.addEventListener('mousedown', handleClick);
