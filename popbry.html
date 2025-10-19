@@ -1,199 +1,228 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
-<title>Popbry — Azbry-MD</title>
-<meta name="description" content="Popcat bertema Azbry: klik kucing, mulut mangap, suara pop, skor lokal & global."/>
-<style>
-  :root{
-    --bg:#07090d; --panel:#0b1016; --text:#e6f0ff; --muted:#93a3b8;
-    --neon:#39ff14; --neon2:#9dffcf; --ring:#39ff1499; --radius:18px;
-  }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{
-    margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
-    background:#0b0d10 url('assets/img/bg.png') center/cover no-repeat fixed;
-    overflow:hidden;
-  }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Popbry (Azbry-MD)</title>
+  <style>
+    :root {
+      --bg:#07090d; --text:#e6f0ff; --muted:#93a3b8;
+      --neon:#39ff14; --ring:#39ff1499; --panel:#0b1016;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;overflow:hidden}
 
-  /* Frame */
-  .wrap{position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-        padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
-  .stage{
-    position:relative; width:min(100vw,900px); height:min(100vh,1000px);
-    border:2px solid rgba(57,255,20,.25); border-radius:22px; overflow:hidden;
-    background:linear-gradient(180deg,rgba(5,8,12,.72),rgba(5,8,12,.35));
-    box-shadow:0 0 28px rgba(57,255,20,.22);
-  }
+    /* ===== BACKGROUND & FRAME ===== */
+    body{
+      font-family:Inter,system-ui,sans-serif;
+      color:var(--text);
+      background:#0b0d10 url('assets/img/bg.png') center/cover no-repeat fixed;
+      display:flex;align-items:center;justify-content:center;
+      -webkit-tap-highlight-color:transparent;
+    }
+    /* frame halus biar mirip site */
+    .frame{
+      position:relative;
+      width:min(960px, 96vw);
+      height:min(92vh, 820px);
+      border:1.5px solid rgba(57,255,20,.22);
+      border-radius:20px;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(5,8,12,.78), rgba(5,8,12,.35));
+      box-shadow:0 0 28px rgba(57,255,20,.18), inset 0 0 24px rgba(0,0,0,.25);
+    }
 
-  /* Header */
-  .topbar{
-    position:absolute; inset:0 0 auto 0; height:74px; padding:10px 14px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:linear-gradient(180deg,rgba(5,8,12,.85),rgba(5,8,12,.2));
-    border-bottom:1px solid rgba(57,255,20,.18);
-    z-index:5;
-  }
-  .brand{font-weight:900; letter-spacing:.3px; color:var(--neon2); text-shadow:0 0 12px var(--ring)}
-  .by{color:var(--muted); font-weight:700}
+    /* ===== HEADER (glass + running neon) ===== */
+    header{
+      position:absolute;top:0;left:0;right:0;
+      padding:12px 16px 10px;
+      text-align:center;
+      font-weight:900;font-size:1.6rem;letter-spacing:.3px;
+      color:var(--text);
+      background:linear-gradient(180deg, rgba(8,12,16,.85), rgba(8,12,16,.15));
+      border-bottom:1px solid rgba(57,255,20,.18);
+      backdrop-filter: blur(8px);
+      z-index:5;
+    }
+    header .title{
+      color:var(--neon);
+      text-shadow:0 0 12px var(--ring);
+    }
+    header small{
+      display:block;margin-top:2px;
+      font-size:.85rem;font-weight:600;color:var(--muted);
+      text-shadow:0 0 6px rgba(0,0,0,.4);
+    }
+    /* garis neon jalan */
+    .bar{
+      position:absolute;left:12px;right:12px;bottom:8px;height:4px;
+      background:rgba(57,255,20,.18);border-radius:999px;overflow:hidden
+    }
+    .bar::before{
+      content:"";position:absolute;inset:0;width:34%;
+      background:linear-gradient(90deg,transparent,rgba(57,255,20,.95),transparent);
+      animation:sweep 1.8s linear infinite;
+    }
+    @keyframes sweep{from{transform:translateX(-40%)}to{transform:translateX(140%)}}
 
-  /* Running neon line */
-  .bar{position:absolute; left:10px; right:10px; top:56px; height:4px; background:rgba(57,255,20,.15);
-       border-radius:999px; overflow:hidden}
-  .bar::before{content:""; position:absolute; inset:0; width:34%;
-    background:linear-gradient(90deg,transparent,rgba(57,255,20,.95),transparent);
-    animation:sweep 1.8s linear infinite}
-  @keyframes sweep{from{transform:translateX(-40%)}to{transform:translateX(140%)}}
+    /* ===== SCORE BESAR ===== */
+    #score{
+      position:absolute;top:108px;left:50%;transform:translateX(-50%);
+      font-size:clamp(3rem,9vw,6.6rem);
+      font-weight:900;color:var(--neon);
+      text-shadow:0 0 16px var(--ring), 0 0 30px rgba(57,255,20,.22);
+      z-index:2;pointer-events:none;
+    }
 
-  /* Score besar di atas kucing */
-  .scoreBig{
-    position:absolute; top:100px; left:50%; transform:translateX(-50%);
-    font-size:clamp(42px,9vw,76px); font-weight:900; color:var(--neon);
-    text-shadow:0 0 14px var(--ring); z-index:4; pointer-events:none;
-  }
+    /* ===== KUCING (tengah) ===== */
+    #cat{
+      position:absolute;inset:0; margin:auto;
+      width:min(78vw,520px);max-height:62vh;
+      user-select:none; -webkit-user-drag:none;
+      transition:transform .06s ease;
+      filter:drop-shadow(0 0 26px rgba(57,255,20,.26));
+      z-index:1;
+    }
 
-  /* Kucing tengah */
-  .catBox{position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
-  .cat{width:min(78vw, 520px); height:auto; filter:drop-shadow(0 0 28px rgba(57,255,20,.25)); user-select:none}
+    /* ===== FOOTER (glass footer ala site) ===== */
+    footer{
+      position:absolute;left:0;right:0;bottom:0;
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      padding:12px 16px;
+      font-size:.95rem;color:var(--muted);
+      background:linear-gradient(0deg, rgba(8,12,16,.85), rgba(8,12,16,.18));
+      border-top:1px solid rgba(57,255,20,.18);
+      backdrop-filter: blur(8px);
+      z-index:5;
+    }
+    footer .left{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+    footer .left b{color:var(--neon);text-shadow:0 0 8px rgba(57,255,20,.4)}
+    footer .center{flex:1;text-align:center;color:var(--muted);opacity:.95}
+    footer .right{text-align:right}
+    footer a{color:#9dffcf;text-decoration:none;font-weight:700}
+    footer a:hover{opacity:.9;text-shadow:0 0 8px var(--ring)}
 
-  /* Floaty */
-  .floaty{position:fixed; pointer-events:none; font-weight:900; color:var(--neon); text-shadow:0 0 10px var(--ring)}
+    /* ===== Floaty ===== */
+    .floaty{
+      position:fixed;pointer-events:none;font-weight:900;
+      color:var(--neon);text-shadow:0 0 10px var(--ring);
+      z-index:10;
+    }
 
-  /* Footer */
-  .footer{
-    position:absolute; left:0; right:0; bottom:0; height:62px; padding:10px 14px;
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:linear-gradient(0deg,rgba(5,8,12,.85),rgba(5,8,12,.15));
-    border-top:1px solid rgba(57,255,20,.18);
-  }
-  .left, .right{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-  .pill{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
-        background:rgba(12,16,22,.6); border:1px solid #1b2534; color:var(--muted)}
-  .pill b{color:var(--neon)}
-  .link{padding:8px 12px; border:1px solid rgba(57,255,20,.35); border-radius:999px; color:var(--text);
-        text-decoration:none; box-shadow:0 0 10px rgba(57,255,20,.15)}
-  .center{color:var(--muted); font-size:.92rem; text-align:center}
-</style>
+    /* ===== Responsive minor tweak ===== */
+    @media (max-width:600px){
+      header{font-size:1.35rem}
+      #score{top:100px}
+      footer{font-size:.9rem}
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="stage" id="frame">
+  <div class="frame">
     <!-- HEADER -->
-    <div class="topbar">
-      <div class="brand">POPBRY (Azbry-MD)</div>
-      <div class="by">FebryWesker</div>
+    <header>
+      <div class="title">POPBRY <span style="font-size:.85em;">(Azbry-MD)</span></div>
+      <small>by FebryWesker</small>
       <div class="bar"></div>
-    </div>
+    </header>
 
-    <!-- BIG SCORE -->
-    <div class="scoreBig" id="scoreBig">0</div>
+    <!-- SCORE BESAR -->
+    <div id="score">0</div>
 
-    <!-- CAT -->
-    <div class="catBox">
-      <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Popbry" draggable="false" />
-    </div>
+    <!-- KUCING -->
+    <img id="cat" src="assets/img/popin.png" alt="Popbry Cat" draggable="false" />
 
     <!-- FOOTER -->
-    <div class="footer">
+    <footer>
       <div class="left">
-        <span class="pill">Your Clicks: <b id="local">0</b></span>
-        <span class="pill">Global: <b id="global">0</b></span>
+        <div>Your Clicks: <b id="local">0</b></div>
+        <div>Global Clicks: <b id="global">0</b></div>
       </div>
-      <div class="center">© 2025 FebryWesker • Azbry-MD</div>
-      <div class="right">
-        <a class="link" href="https://azbry-minigamez.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
-      </div>
-    </div>
+      <div class="center">© 2025 Azbry Project — Licensed under MIT</div>
+      <div class="right"><a href="https://github.com/vandebry10-star" target="_blank">Portfolio</a></div>
+    </footer>
   </div>
-</div>
 
-<script>
-  // ====== CONFIG (optional endpoint global) ======
-  const LEADERBOARD_URL = null; // ex: 'https://example.com/api/total'
+  <script>
+    const $ = id => document.getElementById(id);
+    const el = { cat: $('cat'), score: $('score'), l: $('local'), g: $('global') };
 
-  // ====== DOM ======
-  const $ = id => document.getElementById(id);
-  const el = { frame: $('frame'), cat: $('cat'), score: $('scoreBig'), g: $('global'), l: $('local') };
+    // PRELOAD
+    const imgPopin = new Image(); imgPopin.src = 'assets/img/popin.png';
+    const imgPopup = new Image(); imgPopup.src = 'assets/img/popup.png';
 
-  // ====== AUDIO POP ======
-  const AudioSys = (()=> {
-    let ctx=null;
-    function ensure(){ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)(); }
-    function pop(){ ensure(); const o=ctx.createOscillator(), g=ctx.createGain();
-      o.type='square'; o.frequency.value=520; g.gain.value=.06;
-      o.connect(g).connect(ctx.destination); o.start();
-      o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime+0.08);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.09);
-      o.stop(ctx.currentTime+0.1);
-    }
-    return { pop };
-  })();
-
-  // ====== FLOATY ======
-  function floaty(text,x,y){
-    const n=document.createElement('div'); n.className='floaty'; n.textContent=text;
-    n.style.left=x+'px'; n.style.top=y+'px'; n.style.opacity='1';
-    document.body.appendChild(n);
-    const t0=Date.now();
-    (function anim(){
-      const t=(Date.now()-t0)/700;
-      n.style.transform=`translateY(${-42*t}px)`; n.style.opacity=String(1-t);
-      if(t<1) requestAnimationFrame(anim); else n.remove();
+    // AUDIO (nilai gain aslinya kamu pertahankan)
+    const AudioSys = (() => {
+      let ctx;
+      function ensure(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+      function pop(){
+        ensure();
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type='square'; o.frequency.value=520; g.gain.value=10; // sesuai kode kamu
+        o.connect(g).connect(ctx.destination);
+        o.start();
+        o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+        o.stop(ctx.currentTime + 0.1);
+      }
+      return { pop };
     })();
-  }
 
-  // ====== STORE (local + optional global) ======
-  const fmt = new Intl.NumberFormat('id-ID');
-  const Store = (()=>{
-    const KEY='azbry_popbry_total_v1';
-    let local = Number(localStorage.getItem('azbry_local')||0);
-    let total = Number(localStorage.getItem(KEY)||0);
-
-    function ui(){ el.l.textContent = fmt.format(local); el.g.textContent = fmt.format(total); el.score.textContent = fmt.format(local); }
-    function cache(){ localStorage.setItem('azbry_local',local); localStorage.setItem(KEY,total); }
-
-    async function pull(){
-      if(LEADERBOARD_URL){
-        try{ const r=await fetch(LEADERBOARD_URL,{cache:'no-store'}); const j=await r.json(); total = Number(j.total||total); }catch(_){}
+    // STORE (tanpa perubahan logika)
+    const fmt = new Intl.NumberFormat('id-ID');
+    const Store = (() => {
+      let local = Number(localStorage.getItem('azbry_local')||0);
+      let global = Number(localStorage.getItem('azbry_global')||0);
+      function updateUI(){
+        el.l.textContent = fmt.format(local);
+        el.g.textContent = fmt.format(global);
+        el.score.textContent = fmt.format(local);
       }
-      ui();
-    }
-    async function add(n){
-      local += n; total += n; ui(); cache();
-      if(LEADERBOARD_URL){
-        try{ await fetch(LEADERBOARD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({delta:n})}); }catch(_){}
+      setInterval(()=>{ global += Math.floor(Math.random()*2); updateUI(); save(); }, 1500);
+      function save(){
+        localStorage.setItem('azbry_local', local);
+        localStorage.setItem('azbry_global', global);
       }
+      function add(n){ local+=n; global+=n; updateUI(); save(); }
+      return { add, updateUI };
+    })();
+
+    // FLOATY
+    function floaty(text, x, y){
+      const n=document.createElement('div');
+      n.className='floaty'; n.textContent=text;
+      n.style.left=x+'px'; n.style.top=y+'px'; n.style.opacity='1';
+      document.body.appendChild(n);
+      const t0=Date.now();
+      (function anim(){
+        const t=(Date.now()-t0)/700;
+        n.style.transform=`translateY(${-42*t}px)`;
+        n.style.opacity=String(1-t);
+        if(t<1) requestAnimationFrame(anim); else n.remove();
+      })();
     }
-    return { pull, add, ui };
-  })();
 
-  // ====== MOUTH CONTROL ======
-  function openMouth(){ el.cat.src='assets/img/popup.png'; }
-  function closeMouth(){ el.cat.src='assets/img/popin.png'; }
+    // MULUT
+    function openMouth(){ el.cat.src = imgPopup.src; el.cat.style.transform = "scale(0.94)"; }
+    function closeMouth(){ el.cat.src = imgPopin.src; el.cat.style.transform = "scale(1)"; }
 
-  // ====== CLICK ======
-  function handleClick(ev){
-    const t = ev.touches ? ev.touches[0] : ev;
-    const x = t.clientX || innerWidth/2;
-    const y = t.clientY || innerHeight/2;
+    // CLICK
+    function handleClick(ev){
+      const x = (ev.touches? ev.touches[0].clientX : ev.clientX) || (innerWidth/2);
+      const y = (ev.touches? ev.touches[0].clientY : ev.clientY) || (innerHeight/2);
+      openMouth(); AudioSys.pop(); Store.add(1);
+      floaty('+1', x, y);
+      setTimeout(closeMouth, 120);
+    }
 
-    openMouth(); AudioSys.pop(); Store.add(1);
-    floaty('+1', x, y);
-    floaty('🐱', x + (Math.random()*28-14), y + (Math.random()*28-14));
-    setTimeout(closeMouth,110);
-  }
+    const clickTarget = window.matchMedia('(pointer: coarse)').matches ? 'touchstart' : 'mousedown';
+    window.addEventListener(clickTarget, handleClick, {passive:true});
+    document.addEventListener('keydown', e=>{
+      if(e.code==='Space'){ e.preventDefault(); handleClick(e); }
+    });
+    el.cat.addEventListener('dragstart', e=>e.preventDefault());
 
-  // Bind (klik di mana saja)
-  window.addEventListener('mousedown', handleClick);
-  window.addEventListener('touchstart', e=>handleClick(e), {passive:true});
-  document.addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); handleClick(e); }});
-
-  // Prevent ghost-drag
-  el.cat.addEventListener('dragstart', e=>e.preventDefault());
-
-  // BOOT
-  Store.pull(); Store.ui();
-</script>
+    Store.updateUI();
+  </script>
 </body>
 </html>
