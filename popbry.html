@@ -106,7 +106,7 @@
       function pop(){
         ensure();
         const o=ctx.createOscillator(), g=ctx.createGain();
-        o.type='square'; o.frequency.value=520; g.gain.value=0.2;
+        o.type='square'; o.frequency.value=520; g.gain.value=0.10;
         o.connect(g).connect(ctx.destination);
         o.start();
         o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
