@@ -1,47 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Astro Blip — Azbry-MD</title>
+  <title>Astro Blip • Azbry-MD</title>
   <link rel="stylesheet" href="assets/css/azbry.css">
+  <style>
+    /* Tambahan kecil yang belum ada di azbry.css */
+    .pill {
+      display:inline-flex; align-items:center; gap:10px;
+      padding:8px 12px; border-radius:999px;
+      background:rgba(184,255,154,.10); border:1px solid rgba(184,255,154,.35);
+      color:#dfffe0; font-weight:800; letter-spacing:.2px;
+      box-shadow:0 6px 22px rgba(184,255,154,.18);
+    }
+    .hud{position:fixed; inset:0 0 auto 0; padding:12px 12px 8px; z-index:10;}
+    .hud .row{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .scoreBig{position:fixed; top:72px; left:50%; transform:translateX(-50%);
+      font-weight:900; font-size:clamp(24px,7vw,52px); color:var(--neon); text-shadow:0 0 16px var(--ring); z-index:5;}
+    .hintWrap{position:fixed; top:48px; left:50%; transform:translateX(-50%); z-index:9;}
+    .legalWrap{position:fixed; bottom:10px; left:50%; transform:translateX(-50%); z-index:9;}
+    .legalWrap .pill a{color:var(--neon); text-decoration:none;}
+    canvas{display:block; position:fixed; inset:0; width:100vw; height:100vh; touch-action:none;}
+  </style>
 </head>
+<body class="azbry-bg">
 
-<body class="azbry-theme azbry-game">
+  <!-- HUD atas -->
+  <div class="hud">
+    <div class="row">
+      <div class="brand-mini">
+        <div class="mini-kicker">AZBRY-MD • MINI GAMES</div>
+        <div class="mini-title">Astro <b>Blip</b></div>
+      </div>
 
-  <!-- HEADER -->
-  <header class="azbry-header">
-    <div>
-      <div class="azbry-sub">AZBRY-MD • MINI GAMES</div>
-      <h1 class="azbry-title">Astro Blip</h1>
+      <div class="row" style="gap:8px">
+        <span id="bestPill" class="pill">Best: <span id="best">0</span></span>
+        <a class="btn-neon" href="index.html">Kembali</a>
+      </div>
     </div>
-    <div class="azbry-hud">
-      <span class="azbry-badge">Best: <b id="best">0</b></span>
-      <span class="azbry-badge">CD <span class="azbry-bar"><i id="cd"></i></span></span>
-      <a class="azbry-btn" href="index.html">← Kembali</a>
-    </div>
-  </header>
-
-  <!-- SCORE -->
-  <div id="score" class="azbry-score">0</div>
-
-  <!-- CANVAS -->
-  <canvas id="game"></canvas>
-
-  <!-- HINT -->
-  <div class="azbry-hint">
-    🎯 Tujuan: hancurkan drone sebanyak mungkin. Seret untuk gerak, tap untuk menembak (ada cooldown).
   </div>
 
-  <!-- FOOTER -->
-  <footer class="azbry-footer">
-    <span>© <span id="y"></span> Azbry-MD</span>
-    <span>Lisensi MIT • Dikelola oleh FebryWesker •
-      <a href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
-    </span>
-  </footer>
+  <!-- Tujuan (atas, pill horizontal) -->
+  <div class="hintWrap">
+    <div class="pill">🎯 Tujuan: hancurkan drone sebanyak mungkin. Seret untuk gerak. Auto-fire aktif.</div>
+  </div>
 
-  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  <!-- Skor berjalan (di dekat atas) -->
+  <div id="scoreBig" class="scoreBig">0</div>
+
+  <!-- Kanvas game -->
+  <canvas id="game"></canvas>
+
+  <!-- Lisensi & Portofolio (bawah, pill) -->
+  <div class="legalWrap">
+    <div class="pill">© 2025 Azbry-MD • Lisensi MIT • Dikelola oleh FebryWesker •
+      <a href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
+    </div>
+  </div>
+
   <script src="assets/js/astroblip.js"></script>
 </body>
 </html>
