@@ -1,0 +1,53 @@
+/* === AZBRY THEME (persis index) === */
+:root{
+  --bg:#0b0d10; --panel:#111418; --ink:#e6e8ec; --muted:#98a2b3;
+  --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.22);
+  --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{
+  margin:0; color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(1200px 800px at 20% -10%, rgba(184,255,154,.06), transparent 40%),
+    radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
+    linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
+}
+
+/* Topbar / Pills / Buttons persis index */
+.topbar{
+  position:fixed; top:0; left:0; right:0; z-index:10;
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:12px 16px; background:rgba(17,20,24,.45); backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.brand{display:flex; flex-direction:column}
+.brand .sub{color:var(--muted); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.25px}
+.brand .title{margin:0; font-weight:800; letter-spacing:.2px; font-size:clamp(18px,4vw,22px)}
+.badge{
+  display:inline-flex; gap:8px; align-items:center; background:rgba(184,255,154,.09);
+  color:#dfffe0; border:1px solid var(--ring); padding:6px 10px; border-radius:999px;
+  font-size:12px; font-weight:800; letter-spacing:.3px
+}
+.btn{
+  display:inline-flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; font-weight:800; text-decoration:none; cursor:pointer;
+  color:#0b0d10; background:linear-gradient(180deg,var(--accent),var(--accent2)); border:0;
+  box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)
+}
+.btn.ghost{background:transparent; color:var(--ink); border:1px solid rgba(255,255,255,.12); box-shadow:none}
+
+.panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),var(--panel);
+  border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow);
+}
+
+/* Footer persis index */
+.footer{
+  position:fixed; left:0; right:0; bottom:0; padding:10px 16px;
+  display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  color:#b8c0cc; font-size:13px; background:rgba(17,20,24,.45);
+  border-top:1px solid rgba(255,255,255,.06); backdrop-filter:blur(8px);
+}
+
+/* Utility */
+.center{display:flex; align-items:center; justify-content:center}
+.neon{color:var(--accent2); text-shadow:0 0 10px var(--ring)}
