@@ -1,266 +1,229 @@
-/* Astro Blip — Azbry-MD (portrait, Azbry theme)
-   - batas gerak tank
-   - cooldown real + bar
-   - score & best (localStorage)
-   - tap = shoot, drag = gerak
-*/
-
+/* Astro Blip – Azbry-MD (auto-fire, batas gerak, HUD baru) */
 (() => {
   const cvs = document.getElementById('game');
-  const ctx = cvs.getContext('2d');
-  const dpr = Math.max(1, Math.min(2, devicePixelRatio || 1));
+  const ctx = cvs.getContext('2d', { alpha: false });
 
-  const elScore = document.getElementById('score');
-  const elBest  = document.getElementById('best');
-  const elCdBar = document.getElementById('cd');
+  // HUD refs
+  const scoreEl = document.getElementById('scoreBig');
+  const bestEl  = document.getElementById('best');
+  const BEST_KEY = 'ab_ast_best_v2';
 
-  // ===== Game state
-  const state = {
-    w: 0, h: 0,
-    playing: true,
-    score: 0,
-    best: Number(localStorage.getItem('azbry_astro_best') || 0),
-    // player (tank)
-    px: 0, py: 0, pr: 16, // radius
-    speed: 7,
-    minX: 0, maxX: 0,     // batas gerak
-    // shooting
-    cooldown: 380,        // ms
-    lastShot: 0,
-    bullets: [],
-    enemies: [],
-    nextEnemy: 0,
+  // Theme colors (sinkron dgn azbry.css)
+  const BG_TOP = '#0b0d10';
+  const GRID_GLOW = 'rgba(57,255,20,0.12)';
+  const NEON = '#39ff14';
+
+  // Game params
+  const WORLD = { w: innerWidth, h: innerHeight };
+  const PADDING_X = 16;             // batas gerak tank dari tepi
+  const TANK_SIZE = 44;
+  const BULLET_W = 5, BULLET_H = 12, BULLET_SPEED = 640; // px/s
+  const FIRE_INTERVAL = 180;        // ms (auto-fire)
+  const DRONE_SPAWN = 800;          // ms
+  const DRONE_MIN_R = 18, DRONE_MAX_R = 32;
+  const DRONE_SPEED = [90, 160];    // px/s range turun
+  const CLEAN_BELOW = 40;
+
+  let lastTime = 0;
+  let score = 0;
+  let best  = Number(localStorage.getItem(BEST_KEY) || 0);
+  bestEl.textContent = best;
+
+  const tank = {
+    x: WORLD.w * 0.5,
+    y: WORLD.h - 120,
+    targetX: null
   };
 
-  elBest.textContent = state.best;
+  /** Entities */
+  const bullets = [];
+  const drones  = [];
 
-  // ===== Resize (portrait)
+  /** Resize canvas */
   function resize() {
-    state.w = Math.floor(innerWidth  * dpr);
-    state.h = Math.floor(innerHeight * dpr);
-    cvs.width  = state.w;
-    cvs.height = state.h;
-    cvs.style.width  = (state.w / dpr) + 'px';
-    cvs.style.height = (state.h / dpr) + 'px';
-
-    // Player start (bottom center)
-    state.py = state.h - 120 * dpr;
-    state.px = state.w / 2;
-
-    // Batas gerak (padding kiri/kanan)
-    const pad = 32 * dpr;
-    state.minX = pad;
-    state.maxX = state.w - pad;
-
-    // Kecilkan hint agar tidak nutup player
-    const hint = document.getElementById('hint');
-    if (hint) hint.style.bottom = Math.round(76 + (envSafeInset('bottom'))) + 'px';
+    WORLD.w = innerWidth; WORLD.h = innerHeight;
+    cvs.width = WORLD.w;  cvs.height = WORLD.h;
+    tank.y = WORLD.h - 120;
+    clampTank();
+    drawBackdrop(true);
   }
-  window.addEventListener('resize', resize, {passive: true});
+  addEventListener('resize', resize, { passive:true });
   resize();
 
-  // ===== Helpers
-  function envSafeInset(edge) {
-    // fallback 0, Safari iOS pakai env(safe-area-inset-*)
-    try { return parseInt(getComputedStyle(document.documentElement).getPropertyValue(`env(safe-area-inset-${edge})`)||0,10) || 0; }
-    catch { return 0; }
-  }
-  const now = () => performance.now();
+  /** Background neon grid */
+  function drawBackdrop(clearOnly=false) {
+    ctx.fillStyle = BG_TOP;
+    ctx.fillRect(0,0,cvs.width,cvs.height);
 
-  function drawGlowCircle(x, y, r, color) {
-    ctx.save();
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 18 * dpr;
-    ctx.fillStyle = color;
+    if (clearOnly) return;
+    // subtle grid + vignette
+    const step = 48;
+    ctx.strokeStyle = GRID_GLOW;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
+    for (let x=0; x<=cvs.width; x+=step) {
+      ctx.moveTo(x, cvs.height); ctx.lineTo(x, cvs.height*0.55);
+    }
+    for (let y=cvs.height; y>=cvs.height*0.55; y-=step) {
+      ctx.moveTo(0,y); ctx.lineTo(cvs.width,y);
+    }
+    ctx.stroke();
+
+    // vignette
+    const g = ctx.createRadialGradient(
+      cvs.width*0.5, cvs.height*0.4, 80,
+      cvs.width*0.5, cvs.height*0.6, Math.max(cvs.width,cvs.height)*0.9
+    );
+    g.addColorStop(0,'rgba(0,0,0,0)');
+    g.addColorStop(1,'rgba(0,0,0,0.6)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,cvs.width,cvs.height);
   }
 
-  // ===== Player (tank icon)
-  function drawTank(x, y) {
-    // tank stylized neon (pakai rect + turret)
-    const baseW = 44 * dpr, baseH = 18 * dpr;
-    const towerW = 28 * dpr, towerH = 16 * dpr;
-    const barrelW = 8 * dpr, barrelH = 16 * dpr;
-    const col = '#39ff14';
-
-    // glow
+  /** Drawing helpers */
+  function drawTank() {
     ctx.save();
-    ctx.shadowColor = col; ctx.shadowBlur = 18 * dpr;
-
-    // base
-    ctx.fillStyle = col;
-    ctx.fillRect(x - baseW/2, y - baseH/2, baseW, baseH);
-
-    // tower
-    ctx.fillRect(x - towerW/2, y - baseH/2 - towerH, towerW, towerH);
-
-    // barrel (ke atas)
-    ctx.fillRect(x - barrelW/2, y - baseH/2 - towerH - barrelH, barrelW, barrelH);
+    ctx.translate(tank.x, tank.y);
+    ctx.shadowColor = NEON; ctx.shadowBlur = 18;
+    ctx.fillStyle = NEON;
+    // Bentuk tank pixel-simple (ikon)
+    ctx.fillRect(-12, -6, 24, 12);         // body
+    ctx.fillRect(-6, -18, 12, 12);         // tower
+    ctx.fillRect(-3, -26, 6, 10);          // canon
     ctx.restore();
   }
 
-  // ===== Input: drag & tap
-  let dragging = false;
-  let lastTap = 0;
-
-  function onDown(e) {
-    dragging = true;
-    moveFromEvent(e);
-    tryShoot();
-  }
-  function onMove(e) {
-    if (!dragging) return;
-    moveFromEvent(e);
-  }
-  function onUp() {
-    dragging = false;
-  }
-  function moveFromEvent(e) {
-    const t = e.touches ? e.touches[0] : e;
-    let targetX = t.clientX * dpr;
-    // batas gerak
-    if (targetX < state.minX) targetX = state.minX;
-    if (targetX > state.maxX) targetX = state.maxX;
-    state.px = targetX;
-  }
-  function onTap(e) {
-    // tap cepat (tanpa drag)
-    const t = now();
-    if (t - lastTap < 350) { // double tap pun tetap shoot 1x karena cooldown
-      tryShoot();
-    } else {
-      tryShoot();
-    }
-    lastTap = t;
+  function drawBullet(b) {
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.fillStyle = NEON;
+    ctx.shadowColor = NEON; ctx.shadowBlur = 12;
+    ctx.fillRect(-BULLET_W/2, -BULLET_H, BULLET_W, BULLET_H);
+    ctx.restore();
   }
 
-  cvs.addEventListener('mousedown', onDown);
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
-
-  cvs.addEventListener('touchstart', onDown, {passive:true});
-  window.addEventListener('touchmove', onMove, {passive:true});
-  window.addEventListener('touchend', onUp, {passive:true});
-  cvs.addEventListener('click', onTap);
-
-  document.addEventListener('keydown', (e)=>{
-    if (e.code==='Space') { e.preventDefault(); tryShoot(); }
-    if (e.code==='ArrowLeft')  { state.px = Math.max(state.minX, state.px - 36*dpr); }
-    if (e.code==='ArrowRight') { state.px = Math.min(state.maxX, state.px + 36*dpr); }
-  });
-
-  // ===== Shoot + cooldown
-  function tryShoot() {
-    const t = now();
-    if (t - state.lastShot < state.cooldown) return; // masih dingin
-
-    state.lastShot = t;
-    // bullet
-    state.bullets.push({
-      x: state.px,
-      y: state.py - 48 * dpr,
-      r: 6 * dpr,
-      vy: -10 * dpr
-    });
+  function drawDrone(d) {
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    const g = ctx.createRadialGradient(0,0,2, 0,0,d.r);
+    g.addColorStop(0,'#dfffe0'); g.addColorStop(1,'rgba(184,255,154,0.15)');
+    ctx.fillStyle = g;
+    ctx.shadowColor = NEON; ctx.shadowBlur = 22;
+    ctx.beginPath(); ctx.arc(0,0,d.r,0,Math.PI*2); ctx.fill();
+    ctx.restore();
   }
 
-  // ===== Enemies spawn
-  function spawnEnemy() {
-    const r = (12 + Math.random()*16) * dpr;
-    const x = (r + Math.random()*(state.w - 2*r));
-    state.enemies.push({
-      x, y: -r-10, r,
-      vy: (1.6 + Math.random()*1.8) * dpr
-    });
+  /** Spawn logic */
+  let fireTimer = 0;
+  let droneTimer = 0;
+
+  function spawnBullet() {
+    bullets.push({ x: tank.x, y: tank.y-28 });
   }
 
-  // ===== Loop
-  function loop(ts) {
-    if (!state.playing) return;
+  function spawnDrone() {
+    const r = rand(DRONE_MIN_R, DRONE_MAX_R);
+    const x = rand(PADDING_X + r, WORLD.w - PADDING_X - r);
+    const v = rand(DRONE_SPEED[0], DRONE_SPEED[1]);
+    drones.push({ x, y: -r-10, r, v });
+  }
 
-    // Clear
-    ctx.clearRect(0,0,state.w,state.h);
-
-    // Background subtle grid/glow
-    drawBackdrop();
-
-    // Player
-    drawTank(state.px, state.py);
-    drawGlowCircle(state.px, state.py, 10*dpr, 'rgba(57,255,20,.25)');
-
-    // Bullets
-    for (let i=state.bullets.length-1;i>=0;i--){
-      const b = state.bullets[i];
-      b.y += b.vy;
-      if (b.y < -20*dpr) { state.bullets.splice(i,1); continue; }
-      drawGlowCircle(b.x, b.y, b.r, '#b8ff9a');
+  /** Update */
+  function update(dt) {
+    // auto fire
+    fireTimer += dt*1000;
+    if (fireTimer >= FIRE_INTERVAL) {
+      fireTimer = 0;
+      spawnBullet();
     }
 
-    // Enemies + spawn
-    if (ts > state.nextEnemy) {
-      state.nextEnemy = ts + (750 + Math.random()*850); // jeda spawn
-      spawnEnemy();
+    // spawn drone
+    droneTimer += dt*1000;
+    if (droneTimer >= DRONE_SPAWN) {
+      droneTimer = 0;
+      spawnDrone();
     }
-    for (let i=state.enemies.length-1;i>=0;i--){
-      const e = state.enemies[i];
-      e.y += e.vy;
-      if (e.y - e.r > state.h + 40*dpr) { // lewat bawah: game lanjut, gak minus skor
-        state.enemies.splice(i,1); 
-        continue;
-      }
-      drawGlowCircle(e.x, e.y, e.r, '#9dffcf');
 
-      // collision bullet vs enemy
-      let hit = false;
-      for (let j=state.bullets.length-1;j>=0;j--){
-        const b = state.bullets[j];
-        const dx = e.x - b.x, dy = e.y - b.y;
-        if (dx*dx + dy*dy <= (e.r + b.r)*(e.r + b.r)) {
-          // destroy
-          state.bullets.splice(j,1);
-          hit = true;
+    // bullets
+    for (let i=bullets.length-1;i>=0;i--){
+      const b = bullets[i];
+      b.y -= BULLET_SPEED * dt;
+      if (b.y < -BULLET_H) bullets.splice(i,1);
+    }
+
+    // drones
+    for (let i=drones.length-1;i>=0;i--){
+      const d = drones[i];
+      d.y += d.v * dt;
+      if (d.y - d.r > WORLD.h + CLEAN_BELOW) drones.splice(i,1);
+    }
+
+    // collisions
+    for (let i=drones.length-1;i>=0;i--){
+      const d = drones[i];
+      for (let j=bullets.length-1;j>=0;j--){
+        const b = bullets[j];
+        const dx = d.x - b.x, dy = d.y - b.y;
+        if (dx*dx + dy*dy <= (d.r+8)*(d.r+8)) {
+          bullets.splice(j,1);
+          drones.splice(i,1);
+          score++;
+          scoreEl.textContent = score;
+          if (score > best) {
+            best = score;
+            bestEl.textContent = best;
+            localStorage.setItem(BEST_KEY, String(best));
+          }
           break;
         }
       }
-      if (hit) {
-        // boom effect (sederhana)
-        for (let k=0;k<6;k++){
-          drawGlowCircle(e.x + (Math.random()*12-6)*dpr, e.y + (Math.random()*12-6)*dpr, 3*dpr, '#39ff14');
-        }
-        state.enemies.splice(i,1);
-        addScore(1);
-      }
     }
+  }
 
-    // UI (score + cooldown bar)
-    elScore.textContent = state.score;
-    const cdLeft = Math.max(0, 1 - ((now()-state.lastShot)/state.cooldown));
-    elCdBar.style.width = (Math.round((1-cdLeft)*100)) + '%';
+  /** Render */
+  function render() {
+    drawBackdrop();
+    // draw entities
+    for (const d of drones) drawDrone(d);
+    for (const b of bullets) drawBullet(b);
+    drawTank();
+  }
 
+  /** Game loop */
+  function loop(t) {
+    if (!lastTime) lastTime = t;
+    const dt = Math.min(0.033, (t - lastTime)/1000);
+    lastTime = t;
+
+    update(dt);
+    render();
     requestAnimationFrame(loop);
   }
-
-  function addScore(n) {
-    state.score += n;
-    if (state.score > state.best) {
-      state.best = state.score;
-      localStorage.setItem('azbry_astro_best', String(state.best));
-      elBest.textContent = state.best;
-    }
-  }
-
-  function drawBackdrop(){
-    // halus, cukup gradient bawah biar ada lantai sense
-    const grad = ctx.createLinearGradient(0, state.h*0.7, 0, state.h);
-    grad.addColorStop(0, 'rgba(57,255,20,0)');
-    grad.addColorStop(1, 'rgba(57,255,20,0.08)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, state.h*0.7, state.w, state.h*0.3);
-  }
-
-  // Boot
   requestAnimationFrame(loop);
+
+  /** Input: drag horizontal */
+  let dragging = false;
+  function pointerXY(ev){
+    if (ev.touches && ev.touches[0]) return { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
+    return { x: ev.clientX, y: ev.clientY };
+  }
+  function clampTank(){
+    tank.x = Math.max(PADDING_X + TANK_SIZE*0.5, Math.min(WORLD.w - (PADDING_X + TANK_SIZE*0.5), tank.x));
+  }
+  function onDown(ev){ dragging = true; const p = pointerXY(ev); tank.x = p.x; clampTank(); }
+  function onMove(ev){ if(!dragging) return; const p = pointerXY(ev); tank.x = p.x; clampTank(); }
+  function onUp(){ dragging = false; }
+
+  cvs.addEventListener('mousedown', onDown);
+  addEventListener('mousemove', onMove, { passive:true });
+  addEventListener('mouseup', onUp);
+
+  cvs.addEventListener('touchstart', onDown, { passive:true });
+  addEventListener('touchmove', onMove, { passive:true });
+  addEventListener('touchend', onUp);
+
+  /** Utils */
+  function rand(a,b){ return a + Math.random()*(b-a); }
+
+  // Reset skor saat reload page (opsional tak reset best)
+  score = 0; scoreEl.textContent = score;
 })();
