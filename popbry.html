@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Popbry (Azbry-MD)</title>
   <style>
-    :root {--bg:#07090d;--text:#e6f0ff;--muted:#93a3b8;--neon:#39ff14;--ring:#39ff1480;}
+    :root {
+      --bg:#07090d; --text:#e6f0ff; --muted:#93a3b8;
+      --neon:#39ff14; --ring:#39ff1480;
+    }
     *{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden}
     body{
@@ -14,51 +17,89 @@
       color:var(--text);
       display:flex;flex-direction:column;align-items:center;justify-content:center;
     }
+
+    /* HEADER */
     header{
       position:absolute;top:0;width:100%;text-align:center;
       padding:12px 0;font-weight:900;font-size:1.6rem;
       color:var(--neon);text-shadow:0 0 10px var(--ring);
     }
-    header small{display:block;font-size:0.85rem;font-weight:500;color:var(--muted);}
+    header small{
+      display:block;font-size:0.85rem;font-weight:500;color:var(--muted);
+    }
+
+    /* SCORE BESAR */
     #score{
       position:absolute;top:14%;
-      font-size:clamp(3rem,8vw,7rem);font-weight:900;
-      text-shadow:0 0 15px var(--ring);color:var(--neon);
+      font-size:clamp(3rem,8vw,7rem);
+      font-weight:900;color:var(--neon);
+      text-shadow:0 0 15px var(--ring);
     }
+
+    /* KUCING */
     #cat{
       width:min(80vw,480px);user-select:none;
       transition:transform .05s ease;
       filter:drop-shadow(0 0 24px rgba(57,255,20,.25));
     }
+
+    /* FOOTER AREA */
     footer{
-      position:absolute;bottom:20px;text-align:center;
-      font-size:1rem;color:var(--muted);line-height:1.4;
+      position:absolute;bottom:0;left:0;width:100%;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 20px;
+      font-size:0.95rem;color:var(--muted);
+      background:rgba(11,13,16,0.3);
+      border-top:1px solid rgba(57,255,20,0.1);
+      backdrop-filter:blur(8px);
     }
-    footer b{color:var(--neon)}
-    .floaty{position:fixed;pointer-events:none;
-      font-weight:900;color:var(--neon);
-      text-shadow:0 0 10px var(--ring);
+    footer .left{display:flex;flex-direction:column;align-items:flex-start;}
+    footer .left b{color:var(--neon)}
+    footer .center{text-align:center;flex:1;font-size:0.9rem;color:var(--muted);}
+    footer .right{text-align:right;}
+    footer a{
+      color:var(--neon2,var(--neon));
+      text-decoration:none;font-weight:600;
+    }
+    footer a:hover{opacity:.8;text-shadow:0 0 8px var(--ring);}
+    .floaty{
+      position:fixed;pointer-events:none;font-weight:900;
+      color:var(--neon);text-shadow:0 0 10px var(--ring);
     }
   </style>
 </head>
 <body>
-  <header>POPBRY <span style="font-size:0.85em;">(Azbry-MD)</span><small>by FebryWesker</small></header>
+  <header>
+    POPBRY <span style="font-size:0.85em;">(Azbry-MD)</span>
+    <small>by FebryWesker</small>
+  </header>
+
   <div id="score">0</div>
+
   <img id="cat" src="assets/img/popin.png" alt="Popbry Cat" draggable="false" />
+
   <footer>
-    <div>Your Clicks: <b id="local">0</b></div>
-    <div>Global Clicks: <b id="global">0</b></div>
+    <div class="left">
+      <div>Your Clicks: <b id="local">0</b></div>
+      <div>Global Clicks: <b id="global">0</b></div>
+    </div>
+    <div class="center">
+      <span>© 2025 Azbry Project — Licensed under MIT</span>
+    </div>
+    <div class="right">
+      <a href="https://github.com/vandebry10-star" target="_blank">Portfolio</a>
+    </div>
   </footer>
 
   <script>
     const $ = id => document.getElementById(id);
     const el = { cat: $('cat'), score: $('score'), l: $('local'), g: $('global') };
 
-    // ===== Preload both images =====
+    // ===== PRELOAD =====
     const imgPopin = new Image(); imgPopin.src = 'assets/img/popin.png';
     const imgPopup = new Image(); imgPopup.src = 'assets/img/popup.png';
 
-    // ===== Pop sound =====
+    // ===== AUDIO =====
     const AudioSys = (() => {
       let ctx;
       function ensure(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
@@ -75,7 +116,7 @@
       return { pop };
     })();
 
-    // ===== Store =====
+    // ===== STORE =====
     const fmt = new Intl.NumberFormat('id-ID');
     const Store = (() => {
       let local = Number(localStorage.getItem('azbry_local')||0);
@@ -94,7 +135,7 @@
       return { add, updateUI };
     })();
 
-    // ===== Floaty effect =====
+    // ===== FLOATY =====
     function floaty(text, x, y){
       const n=document.createElement('div');
       n.className='floaty'; n.textContent=text;
@@ -109,7 +150,7 @@
       })();
     }
 
-    // ===== Click logic =====
+    // ===== ANIMASI MULUT =====
     function openMouth(){
       el.cat.src = imgPopup.src;
       el.cat.style.transform = "scale(0.93)";
@@ -119,6 +160,7 @@
       el.cat.style.transform = "scale(1)";
     }
 
+    // ===== CLICK LOGIC =====
     function handleClick(ev){
       const x = (ev.touches? ev.touches[0].clientX : ev.clientX) || (innerWidth/2);
       const y = (ev.touches? ev.touches[0].clientY : ev.clientY) || (innerHeight/2);
@@ -129,14 +171,11 @@
       setTimeout(closeMouth, 120);
     }
 
-    // ===== Use only one click handler (avoid double) =====
     const clickTarget = window.matchMedia('(pointer: coarse)').matches ? 'touchstart' : 'mousedown';
     window.addEventListener(clickTarget, handleClick, {passive:true});
-
     document.addEventListener('keydown', e=>{
       if(e.code==='Space'){ e.preventDefault(); handleClick(e); }
     });
-
     el.cat.addEventListener('dragstart', e=>e.preventDefault());
     Store.updateUI();
   </script>
