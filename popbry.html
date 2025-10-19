@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nasi Uduk Click — Azbry</title>
+  <meta name="description" content="Popcat versi Azbry: kucing di tengah, klik ganti mulut, +1 floaty, suara pop, leaderboard global." />
+  <style>
+    :root{
+      --bg:#07090d; --panel:#0c1016; --text:#e6f0ff; --muted:#93a3b8;
+      --neon:#39ff14; --neon2:#9dffcf; --ring:#39ff1480; --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      background:#0b0d10 url("assets/img/bg.png") center/cover no-repeat fixed;
+      overflow:hidden;
+    }
+
+    /* Topbar */
+    .topbar{position:fixed; top:0; left:0; right:0; padding:10px 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      backdrop-filter: blur(6px);
+      background:linear-gradient(180deg, rgba(7,9,13,.85), rgba(7,9,13,.35));
+      border-bottom:1px solid #1b2534;
+    }
+    .brand{font-weight:900; letter-spacing:.2px; color:var(--neon2); text-shadow:0 0 14px var(--ring)}
+    .leader{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+      background:rgba(12,16,22,.6); border:1px solid #1b2534; color:var(--muted)}
+    .pill b{color:var(--neon)}
+
+    /* Stage */
+    .stage{position:absolute; inset:0; display:flex; align-items:center; justify-content:center}
+    .cat{width:min(78vw, 520px); height:auto; user-select:none; -webkit-user-drag:none;
+      image-rendering:-webkit-optimize-contrast; filter: drop-shadow(0 0 24px rgba(57,255,20,.25));}
+
+    /* Floaty */
+    .floaty{position:fixed; pointer-events:none; font-weight:900; color:var(--neon);
+      text-shadow:0 0 10px var(--ring); will-change: transform, opacity}
+
+    /* Helper */
+    .help{position:fixed; left:50%; transform:translateX(-50%); bottom:12px; color:var(--muted);
+      font-size:.95rem; background:rgba(12,16,22,.55); border:1px solid #1b2534; border-radius:12px; padding:6px 10px}
+  </style>
+  <!-- Preload assets -->
+  <link rel="preload" as="image" href="assets/img/popin.png">
+  <link rel="preload" as="image" href="assets/img/popup.png">
+</head>
+<body>
+  <!-- TOP / LEADERBOARD -->
+  <div class="topbar">
+    <div class="brand">AZBRY • POPCAT</div>
+    <div class="leader">
+      <span class="pill">Global Clicks: <b id="global">0</b></span>
+      <span class="pill">Your Clicks: <b id="local">0</b></span>
+      <span class="pill" id="status" style="display:none"></span>
+    </div>
+  </div>
+
+  <!-- CENTER CAT -->
+  <div class="stage" id="stage">
+    <img id="cat" class="cat" src="assets/img/popin.png" alt="Azbry Cat" draggable="false"/>
+  </div>
+
+  <div class="help">Tap/klik layar • suara pop & efek +1 🐱</div>
+
+  <script>
+    // ====== CONFIG ======
+    const LEADERBOARD_URL = "/api/leaderboard"; // ganti kalau endpoint beda
+
+    // ====== ELEMENTS ======
+    const $ = (id) => document.getElementById(id);
+    const el = { stage:$("stage"), cat:$("cat"), g:$("global"), l:$("local"), status:$("status") };
+    const fmt = new Intl.NumberFormat("id-ID");
+
+    // ====== AUDIO (tanpa asset) ======
+    const AudioSys = (() => {
+      let ctx=null;
+      function ensure(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); }
+      function pop(){
+        ensure();
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type="square"; o.frequency.value=520 + Math.random()*40;
+        g.gain.value=.06; o.connect(g).connect(ctx.destination);
+        o.start();
+        o.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+        o.stop(ctx.currentTime + 0.1);
+      }
+      return { pop };
+    })();
+
+    // ====== FLOATY ======
+    function floaty(text, x, y){
+      const n=document.createElement("div");
+      n.className="floaty"; n.textContent=text;
+      n.style.left=x+"px"; n.style.top=y+"px";
+      n.style.opacity="1"; n.style.transform="translateY(0)";
+      document.body.appendChild(n);
+      const t0=Date.now();
+      (function anim(){
+        const t=(Date.now()-t0)/700;
+        n.style.transform=`translateY(${-42*t}px)`;
+        n.style.opacity=String(1-t);
+        if(t<1) requestAnimationFrame(anim); else n.remove();
+      })();
+    }
+
+    // ====== STORE (client + server) ======
+    const Store = (() => {
+      const KEY = "azbry_popcat_total_v1";
+      let local = Number(localStorage.getItem("azbry_local")||0);
+      let global = Number(localStorage.getItem(KEY)||0);
+
+      function ui(){ el.g.textContent = fmt.format(global); el.l.textContent = fmt.format(local); }
+      function cache(){ localStorage.setItem("azbry_local", local); localStorage.setItem(KEY, global); }
+
+      async function pull(){
+        try{
+          const r = await fetch(LEADERBOARD_URL, { cache:"no-store" });
+          if(!r.ok) throw 0;
+          const j = await r.json();
+          global = Number(j.total||0);
+          el.status.style.display="none";
+          cache(); ui();
+        }catch{
+          el.status.style.display="inline-flex";
+          el.status.textContent = "offline cache";
+        }
+      }
+
+      async function add(n){
+        local += n; global += n; ui(); cache();
+        try{
+          const r=await fetch(LEADERBOARD_URL, {
+            method:"POST", headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify({ delta:n })
+          });
+          const j = await r.json();
+          if(r.ok && j && typeof j.total!=="undefined"){
+            global = Number(j.total||0); cache(); ui();
+            el.status.style.display="none";
+          }
+        }catch{
+          el.status.style.display="inline-flex";
+          el.status.textContent = "queued";
+        }
+      }
+      return { pull, add, ui };
+    })();
+
+    // ====== INTERACTION ======
+    function openMouth(){ el.cat.src = "assets/img/popup.png"; }
+    function closeMouth(){ el.cat.src = "assets/img/popin.png"; }
+
+    function handleClick(ev){
+      const t = ev.touches ? ev.touches[0] : ev;
+      const x = t?.clientX ?? innerWidth/2;
+      const y = t?.clientY ?? innerHeight/2;
+      openMouth(); AudioSys.pop(); Store.add(1);
+      floaty("+1", x, y);
+      floaty("🐱", x + (Math.random()*30-15), y + (Math.random()*30-15));
+      setTimeout(closeMouth, 110);
+    }
+
+    // klik di mana pun (ala Popcat)
+    window.addEventListener("mousedown", handleClick);
+    window.addEventListener("touchstart", (e)=>handleClick(e), {passive:true});
+    document.addEventListener("keydown", (e)=>{ if(e.code==="Space"){ e.preventDefault(); handleClick(e); }});
+
+    // cegah drag ghost image
+    el.cat.addEventListener("dragstart", e=>e.preventDefault());
+
+    // ====== BOOT ======
+    Store.ui();
+    Store.pull();               // fetch total pertama
+    setInterval(Store.pull, 3000); // refresh tiap 3 detik (ringan)
+  </script>
+</body>
+</html>
