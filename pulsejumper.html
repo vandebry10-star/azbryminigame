@@ -2,188 +2,319 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pulse Jumper — Azbry-MD</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+<title>Pulse Jumper — Azbry Portrait</title>
 <style>
-  :root {
-    --bg:#07090d; --neon:#39ff14; --text:#e6f0ff; --muted:#93a3b8;
-  }
+  :root{ --neon:#39ff14; --neonSoft:#9dffcf; --text:#e6f0ff; --muted:#93a3b8; }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{height:100%;overflow:hidden}
+  html,body{height:100%;background:#000}
   body{
-    font-family:Inter,system-ui,sans-serif;
+    font-family:Inter,system-ui,sans-serif; color:var(--text);
     background:#0b0d10 url('assets/img/bg.png') center/cover no-repeat fixed;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    color:var(--text);
+    overscroll-behavior:none;
   }
-  h1{
-    position:absolute;top:20px;
-    color:var(--neon);text-shadow:0 0 10px var(--neon);
-    font-weight:900;letter-spacing:.5px;
+  /* Container portrait: jaga rasio 9:16 */
+  .wrap{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  #score{
-    position:absolute;top:60px;font-size:1.2rem;color:var(--muted);
+  .frame{
+    width:min(100vw, 420px);         /* batas max lebar hp */
+    height:min(100vh, 840px);        /* batasi ketinggian */
+    aspect-ratio: 9 / 16;
+    position:relative; border:2px solid rgba(57,255,20,.25);
+    border-radius:16px; overflow:hidden;
+    box-shadow:0 0 24px rgba(57,255,20,.25);
+    background:rgba(5,8,10,.55);
+    backdrop-filter: blur(2px);
+    touch-action: none; /* buat mencegah zoom/scroll saat tap */
   }
-  #best{
-    position:absolute;top:84px;font-size:1rem;color:var(--neon);
+
+  /* HUD TOP: bar neon bergerak, judul, skor */
+  .hud{
+    position:absolute; top:0; left:0; right:0; padding:10px 12px 8px;
+    background:linear-gradient(180deg,rgba(5,8,12,.8),rgba(5,8,12,.1));
+    border-bottom:1px solid rgba(57,255,20,.18);
+    z-index:5;
   }
-  #restart{
-    position:absolute;bottom:20px;
-    background:transparent;border:1px solid var(--neon);
-    color:var(--text);padding:8px 16px;border-radius:8px;
-    cursor:pointer;font-weight:600;display:none;
-    text-shadow:0 0 8px var(--neon);
+  .title{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    font-weight:900; letter-spacing:.3px;
   }
-  #restart:hover{background:rgba(57,255,20,.1);}
-  canvas{
-    border:2px solid rgba(57,255,20,.3);
-    background:rgba(5,8,10,0.7);
-    box-shadow:0 0 20px rgba(57,255,20,.2);
-    border-radius:10px;
+  .title .brand{ color:var(--neonSoft); text-shadow:0 0 10px rgba(57,255,20,.6); }
+  .title .by{ color:var(--muted); font-weight:600; font-size:.9rem; }
+  .bar{
+    margin-top:6px; height:4px; width:100%; background:rgba(57,255,20,.15); border-radius:999px;
+    overflow:hidden; position:relative;
   }
+  .bar::before{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(90deg, transparent, rgba(57,255,20,.9), transparent);
+    width:35%; animation: sweep 1.8s linear infinite;
+  }
+  @keyframes sweep { from{transform:translateX(-40%)} to{transform:translateX(140%)} }
+
+  .stats{
+    margin-top:8px; display:flex; justify-content:space-between; font-weight:700;
+    color:var(--muted);
+  }
+  .stats b{ color:var(--neon); text-shadow:0 0 8px rgba(57,255,20,.5); }
+
+  /* SCORE besar di tengah atas */
+  .scoreBig{
+    position:absolute; top:18%; left:50%; transform:translateX(-50%);
+    font-size: clamp(2.5rem, 9vw, 4rem);
+    color:var(--neon); font-weight:900; text-shadow:0 0 14px rgba(57,255,20,.6);
+    z-index:4; pointer-events:none;
+  }
+
+  /* Canvas permainan memenuhi frame */
+  canvas{ position:absolute; inset:0; width:100%; height:100%; }
+
+  /* Tombol restart */
+  .restart{
+    position:absolute; bottom:16px; left:50%; transform:translateX(-50%);
+    background:transparent; border:1px solid var(--neon); color:var(--text);
+    padding:10px 16px; border-radius:10px; font-weight:700; display:none;
+    box-shadow:0 0 10px rgba(57,255,20,.25);
+  }
+  .restart:active{ transform:translateX(-50%) scale(.98); }
+
+  /* Floaty saat klik (opsional, kecil) */
+  .floaty{ position:absolute; pointer-events:none; color:var(--neon); font-weight:900; text-shadow:0 0 10px rgba(57,255,20,.7); }
 </style>
 </head>
 <body>
-<h1>Pulse Jumper 🌵</h1>
-<div id="score">Score: 0</div>
-<div id="best">Best: 0</div>
-<canvas id="game" width="480" height="260"></canvas>
-<button id="restart">Restart</button>
+<div class="wrap">
+  <div class="frame" id="gameFrame">
+    <div class="hud">
+      <div class="title">
+        <div class="brand">POPBRY • PULSE JUMPER</div>
+        <div class="by">Azbry-MD</div>
+      </div>
+      <div class="bar"></div>
+      <div class="stats">
+        <div>Score: <b id="scoreSmall">0</b></div>
+        <div>Best: <b id="bestSmall">0</b></div>
+      </div>
+    </div>
+
+    <div class="scoreBig" id="scoreBig">0</div>
+    <canvas id="game"></canvas>
+    <button class="restart" id="restart">Restart</button>
+  </div>
+</div>
 
 <script>
-const cvs=document.getElementById('game');
-const ctx=cvs.getContext('2d');
-const scoreEl=document.getElementById('score');
-const bestEl=document.getElementById('best');
-const restartBtn=document.getElementById('restart');
+(() => {
+  // ===== DOM refs
+  const frame = document.getElementById('gameFrame');
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const scoreSmall = document.getElementById('scoreSmall');
+  const bestSmall  = document.getElementById('bestSmall');
+  const scoreBig   = document.getElementById('scoreBig');
+  const restartBtn = document.getElementById('restart');
 
-// ==== Load assets ====
-const bg = new Image(); bg.src = 'assets/img/bg.png';
-const catOpen = new Image(); catOpen.src = 'assets/img/popup.png';
-const catClose = new Image(); catClose.src = 'assets/img/popin.png';
-let catImg = catClose;
+  // ===== Responsive canvas (fit frame)
+  function resizeCanvas(){
+    const rect = frame.getBoundingClientRect();
+    cvs.width  = Math.floor(rect.width);
+    cvs.height = Math.floor(rect.height);
+  }
+  resizeCanvas();
+  addEventListener('resize', resizeCanvas);
 
-// ==== Vars ====
-const gravity=0.5;
-let isJumping=false, jumpPower=9;
-let score=0, best=Number(localStorage.getItem('pulse_best')||0);
-let gameOver=false;
-let obstacles=[]; let spawnTimer=0;
+  // ===== Assets
+  const bg = new Image();    bg.src = 'assets/img/bg.png';
+  const catOpen  = new Image(); catOpen.src  = 'assets/img/popup.png';
+  const catClose = new Image(); catClose.src = 'assets/img/popin.png';
+  let catImg = catClose;
 
-// ==== Player ====
-const player={ x:60,y:200,w:60,h:60,vy:0 };
+  // ===== Game vars (portrait tuned)
+  const groundY = () => Math.floor(cvs.height * 0.78);  // posisi tanah relatif
+  const gravity = 0.6;
+  const jumpPower = Math.max(8, Math.min(12, cvs.height * 0.015)); // skala sesuai tinggi layar
+  let isJumping = false;
+  let score = 0;
+  let best  = Number(localStorage.getItem('pulse_best') || 0);
+  let gameOver = false;
 
-// ==== Sound ====
-function popSound(){
-  const ctxA=new (window.AudioContext||window.webkitAudioContext)();
-  const o=ctxA.createOscillator(), g=ctxA.createGain();
-  o.type='square'; o.frequency.value=400;
-  g.gain.value=.08; o.connect(g).connect(ctxA.destination);
-  o.start(); o.stop(ctxA.currentTime+0.1);
-}
-
-// ==== Kaktus Neon ====
-function drawCactus(x,y,scale=1){
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
-  ctx.lineWidth=2;
-  ctx.strokeStyle='#39ff14';
-  ctx.shadowColor='#39ff14';
-  ctx.shadowBlur=10;
-  ctx.beginPath();
-  // batang utama
-  ctx.moveTo(0,0); ctx.lineTo(0,-30);
-  // cabang kiri
-  ctx.moveTo(-8,-10); ctx.lineTo(-8,-25);
-  ctx.lineTo(-3,-25);
-  // cabang kanan
-  ctx.moveTo(8,-15); ctx.lineTo(8,-32);
-  ctx.lineTo(3,-32);
-  ctx.stroke();
-  ctx.shadowBlur=0;
-  ctx.restore();
-}
-
-// ==== Loop ====
-function loop(){
-  if(gameOver) return;
-  requestAnimationFrame(loop);
-  ctx.clearRect(0,0,cvs.width,cvs.height);
-  ctx.drawImage(bg,0,0,cvs.width,cvs.height);
-
-  // Player physics
-  player.y+=player.vy;
-  player.vy+=gravity;
-  if(player.y>200){player.y=200;player.vy=0;isJumping=false;catImg=catClose;}
-
-  // Player
-  ctx.save();
-  ctx.shadowColor='#39ff14';
-  ctx.shadowBlur=15;
-  ctx.drawImage(catImg, player.x, player.y, player.w, player.h);
-  ctx.restore();
+  // Player size relatif biar proporsional portrait
+  const baseUnit = Math.min(cvs.width, cvs.height);
+  const player = {
+    x: Math.floor(cvs.width * 0.18),
+    y: groundY(),
+    w: Math.floor(baseUnit * 0.12),
+    h: Math.floor(baseUnit * 0.12),
+    vy: 0
+  };
 
   // Obstacles
-  spawnTimer--;
-  if(spawnTimer<=0){
-    const size = Math.random()*0.8+0.7;
-    obstacles.push({x:cvs.width,y:220,scale:size,speed:4});
-    spawnTimer=90+Math.random()*60;
-  }
-  obstacles.forEach(o=>{
-    o.x-=o.speed;
-    drawCactus(o.x,o.y,o.scale);
-  });
-  obstacles=obstacles.filter(o=>o.x>-40);
+  let obstacles = [];
+  let spawnTimer = 0;
 
-  // Collision
-  obstacles.forEach(o=>{
-    const cactusW=15*o.scale, cactusH=35*o.scale;
-    if(player.x < o.x+cactusW && player.x+player.w > o.x &&
-       player.y+player.h > o.y-cactusH){
-      gameOver=true;
-      restartBtn.style.display='block';
-      ctx.fillStyle='rgba(0,0,0,.5)';
-      ctx.fillRect(0,0,cvs.width,cvs.height);
-      ctx.fillStyle='#39ff14';
-      ctx.font='bold 24px Inter';
-      ctx.fillText('💀 Game Over', cvs.width/2-80, cvs.height/2);
-      if(score>best){
-        best=Math.floor(score);
-        localStorage.setItem('pulse_best',best);
-      }
-      bestEl.textContent="Best: "+best;
+  // ===== Sound (tap)
+  function popSound(){
+    const ctxA = new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctxA.createOscillator(), g=ctxA.createGain();
+    o.type='square'; o.frequency.value=420; g.gain.value=.08;
+    o.connect(g).connect(ctxA.destination);
+    o.start(); o.stop(ctxA.currentTime + 0.1);
+  }
+
+  // ===== Draw cactus (Azbry)
+  function drawCactus(x, y, scale=1){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.lineWidth = Math.max(1.5, cvs.width*0.002);
+    ctx.strokeStyle = '#39ff14';
+    ctx.shadowColor = '#39ff14';
+    ctx.shadowBlur  = 10;
+
+    ctx.beginPath();
+    // batang
+    ctx.moveTo(0,0); ctx.lineTo(0,-30);
+    // cabang kiri
+    ctx.moveTo(-8,-8); ctx.lineTo(-8,-24); ctx.lineTo(-3,-24);
+    // cabang kanan
+    ctx.moveTo(8,-12); ctx.lineTo(8,-30); ctx.lineTo(3,-30);
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  }
+
+  // ===== Collision (bbox approx)
+  function collides(p, o){
+    // Perkiraan bounding box kaktus
+    const cW = 14 * o.scale;
+    const cH = 32 * o.scale;
+    return (p.x < o.x + cW) && (p.x + p.w > o.x) && (p.y + p.h > o.y - cH);
+  }
+
+  // ===== UI update
+  function updateUI(){
+    const s = Math.floor(score);
+    scoreSmall.textContent = s;
+    scoreBig.textContent   = s;
+    bestSmall.textContent  = best;
+  }
+
+  // ===== Loop
+  function loop(){
+    if(gameOver) return;
+    requestAnimationFrame(loop);
+
+    // Clear + bg
+    ctx.clearRect(0,0,cvs.width,cvs.height);
+    ctx.drawImage(bg, 0, 0, cvs.width, cvs.height);
+
+    // Ground line (tipis neon)
+    ctx.strokeStyle = 'rgba(57,255,20,.25)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, groundY()+player.h);
+    ctx.lineTo(cvs.width, groundY()+player.h);
+    ctx.stroke();
+
+    // Physics
+    player.y += player.vy;
+    player.vy += gravity;
+    const floor = groundY();
+    if(player.y > floor){
+      player.y = floor;
+      player.vy = 0;
+      isJumping = false;
+      catImg = catClose;
     }
+
+    // Player
+    ctx.save();
+    ctx.shadowColor = '#39ff14'; ctx.shadowBlur = 14;
+    ctx.drawImage(catImg, player.x, player.y - player.h, player.w, player.h); // y pakai top-left
+    ctx.restore();
+
+    // Spawner: kecepatan, gap, skala portrait-friendly
+    spawnTimer--;
+    if(spawnTimer <= 0){
+      // Cactus lebih kecil & ada variasi
+      const scale = (Math.random()*0.5 + 0.65) * (cvs.height/600); // skala relatif layar
+      const speed = Math.max(3.2, Math.min(5.5, cvs.width/160));   // kecepatan relatif lebar
+      obstacles.push({
+        x: cvs.width + 10,
+        y: floor + player.h - 8, // sedikit turun agar gap aman
+        scale, speed
+      });
+      // Interval spawn diberi jeda cukup → bisa dilompati
+      spawnTimer = Math.floor(70 + Math.random()*70);
+    }
+    // Move & draw cactus
+    obstacles.forEach(o=>{
+      o.x -= o.speed;
+      drawCactus(o.x, o.y, o.scale);
+    });
+    // Keep in bounds
+    obstacles = obstacles.filter(o => o.x > -40);
+
+    // Collision
+    for(const o of obstacles){
+      if(collides({x:player.x, y:player.y - player.h, w:player.w, h:player.h}, o)){
+        gameOver = true;
+        restartBtn.style.display = 'block';
+        // Overlay
+        ctx.fillStyle = 'rgba(0,0,0,.45)';
+        ctx.fillRect(0,0,cvs.width,cvs.height);
+        ctx.fillStyle = '#39ff14';
+        ctx.font = 'bold 24px Inter';
+        ctx.fillText('💀 Game Over', cvs.width/2 - 70, cvs.height/2);
+        // Best
+        const s = Math.floor(score);
+        if(s > best){
+          best = s;
+          localStorage.setItem('pulse_best', best);
+        }
+        updateUI();
+        return;
+      }
+    }
+
+    // Score
+    score += 0.025 * (cvs.width/360); // skala ringan berdasarkan lebar
+    updateUI();
+  }
+
+  // ===== Controls (single handler, anti double)
+  const isCoarse = matchMedia('(pointer: coarse)').matches;
+  function jump(){
+    if(!isJumping && !gameOver){
+      player.vy = -jumpPower;
+      isJumping = true;
+      catImg = catOpen;
+      popSound();
+    }
+  }
+  // Gunakan satu event utama sesuai device
+  const primaryEvt = isCoarse ? 'touchstart' : 'mousedown';
+  frame.addEventListener(primaryEvt, (e)=>{ e.preventDefault(); jump(); }, {passive:true});
+  addEventListener('keydown', e=>{ if(e.code==='Space'){ e.preventDefault(); jump(); }});
+
+  // Restart
+  restartBtn.addEventListener('click', ()=>{
+    obstacles = []; score = 0; gameOver = false;
+    player.y = groundY(); player.vy = 0; isJumping = false; catImg = catClose;
+    restartBtn.style.display = 'none';
+    updateUI();
+    loop();
   });
 
-  // Score
-  score+=0.02;
-  scoreEl.textContent="Score: "+Math.floor(score);
-}
-
-// ==== Jump ====
-function jump(){
-  if(!isJumping && !gameOver){
-    player.vy=-jumpPower;
-    isJumping=true;
-    catImg=catOpen;
-    popSound();
-  }
-}
-
-// ==== Controls ====
-window.addEventListener('keydown', e=>{if(e.code==='Space')jump();});
-window.addEventListener('mousedown', jump);
-window.addEventListener('touchstart', jump, {passive:true});
-
-restartBtn.addEventListener('click', ()=>{
-  obstacles=[];score=0;player.y=200;player.vy=0;
-  gameOver=false;restartBtn.style.display='none';loop();
-});
-
-bestEl.textContent="Best: "+best;
-loop();
+  // Init
+  best  = Number(localStorage.getItem('pulse_best')||0);
+  updateUI();
+  loop();
+})();
 </script>
 </body>
 </html>
