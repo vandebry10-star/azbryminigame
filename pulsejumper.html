@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse Jumper — Popbry Edition</title>
+<style>
+  :root {
+    --bg:#07090d; --neon:#39ff14; --text:#e6f0ff; --muted:#93a3b8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:Inter,system-ui,sans-serif;
+    background:radial-gradient(circle at center,#0b0d10,#07090d 80%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    color:var(--text);
+  }
+  h1{
+    position:absolute;top:20px;
+    color:var(--neon);text-shadow:0 0 10px var(--neon);
+    font-weight:900;letter-spacing:.5px;
+  }
+  #score{
+    position:absolute;top:60px;font-size:1.2rem;color:var(--muted);
+  }
+  #restart{
+    position:absolute;bottom:20px;
+    background:transparent;border:1px solid var(--neon);
+    color:var(--text);padding:8px 16px;border-radius:8px;
+    cursor:pointer;font-weight:600;display:none;
+    text-shadow:0 0 8px var(--neon);
+  }
+  #restart:hover{background:rgba(57,255,20,.1);}
+  canvas{
+    border:2px solid rgba(57,255,20,.3);
+    background:rgba(5,8,10,0.8);
+    box-shadow:0 0 20px rgba(57,255,20,.2);
+    border-radius:10px;
+  }
+</style>
+</head>
+<body>
+<h1>Pulse Jumper 🐱</h1>
+<div id="score">Score: 0</div>
+<canvas id="game" width="480" height="260"></canvas>
+<button id="restart">Restart</button>
+
+<script>
+const cvs=document.getElementById('game');
+const ctx=cvs.getContext('2d');
+const scoreEl=document.getElementById('score');
+const restartBtn=document.getElementById('restart');
+
+// ==== Load Kucing Popbry ====
+const catOpen = new Image();
+catOpen.src = 'assets/img/popup.png';
+const catClose = new Image();
+catClose.src = 'assets/img/popin.png';
+let catImg = catClose;
+
+// ==== Game Vars ====
+const gravity=0.5;
+let isJumping=false, jumpPower=9;
+let score=0, gameOver=false;
+let obstacles=[]; let spawnTimer=0;
+
+// ==== Player ====
+const player={
+  x:60,y:200,w:60,h:60,vy:0
+};
+
+// ==== Suara lompat ====
+function popSound(){
+  const ctxA=new (window.AudioContext||window.webkitAudioContext)();
+  const o=ctxA.createOscillator(), g=ctxA.createGain();
+  o.type='square'; o.frequency.value=400;
+  g.gain.value=.08; o.connect(g).connect(ctxA.destination);
+  o.start(); o.stop(ctxA.currentTime+0.1);
+}
+
+// ==== Loop ====
+function loop(){
+  if(gameOver) return;
+  requestAnimationFrame(loop);
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+
+  // Background Pulse
+  const pulse=Math.sin(Date.now()/300)*8+40;
+  ctx.fillStyle=`rgba(57,255,20,0.${Math.floor(pulse)})`;
+  ctx.fillRect(0,0,cvs.width,cvs.height);
+
+  // Player physics
+  player.y+=player.vy;
+  player.vy+=gravity;
+  if(player.y>200){player.y=200;player.vy=0;isJumping=false;catImg=catClose;}
+
+  // Draw player
+  ctx.save();
+  ctx.shadowColor='#39ff14';
+  ctx.shadowBlur=15;
+  ctx.drawImage(catImg, player.x, player.y, player.w, player.h);
+  ctx.restore();
+
+  // Obstacles
+  spawnTimer--;
+  if(spawnTimer<=0){
+    obstacles.push({x:cvs.width,y:220,w:20,h:30,speed:4});
+    spawnTimer=80+Math.random()*40;
+  }
+  obstacles.forEach(o=>{
+    o.x-=o.speed;
+    ctx.fillStyle='rgba(57,255,20,.7)';
+    ctx.fillRect(o.x,o.y,o.w,o.h);
+  });
+  obstacles=obstacles.filter(o=>o.x>-40);
+
+  // Collision
+  obstacles.forEach(o=>{
+    if(player.x < o.x+o.w && player.x+player.w > o.x &&
+       player.y+player.h > o.y){
+      gameOver=true;
+      restartBtn.style.display='block';
+      ctx.fillStyle='rgba(0,0,0,.5)';
+      ctx.fillRect(0,0,cvs.width,cvs.height);
+      ctx.fillStyle='#39ff14';
+      ctx.font='bold 24px Inter';
+      ctx.fillText('💀 Game Over', cvs.width/2-80, cvs.height/2);
+    }
+  });
+
+  // Score
+  score+=0.02;
+  scoreEl.textContent="Score: "+Math.floor(score);
+}
+
+// ==== Control ====
+function jump(){
+  if(!isJumping && !gameOver){
+    player.vy=-jumpPower;
+    isJumping=true;
+    catImg=catOpen; // buka mulut pas lompat
+    popSound();
+  }
+}
+
+window.addEventListener('keydown', e=>{if(e.code==='Space')jump();});
+window.addEventListener('mousedown', jump);
+window.addEventListener('touchstart', jump, {passive:true});
+
+restartBtn.addEventListener('click', ()=>{
+  obstacles=[];score=0;player.y=200;player.vy=0;
+  gameOver=false;restartBtn.style.display='none';loop();
+});
+
+// Mulai game
+loop();
+</script>
+</body>
+</html>
