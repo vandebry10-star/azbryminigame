@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard — Azbry Popcat</title>
+<style>
+  :root{
+    --bg:#07090d; --neon:#39ff14; --neon2:#9dffcf; --text:#e6f0ff; --muted:#a1b0c0;
+  }
+  body{
+    margin:0; font-family:Inter,system-ui; background:#0b0d10 url("assets/img/bg.png") center/cover fixed;
+    color:var(--text); display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; overflow:hidden;
+  }
+  h1{margin:20px 0;text-shadow:0 0 10px var(--neon);}
+  table{width:90%; max-width:480px; border-collapse:collapse; background:rgba(10,14,18,.8); border-radius:16px; overflow:hidden;}
+  th,td{text-align:left;padding:10px 12px;}
+  th{background:rgba(20,28,36,.7);border-bottom:1px solid #222;}
+  tr:nth-child(even){background:rgba(12,16,20,.6);}
+  .medal{font-size:1.4em;}
+  .back{margin-top:20px;color:var(--neon2);text-decoration:none;font-weight:600;}
+</style>
+</head>
+<body>
+  <h1>🏆 Azbry Leaderboard</h1>
+  <table id="board">
+    <thead><tr><th>#</th><th>Nama</th><th>Skor</th></tr></thead>
+    <tbody><tr><td colspan="3">Loading...</td></tr></tbody>
+  </table>
+  <a href="nasdukclick.html" class="back">⬅️ Kembali ke Game</a>
+
+  <script>
+    const nameKey="azbry_name";
+    async function ensureName(){
+      let name=localStorage.getItem(nameKey);
+      if(!name){
+        name=prompt("Masukkan nama kamu:");
+        if(!name) name="Anon"+Math.floor(Math.random()*9999);
+        localStorage.setItem(nameKey,name);
+      }
+      return name;
+    }
+    async function loadBoard(){
+      const res=await fetch("/api/leaderboard");
+      const j=await res.json();
+      const tb=document.querySelector("#board tbody");
+      tb.innerHTML="";
+      j.top.forEach((p,i)=>{
+        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1;
+        tb.innerHTML += `<tr><td class="medal">${medal}</td><td>${p.name}</td><td>${p.score}</td></tr>`;
+      });
+      if(!j.top.length) tb.innerHTML='<tr><td colspan="3">Belum ada data</td></tr>';
+    }
+    ensureName().then(loadBoard);
+    setInterval(loadBoard,5000);
+  </script>
+</body>
+</html>
