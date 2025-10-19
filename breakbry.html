@@ -1,197 +1,203 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Breakbry • Azbry-MD</title>
-  <link rel="stylesheet" href="assets/css/azbry.css?v=2">
-  <style>
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, system-ui, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      min-height: 100vh;
-    }
-    header {
-      text-align: center;
-      font-size: 1.6rem;
-      font-weight: 800;
-      margin-bottom: 4px;
-      color: var(--accent);
-      text-shadow: 0 0 10px var(--ring);
-    }
-    #info {
-      text-align: center;
-      font-size: 1rem;
-      color: var(--muted);
-      margin-bottom: 10px;
-    }
-    canvas {
-      background: #0d0f12;
-      border-radius: 20px;
-      box-shadow: 0 0 18px var(--ring);
-    }
-    #controls {
-      display: flex;
-      justify-content: center;
-      gap: 60px;
-      margin-top: 14px;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
-    }
-    .btn-arrow {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
-      border: none;
-      outline: none;
-      font-size: 2rem;
-      color: #0b0d10;
-      font-weight: bold;
-      background: linear-gradient(180deg, var(--accent), var(--accent2));
-      box-shadow: 0 0 25px var(--ring), inset 0 0 0 1px rgba(0,0,0,.2);
-      -webkit-tap-highlight-color: transparent;
-    }
-    .btn-arrow:active {
-      transform: scale(0.92);
-      box-shadow: 0 0 18px var(--ring);
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>BREAKBRY • Azbry-MD</title>
+
+<!-- Tema Azbry -->
+<link rel="stylesheet" href="assets/css/azbry.css">
+
+<style>
+  :root{
+    /* tinggi footer auto-injected dari azbry.css = fallback 84px */
+    --footer-h: var(--azbry-footer-height, 84px);
+  }
+
+  body{ margin:0; min-height:100dvh; display:flex; flex-direction:column; }
+
+  /* Header */
+  .hdr{
+    text-align:center; padding:20px 16px 8px;
+  }
+  .hdr .t{
+    font-size:clamp(22px,5vw,32px);
+    color:var(--accent); font-weight:800; letter-spacing:.3px;
+    text-shadow:0 0 18px rgba(184,255,154,.28);
+    display:inline-flex; align-items:center; gap:10px;
+  }
+  .meta{ color:var(--muted); font-weight:700; margin-top:6px; }
+
+  /* Panel permainan */
+  .panel{
+    position:relative;
+    margin:12px auto 0;
+    width:min(92vw, 520px);
+    aspect-ratio: 3/4.6;           /* potrait */
+    background: var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:18px;
+    box-shadow: 0 0 0 1px rgba(184,255,154,.12) inset, 0 18px 60px rgba(0,0,0,.45);
+    overflow:hidden;
+  }
+  canvas#game{
+    position:absolute; inset:0; width:100%; height:100%;
+    display:block; background:transparent;
+  }
+
+  /* Dock kontrol panah — DIPINDAH NAIK DI ATAS FOOTER */
+  .ctrl{
+    position:fixed; left:0; right:0;
+    bottom: calc(var(--footer-h) + 24px + env(safe-area-inset-bottom, 0px));
+    display:flex; justify-content:center; gap:42px;
+    z-index: 50; /* di atas panel */
+    pointer-events:none;  /* supaya area sekitar tetap bisa scroll, tombol sendiri aktif */
+  }
+  .ctrl .btn{
+    pointer-events:auto;
+    width:84px; height:84px; border-radius:999px;
+    display:grid; place-items:center;
+    background: linear-gradient(180deg,var(--accent),var(--accent2));
+    color:#0b0d10; font-weight:900; font-size:38px;
+    box-shadow:0 14px 38px rgba(184,255,154,.28), inset 0 -1px 0 rgba(0,0,0,.2);
+    border:0; outline:none;
+    -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; /* no copy menu long-press */
+    touch-action:manipulation;
+  }
+  .ctrl .btn:active{ transform:translateY(2px); filter:saturate(1.1); }
+
+  /* Ruang bawah agar panel tidak “nempel” footer */
+  .spacer{
+    height: calc(var(--footer-h) + 140px + env(safe-area-inset-bottom, 0px));
+  }
+</style>
 </head>
 <body>
-  <header>🧱 BREAKBRY</header>
-  <div id="info">Level: <span id="level">1</span> | Skor: <span id="score">0</span></div>
-  <canvas id="game" width="360" height="520"></canvas>
-  <div id="controls">
-    <button class="btn-arrow" id="left">«</button>
-    <button class="btn-arrow" id="right">»</button>
+
+  <header class="hdr">
+    <div class="t">🧱 BREAKBRY</div>
+    <div class="meta">Level: <span id="lv">1</span> | Skor: <span id="sc">0</span></div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <canvas id="game"></canvas>
+    </section>
+    <!-- spacer supaya konten aman dari footer -->
+    <div class="spacer"></div>
+  </main>
+
+  <!-- Dock kontrol diangkat ke atas footer -->
+  <div class="ctrl" aria-hidden="false">
+    <button id="leftBtn"  class="btn" aria-label="Gerak kiri"  onclick="holdLeft()"  onpointerdown="holdLeft()"  onpointerup="stopHold()" onpointerleave="stopHold()">«</button>
+    <button id="rightBtn" class="btn" aria-label="Gerak kanan" onclick="holdRight()" onpointerdown="holdRight()" onpointerup="stopHold()" onpointerleave="stopHold()">»</button>
   </div>
 
-  <footer class="azbry-footer"></footer>
-
+  <!-- ====== GAME LOGIC (ringkas, sama seperti sebelumnya) ====== -->
   <script>
-    const c = document.getElementById("game");
-    const ctx = c.getContext("2d");
+  // --- setup canvas ---
+  const cvs = document.getElementById('game');
+  const ctx = cvs.getContext('2d');
+  const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+  function resize(){
+    const r = cvs.parentElement.getBoundingClientRect();
+    cvs.width  = Math.floor(r.width  * DPR);
+    cvs.height = Math.floor(r.height * DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0); // scale drawing to CSS pixels
+  }
+  addEventListener('resize', resize, {passive:true}); resize();
 
-    let paddle = {x: 140, y: 490, w: 80, h: 10, spd: 6};
-    let ball = {x: 180, y: 300, r: 7, dx: 3, dy: -3};
-    let bricks = [];
-    let rows = 5, cols = 7, bw = 45, bh = 15, pad = 5, topOff = 60, leftOff = 12;
-    let score = 0, level = 1;
-    let left = false, right = false;
+  // --- game state (sama) ---
+  let W=0,H=0; function wh(){const r=cvs.getBoundingClientRect(); W=r.width; H=r.height;}
+  wh(); addEventListener('resize', wh, {passive:true});
 
-    function createBricks(){
-      bricks = [];
-      for(let r=0;r<rows;r++){
-        bricks[r]=[];
-        for(let c=0;c<cols;c++){
-          bricks[r][c]={x:c*(bw+pad)+leftOff, y:r*(bh+pad)+topOff, hit:false};
-        }
+  const pad={ w:110, h:12, x:0, y:0, speed:6, vx:0 };
+  const ball={ x:0, y:0, r:6, vx:3.1, vy:-3.3, speed:4.2 };
+  let bricks=[], rows=3, cols=7, bw=64, bh=18, gap=10, offsetTop=22, offsetX=0;
+  let score=0, level=1;
+
+  function resetLevel(){
+    // paddle
+    pad.x = (W - pad.w)/2; pad.y = H - 36;
+    // ball
+    ball.x = W/2; ball.y = H/2; ball.vx = 3.1; ball.vy = -3.3;
+    // bricks
+    bricks=[];
+    bw = Math.min(64, (W - 40 - (cols-1)*gap)/cols);
+    offsetX = (W - (cols*bw + (cols-1)*gap))/2;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        bricks.push({x: offsetX + c*(bw+gap), y: offsetTop + r*(bh+gap), hit:false});
       }
     }
+    document.getElementById('lv').textContent = level;
+    document.getElementById('sc').textContent = score;
+  }
 
-    function drawBricks(){
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      bricks.forEach(row=>{
-        row.forEach(b=>{
-          if(!b.hit){
-            ctx.beginPath();
-            ctx.rect(b.x,b.y,bw,bh);
-            ctx.fill();
-            ctx.closePath();
-          }
-        });
-      });
+  // --- controls (hold) ---
+  let hold = 0; // -1 kiri, 1 kanan
+  function holdLeft(){ hold=-1; }
+  function holdRight(){ hold=1; }
+  function stopHold(){ hold=0; }
+  // keyboard
+  addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') hold=-1; else if(e.key==='ArrowRight') hold=1; });
+  addEventListener('keyup',   e=>{ if((e.key==='ArrowLeft' && hold<0) || (e.key==='ArrowRight' && hold>0)) hold=0; });
+
+  // --- loop ---
+  function step(){
+    requestAnimationFrame(step);
+    // clear
+    ctx.clearRect(0,0,W,H);
+
+    // move paddle
+    if(hold<0) pad.x -= pad.speed;
+    if(hold>0) pad.x += pad.speed;
+    pad.x = Math.max(6, Math.min(W - pad.w - 6, pad.x));
+
+    // move ball
+    ball.x += ball.vx; ball.y += ball.vy;
+    // walls
+    if(ball.x < ball.r || ball.x > W-ball.r){ ball.vx *= -1; }
+    if(ball.y < ball.r){ ball.vy *= -1; }
+    if(ball.y > H+40){ // lost -> reset level (tanpa reset skor)
+      resetLevel();
     }
-
-    function drawPaddle(){
-      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      ctx.fillRect(paddle.x,paddle.y,paddle.w,paddle.h);
+    // paddle collide
+    if(ball.y+ball.vy > pad.y-ball.r && ball.x>pad.x && ball.x<pad.x+pad.w){
+      ball.vy = -Math.abs(ball.vy);
+      // sudut pantul berdasar posisi
+      const rel = (ball.x - (pad.x + pad.w/2)) / (pad.w/2);
+      ball.vx = rel * 4.2;
     }
-
-    function drawBall(){
-      ctx.beginPath();
-      ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
-      ctx.fillStyle="#fff";
-      ctx.shadowColor=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
-      ctx.shadowBlur=10;
-      ctx.fill();
-      ctx.closePath();
-      ctx.shadowBlur=0;
-    }
-
-    function collision(){
-      bricks.forEach(row=>{
-        row.forEach(b=>{
-          if(!b.hit){
-            if(ball.x> b.x && ball.x < b.x+bw && ball.y > b.y && ball.y < b.y+bh){
-              ball.dy *= -1;
-              b.hit = true;
-              score += 10;
-              document.getElementById("score").textContent = score;
-            }
-          }
-        });
-      });
-    }
-
-    function update(){
-      ctx.clearRect(0,0,c.width,c.height);
-      drawBricks();
-      drawPaddle();
-      drawBall();
-      collision();
-
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-
-      if(ball.x+ball.r>c.width || ball.x-ball.r<0) ball.dx*=-1;
-      if(ball.y-ball.r<0) ball.dy*=-1;
-      if(ball.y+ball.r>c.height){
-        alert("Game Over! Skor: "+score);
-        document.location.reload();
+    // bricks collide
+    for(const b of bricks){
+      if(b.hit) continue;
+      if(ball.x > b.x && ball.x < b.x+bw && ball.y > b.y && ball.y < b.y+bh){
+        b.hit = true; score += 10; document.getElementById('sc').textContent = score;
+        ball.vy *= -1;
       }
-
-      if(ball.x>paddle.x && ball.x<paddle.x+paddle.w && ball.y+ball.r>paddle.y){
-        ball.dy=-ball.dy;
-      }
-
-      if(left && paddle.x>0) paddle.x-=paddle.spd;
-      if(right && paddle.x+paddle.w<c.width) paddle.x+=paddle.spd;
-
-      if(bricks.flat().every(b=>b.hit)){
-        level++;
-        rows++;
-        createBricks();
-        document.getElementById("level").textContent = level;
-      }
-
-      requestAnimationFrame(update);
+    }
+    // next level?
+    if(bricks.every(b=>b.hit)){
+      level++; rows = Math.min(6, rows+1);
+      resetLevel();
     }
 
-    document.getElementById("left").addEventListener("touchstart",()=>left=true);
-    document.getElementById("left").addEventListener("touchend",()=>left=false);
-    document.getElementById("right").addEventListener("touchstart",()=>right=true);
-    document.getElementById("right").addEventListener("touchend",()=>right=false);
+    // draw bricks
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#b8ff9a';
+    for(const b of bricks){ if(b.hit) continue;
+      // neon bar
+      ctx.fillRect(b.x, b.y, bw, bh);
+      ctx.globalAlpha=.18; ctx.fillRect(b.x, b.y+bh, bw, 6); ctx.globalAlpha=1;
+    }
+    // draw paddle
+    ctx.fillRect(pad.x, pad.y, pad.w, pad.h);
+    // draw ball
+    ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  }
 
-    createBricks();
-    update();
+  resetLevel(); step();
   </script>
-  <!-- ===== Azbry Global Footer ===== -->
-<footer class="azbry-footer">
-  <a href="https://azbry-portofolio.vercel.app/" target="_blank" class="azbry-cta">↗ Portofolio</a>
-  <div class="azbry-meta">
-    <div class="azbry-license">Lisensi MIT • © 2025 Azbry-MD</div>
-    <div class="azbry-owner">Dikelola oleh FebryWesker</div>
-  </div>
-  <div class="azbry-empty"></div>
-</footer>
 </body>
 </html>
