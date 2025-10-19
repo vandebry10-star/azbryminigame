@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Azbry Theme Check</title>
+  <!-- Pakai versi cache-buster biar gak keambil CSS lama -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=theme-check">
+</head>
+<body class="azbry-theme azbry-bg">
+  <div class="wrap">
+    <!-- HEADER (harus match index) -->
+    <header class="azbry-header">
+      <div class="brand">
+        <div class="sub">AZBRY-MD • MINI GAMES</div>
+        <h1>Game Hub</h1>
+      </div>
+      <span class="badge">Have fun!</span>
+    </header>
+
+    <!-- GRID + CARD (harus match radius, shadow, border) -->
+    <section class="grid fade d2">
+      <article class="card feature">
+        <div class="ribbon">FEATURED</div>
+        <h3>🕊️ Tap Runner — Neon</h3>
+        <p>Contoh kartu featured. Cek warna panel, border, dan inner-glow.</p>
+        <a class="btn" href="#">Tombol Primer</a>
+        <a class="btn ghost" href="#" style="margin-left:8px">Tombol Ghost</a>
+      </article>
+
+      <article class="card">
+        <h3>📡 Morse Suite</h3>
+        <p>Cek tipografi (font Inter), warna teks muted, dan spacing.</p>
+        <span class="badge">Badge</span>
+      </article>
+
+      <article class="card">
+        <h3>🐱 Popbry</h3>
+        <p>Cek konsistensi card biasa vs featured.</p>
+        <a class="btn" href="#">Aksi</a>
+      </article>
+    </section>
+
+    <!-- SCORE & HINT PILL (komponen khusus game) -->
+    <div class="azbry-score">123</div>
+    <div class="azbry-hint-pill azbry-hint-top">🎯 Tujuan contoh: ini hanya tes tampilan.</div>
+    <div class="azbry-hint-pill azbry-legal-bottom">© <span id="y"></span> Azbry-MD • Lisensi MIT • Dikelola oleh FebryWesker</div>
+
+    <!-- FOOTER (harus fixed/blur sesuai game) -->
+    <footer class="azbry-footer">
+      <span>© <span id="yf"></span> Azbry-MD</span>
+      <span>Lisensi MIT • Dikelola oleh FebryWesker</span>
+    </footer>
+  </div>
+
+  <script>
+    const y = new Date().getFullYear();
+    document.getElementById('y').textContent = y;
+    document.getElementById('yf').textContent = y;
+  </script>
+</body>
+</html>
