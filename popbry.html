@@ -68,7 +68,7 @@
 
   <script>
     // ====== CONFIG ======
-    const LEADERBOARD_URL = "/api/leaderboard"; // ganti kalau endpoint beda
+    const LEADERBOARD_URL = location.origin + "/api/leaderboard";
 
     // ====== ELEMENTS ======
     const $ = (id) => document.getElementById(id);
@@ -165,10 +165,20 @@
       setTimeout(closeMouth, 110);
     }
 
-    // klik di mana pun (ala Popcat)
-    window.addEventListener("mousedown", handleClick);
-    window.addEventListener("touchstart", (e)=>handleClick(e), {passive:true});
-    document.addEventListener("keydown", (e)=>{ if(e.code==="Space"){ e.preventDefault(); handleClick(e); }});
+// klik / tap (pastikan cuma 1x)
+let isTouch = false;
+window.addEventListener("touchstart", (e)=>{
+  isTouch = true;
+  handleClick(e);
+}, {passive:true});
+
+window.addEventListener("mousedown", (e)=>{
+  if (!isTouch) handleClick(e);
+});
+
+document.addEventListener("keydown", (e)=>{
+  if(e.code==="Space"){ e.preventDefault(); handleClick(e); }
+});
 
     // cegah drag ghost image
     el.cat.addEventListener("dragstart", e=>e.preventDefault());
