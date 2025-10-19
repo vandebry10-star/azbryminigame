@@ -347,7 +347,7 @@ function ac() {
 function beep(duration = 120, freq = 700) {
   const ctx = ac(), o = ctx.createOscillator(), g = ctx.createGain();
   o.connect(g); g.connect(ctx.destination);
-  o.type = 'sine'; o.frequency.value = freq; g.gain.value = 0.2; // volume sedang
+  o.type = 'sine'; o.frequency.value = freq; g.gain.value = 1.0; // volume sedang
   o.start(); setTimeout(() => { o.stop() }, duration);
 }
 
