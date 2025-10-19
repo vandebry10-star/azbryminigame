@@ -1,62 +1,41 @@
-<!doctype html>
-<html lang="id">
+<!DOCTYPE html><html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Azbry Theme Check</title>
-  <!-- Pakai versi cache-buster biar gak keambil CSS lama -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=theme-check">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cek Theme — Azbry</title>
+  <link rel="stylesheet" href="assets/css/azbry.css">
+  <style>
+    body{
+      height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      background:#0b0d10;color:#e6f0ff;font-family:Inter,system-ui,sans-serif;
+    }
+    h1{color:#b8ff9a;text-shadow:0 0 10px rgba(184,255,154,.4)}
+    .card{
+      background:rgba(17,20,24,.8);border:1px solid rgba(255,255,255,.05);
+      box-shadow:0 10px 30px rgba(0,0,0,.4);padding:20px;border-radius:16px;
+      text-align:center;max-width:400px
+    }
+  </style>
 </head>
-<body class="azbry-theme azbry-bg">
-  <div class="wrap">
-    <!-- HEADER (harus match index) -->
-    <header class="azbry-header">
-      <div class="brand">
-        <div class="sub">AZBRY-MD • MINI GAMES</div>
-        <h1>Game Hub</h1>
+<body>
+  <h1>🔆 Cek Theme</h1>
+  <div class="card">
+    <p>Halaman ini hanya untuk memastikan <b>tema global Azbry</b> aktif.</p>
+    <p>Jika tampilan sudah neon hijau dan ada <b>footer otomatis</b> di bawah,<br>berarti tema sudah terpasang dengan benar ✅</p>
+  </div>  <script>
+  (function(){
+    if(document.querySelector('.azbry-footer')) return;
+    const f=document.createElement('div');
+    f.className='azbry-footer';
+    f.innerHTML=`
+      <a class="azbry-cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+      <div class="azbry-meta">
+        <div class="azbry-license">Lisensi MIT • © ${new Date().getFullYear()} Azbry-MD</div>
+        <div class="azbry-owner">Dikelola oleh FebryWesker</div>
       </div>
-      <span class="badge">Have fun!</span>
-    </header>
-
-    <!-- GRID + CARD (harus match radius, shadow, border) -->
-    <section class="grid fade d2">
-      <article class="card feature">
-        <div class="ribbon">FEATURED</div>
-        <h3>🕊️ Tap Runner — Neon</h3>
-        <p>Contoh kartu featured. Cek warna panel, border, dan inner-glow.</p>
-        <a class="btn" href="#">Tombol Primer</a>
-        <a class="btn ghost" href="#" style="margin-left:8px">Tombol Ghost</a>
-      </article>
-
-      <article class="card">
-        <h3>📡 Morse Suite</h3>
-        <p>Cek tipografi (font Inter), warna teks muted, dan spacing.</p>
-        <span class="badge">Badge</span>
-      </article>
-
-      <article class="card">
-        <h3>🐱 Popbry</h3>
-        <p>Cek konsistensi card biasa vs featured.</p>
-        <a class="btn" href="#">Aksi</a>
-      </article>
-    </section>
-
-    <!-- SCORE & HINT PILL (komponen khusus game) -->
-    <div class="azbry-score">123</div>
-    <div class="azbry-hint-pill azbry-hint-top">🎯 Tujuan contoh: ini hanya tes tampilan.</div>
-    <div class="azbry-hint-pill azbry-legal-bottom">© <span id="y"></span> Azbry-MD • Lisensi MIT • Dikelola oleh FebryWesker</div>
-
-    <!-- FOOTER (harus fixed/blur sesuai game) -->
-    <footer class="azbry-footer">
-      <span>© <span id="yf"></span> Azbry-MD</span>
-      <span>Lisensi MIT • Dikelola oleh FebryWesker</span>
-    </footer>
-  </div>
-
-  <script>
-    const y = new Date().getFullYear();
-    document.getElementById('y').textContent = y;
-    document.getElementById('yf').textContent = y;
-  </script>
-</body>
+      <div class="azbry-empty" aria-hidden="true"></div>
+    `;
+    document.body.appendChild(f);
+  })();
+  </script></body>
 </html>
