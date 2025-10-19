@@ -5,36 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Astro Blip — Azbry-MD</title>
 
-  <!-- PAKAI TEMA GLOBAL -->
+  <!-- TEMA GLOBAL AZBRY -->
   <link rel="stylesheet" href="assets/css/azbry.css">
-
-  <style>
-    /* Hanya elemen spesifik game */
-    canvas {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      touch-action: none;
-      display: block;
-    }
-    .hint {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: calc(56px + env(safe-area-inset-bottom));
-      color: var(--muted);
-      background: rgba(17, 20, 24, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-weight: 600;
-      line-height: 1.35;
-      font-size: 0.9rem;
-      max-width: min(420px, 86vw);
-      z-index: 2;
-    }
-  </style>
 </head>
 <body class="azbry-theme">
 
@@ -51,26 +23,31 @@
     </div>
   </header>
 
-  <!-- SCORE BESAR -->
+  <!-- SCORE -->
   <div id="score" class="azbry-score">0</div>
 
-  <!-- CANVAS GAME -->
+  <!-- GAME -->
   <canvas id="game"></canvas>
 
-  <!-- HINT -->
-  <div class="hint">
+  <!-- PETUNJUK -->
+  <div class="azbry-hint">
     🎯 Tujuan: hancurkan drone sebanyak mungkin. Seret untuk gerak, tap untuk menembak (ada cooldown).
   </div>
 
-  <!-- FOOTER GLOBAL -->
+  <!-- FOOTER -->
   <footer class="azbry-footer">
     <span>© <span id="y"></span> Azbry-MD</span>
-    <span>Lisensi MIT • Dikelola oleh FebryWesker • <a href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a></span>
+    <span>Lisensi MIT • Dikelola oleh FebryWesker •
+      <a href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">Portofolio</a>
+    </span>
   </footer>
 
-  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  <script>
+    // Tahun dinamis
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
 
-  <!-- SCRIPT GAME -->
+  <!-- GAME LOGIC YANG SUDAH ADA -->
   <script src="assets/js/astroblip.js"></script>
 </body>
 </html>
