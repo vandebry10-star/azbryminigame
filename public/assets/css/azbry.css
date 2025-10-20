@@ -1,105 +1,141 @@
-/* ===============================
-   AZBRY CHESS BOARD STYLES
-   =============================== */
+/* =====================================================
+   Azbry Global Theme (neon dark)
+   ===================================================== */
 
-.board {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  aspect-ratio: 1 / 1;
-  width: min(90vw, 430px);
-  max-width: 480px;
-  margin: 0 auto;
-  background: #0e0e0e;
-  border: 2px solid #1a1a1a;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 0 20px rgba(0, 255, 100, 0.15);
-  transition: all 0.25s ease;
-}
+:root{
+  --azbry-bg-1:#0b0d10;
+  --azbry-bg-2:#101315;
+  --azbry-ink:#0b0d10;
+  --azbry-ink-soft:#dfe8f2;
 
-.square {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(1.8rem, 2.5vw, 2.5rem);
-  cursor: pointer;
-  user-select: none;
-  transition: background 0.15s ease;
+  --azbry-accent:#b8ff9a;
+  --azbry-accent-2:#94ef89;
+  --azbry-ring:rgba(184,255,154,.18);
+
+  --panel-bd: rgba(255,255,255,.06);
+  --panel-bg-1: rgba(255,255,255,.03);
+  --panel-bg-2: rgba(255,255,255,.02);
+
+  --radius-12:12px;
+  --radius-16:16px;
+  --radius-20:20px;
 }
 
-.square.dark {
-  background: #161616;
-}
-.square.light {
-  background: #202020;
-}
-
-.square.highlight {
-  background: radial-gradient(
-    circle at center,
-    rgba(0, 255, 120, 0.25) 0%,
-    rgba(0, 255, 120, 0.05) 100%
-  );
+/* Global */
+html, body{
+  min-height:100%;
+  margin:0;
+  padding:0;
+  color:#eaf1e9;
+  background: linear-gradient(180deg, var(--azbry-bg-1) 0%, var(--azbry-bg-2) 100%);
+  font-family: Inter, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
-.square.selected {
-  outline: 2px solid #00ff80;
-  outline-offset: -2px;
+/* Container */
+main.container{
+  max-width:1080px;
+  margin:0 auto;
+  padding:18px 16px 120px;
 }
 
-.piece {
-  pointer-events: none;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+/* Header */
+.top-header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; margin-bottom:14px;
+}
+.title h1{
+  margin:0; font-weight:800;
+  font-size: clamp(22px, 3.6vw, 34px);
+  color: var(--azbry-accent);
+  text-shadow: 0 0 16px var(--azbry-ring);
+}
+.tag{
+  display:inline-block;
+  margin-right:8px; padding:3px 8px;
+  border-radius:10px; font-size:12px; font-weight:700;
+  color:#a7b2be;
+  background: rgba(184,255,154,.08);
+  border:1px solid var(--panel-bd);
 }
 
-#moveHistory {
-  text-align: left;
-  font-family: "Courier New", monospace;
-  white-space: pre-line;
-  line-height: 1.3;
-  padding: 10px;
-  color: #ccc;
+/* Mode Picker */
+.mode-picker{ display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 14px; }
+.seg{
+  padding:10px 14px; border-radius: var(--radius-12);
+  font-weight:800; letter-spacing:.2px;
+  background: var(--panel-bg-1);
+  border:1px solid var(--panel-bd);
+  color:#dbe4ee; cursor:pointer; transition:.18s ease;
+}
+.seg.active{
+  background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+  color: var(--azbry-ink); border-color:transparent;
+  box-shadow: 0 0 12px rgba(184,255,154,.35);
 }
 
-button {
-  border: none;
-  border-radius: 10px;
-  padding: 8px 14px;
-  font-weight: 600;
-  background: #1a1a1a;
-  color: #ddd;
-  cursor: pointer;
-  transition: 0.2s;
+/* Board wrapper (umum, detail kotak ada di chess.css) */
+.board-wrap{
+  margin:8px auto 16px; max-width: 820px;
+  border-radius:22px; padding:14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border:1px solid var(--panel-bd);
+  box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.board{
+  width:100%; aspect-ratio:1/1; margin:0 auto;
+  border-radius:16px; overflow:hidden;
 }
 
-button:hover {
-  background: #00ff80;
-  color: #000;
+/* Panel & Buttons */
+.panel{ display:grid; gap:12px; margin:10px auto 18px; max-width:820px; grid-template-columns:1fr; }
+.controls{
+  display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-start;
+  padding:12px; border:1px solid var(--panel-bd); border-radius:var(--radius-16);
+  background: var(--panel-bg-2);
+}
+.btn{
+  padding:10px 14px; border-radius: var(--radius-12); font-weight:800;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04); color:#e8f0fb;
+  transition:.18s ease; cursor:pointer;
+}
+.btn.dark{ background: rgba(255,255,255,.03); }
+.btn.accent{
+  background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+  color: var(--azbry-ink); border-color: transparent;
+  box-shadow: 0 0 12px rgba(184,255,154,.25);
+}
+.btn:hover{ transform: translateY(-1px); opacity:.92; }
+
+/* Move log */
+.move-log{
+  padding:12px; border:1px solid var(--panel-bd); border-radius:var(--radius-16);
+  background: var(--panel-bg-2);
+}
+.move-log h4{ margin:0 0 6px; color:#cdd6e3 }
+#moveHistory{ margin:0; white-space:pre-wrap; color:#aeb9c8; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* Footer shortcuts */
+.footer{
+  max-width:820px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
 
-button.accent {
-  background: #00ff80;
-  color: #000;
+/* License & Portfolio */
+.license{
+  max-width:820px; margin:14px auto 0; text-align:center;
+  opacity:.7;
+}
+.license .cta{
+  display:inline-block; margin-top:8px; padding:10px 14px;
+  background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+  color: var(--azbry-ink); font-weight:800; text-decoration:none;
+  border-radius:12px; box-shadow: 0 10px 32px rgba(184,255,154,.25);
 }
 
-.btn.dark {
-  background: #111;
-  border: 1px solid #222;
-}
-
-#chess-app {
-  text-align: center;
-  color: #d6ffd6;
-}
-
-@media (min-width: 480px) {
-  .board {
-    width: 430px;
-  }
-  .square {
-    font-size: 2.4rem;
-  }
-}
+/* Board-only mode */
+body.board-only .mode-picker,
+body.board-only .panel,
+body.board-only .footer { display:none; }
+body.board-only .board-wrap{ max-width:min(98vw,1100px); padding:10px; }
+body.board-only main.container{ padding-bottom:32px; }
