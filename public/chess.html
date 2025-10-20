@@ -5,24 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Azbry Chess</title>
 
-  <!-- Tema utama -->
+  <!-- Tema -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
 
   <style>
-    /* Pastikan tombol & panel selalu bisa diklik */
     .top-header, .mode-picker, .panel, .footer, .license {
       position: relative;
       z-index: 5;
     }
     .board-wrap { position: relative; z-index: 1; }
-    #statusBar { z-index: 9999; }
     #resultModal { z-index: 10000; }
+    body.board-only .panel,
+    body.board-only .mode-picker,
+    body.board-only .license {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <main id="chess-app" class="container">
-    <!-- HEADER -->
     <header class="top-header">
       <div class="title">
         <span class="tag">AZBRY-MD • BOARD</span>
@@ -30,25 +32,20 @@
       </div>
     </header>
 
-    <!-- MODE PICKER -->
-    <div class="mode-picker" aria-label="Pilih Mode">
+    <div class="mode-picker">
       <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-      <button id="modeAI" class="seg" type="button" aria-label="Mode vs Azbry-MD" title="Mode vs Azbry-MD">
-        vs Azbry-MD
-      </button>
+      <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
     </div>
 
-    <!-- BOARD -->
-    <section class="board-wrap" aria-label="Papan Catur">
+    <section class="board-wrap">
       <div id="board" class="board"></div>
     </section>
 
-    <!-- CONTROL PANEL -->
-    <section class="panel" aria-label="Kontrol Permainan">
+    <section class="panel">
       <div class="controls">
-        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-        <button id="btnUndo" class="btn" type="button">Undo</button>
-        <button id="btnRedo" class="btn" type="button">Redo</button>
+        <button id="btnReset" class="btn accent">Muat Ulang</button>
+        <button id="btnUndo" class="btn">Undo</button>
+        <button id="btnRedo" class="btn">Redo</button>
       </div>
 
       <div class="move-log">
@@ -57,36 +54,97 @@
       </div>
     </section>
 
-    <!-- FOOTER -->
     <footer class="footer">
       <div class="left-btn">
-        <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
+        <button id="btnBoardOnly" class="btn dark">Board Only</button>
       </div>
       <div class="mid-btn">
-        <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
+        <button id="btnFlip" class="btn dark">Flip Board</button>
       </div>
       <div class="right-btn">
-        <button id="btnBack" class="btn dark" type="button">Kembali</button>
+        <button id="btnBack" class="btn dark">Kembali</button>
       </div>
     </footer>
 
-    <!-- LICENSE -->
     <div class="license">
       <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
       <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
     </div>
   </main>
 
-  <!-- SCRIPTS (urutan wajib) -->
+  <!-- Scripts utama -->
   <script src="assets/js/chess-engine.js"></script>
   <script src="assets/js/chess-ui.js"></script>
   <script src="assets/js/main.js"></script>
 
+  <!-- Hotfix semua fungsi -->
   <script>
-    // Pastikan tombol flip bekerja
-    document.getElementById('btnFlip').addEventListener('click', () => {
-      document.getElementById('board').classList.toggle('flip');
-    });
+  (function(){
+    const board = document.getElementById('board');
+    document.getElementById('btnFlip').addEventListener('click', ()=> board.classList.toggle('flip'));
+
+    // Modal hasil akhir
+    const modal = document.createElement('div');
+    modal.id = 'resultModal';
+    modal.style.cssText = 'position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:10000';
+    modal.innerHTML = `
+      <div class="card" style="text-align:center;padding:16px 18px;min-width:250px">
+        <h3 id="resultTitle">Hasil</h3>
+        <p id="resultDesc" style="opacity:.8;margin-bottom:12px">—</p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button id="btnRestart" class="btn accent">Mulai Ulang</button>
+          <button id="btnCloseModal" class="btn">Tutup</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    btnCloseModal.onclick = ()=> modal.style.display='none';
+    btnRestart.onclick = ()=>{ modal.style.display='none'; window.__az_ui?.reset?.(); };
+
+    // Tombol tambahan
+    document.getElementById('btnBoardOnly').onclick = ()=> document.body.classList.toggle('board-only');
+    document.getElementById('btnBack').onclick = ()=> document.body.classList.remove('board-only');
+
+    // Mode vs Azbry-MD
+    const btnAI = document.getElementById('modeAI');
+    const btnHuman = document.getElementById('modeHuman');
+    const setMode = (ai)=>{
+      localStorage.setItem('az_chess_vsAI', JSON.stringify(ai));
+      btnAI.classList.toggle('active', ai);
+      btnHuman.classList.toggle('active', !ai);
+      if(window.__az_ui?.setVsAI) window.__az_ui.setVsAI(ai);
+      window.__az_ui?.reset?.();
+    };
+    btnAI.onclick = ()=> setMode(true);
+    btnHuman.onclick = ()=> setMode(false);
+
+    // Hook hasil
+    function hookResult(){
+      if(!window.__az_ui?.engine) return;
+      const ui = window.__az_ui;
+      const old = ui.updateTurnBar?.bind(ui);
+      if(!old) return;
+      ui.updateTurnBar = function(){
+        old();
+        const st = ui.engine.statusInfo?.();
+        if(st?.end){
+          const title = document.getElementById('resultTitle');
+          const desc = document.getElementById('resultDesc');
+          if(st.type==='checkmate'){
+            title.textContent='Checkmate';
+            desc.textContent=(st.winner==='w'?'Putih':'Hitam')+' menang!';
+          }else if(st.type==='stalemate'){
+            title.textContent='Stalemate';
+            desc.textContent='Seri.';
+          }else{
+            title.textContent='Hasil';
+            desc.textContent='Permainan selesai.';
+          }
+          modal.style.display='grid';
+        }
+      };
+    }
+    window.addEventListener('load', hookResult, {once:true});
+  })();
   </script>
 </body>
 </html>
