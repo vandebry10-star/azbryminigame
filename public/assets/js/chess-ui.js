@@ -14,8 +14,7 @@
       moveHistoryId='moveHistory',
       btnResetId='btnReset',
       btnUndoId='btnUndo',
-      btnRedoId='btnRedo',
-      btnBoardOnlyId='btnBoardOnly'
+      btnRedoId='btnRedo'
     } = opts || {};
 
     const BOARD = el(boardId);
@@ -76,7 +75,6 @@
 
     function updateTurnBar(){
       TURN.textContent = fmtTurn();
-      // show CHECK small banner
       const sb = document.getElementById('statusBar');
       if(sb){
         if(engine.isCheck(engine.getTurn())){ sb.style.display='block'; sb.textContent='CHECK!'; }
@@ -114,19 +112,17 @@
         sel=null; legal=[]; clearMarks();
         drawBoard(); updateLog();
 
-        // status check + AI
         const st = engine.statusInfo();
         if(st.end){
           showResult(st);
         }else{
           if(vsAI && engine.getTurn()==='b' && typeof onAIMove==='function'){
-            onAIMove(); // main.js will trigger AI after short delay
+            onAIMove(); // panggil AI dari main.js
           }
         }
         return;
       }
 
-      // reselect if clicked own piece
       if(p!=='.' && ( (engine.getTurn()==='w' && /[PNBRQK]/.test(p)) || (engine.getTurn()==='b' && /[pnbrqk]/.test(p)) )){
         sel={r,c};
         legal = engine.legalMovesAt(r,c);
@@ -164,52 +160,44 @@
     }
 
     // public controls
-    function reset(){
-      engine.reset();
-      sel=null; legal=[]; clearMarks();
-      drawBoard(); updateLog();
-    }
-    function undo(){
-      const m = engine.undo(); if(!m) return;
-      sel=null; legal=[]; clearMarks();
-      drawBoard(); updateLog();
-    }
-    function redo(){
-      const m = engine.redo(); if(!m) return;
-      sel=null; legal=[]; clearMarks();
-      drawBoard(); updateLog();
-    }
-
-    function setVsAI(flag){
-      vsAI = !!flag;
-    }
-
-    // Hook default buttons if exist
-    const btnReset = document.getElementById(btnResetId);
-    const btnUndo  = document.getElementById(btnUndoId);
-    const btnRedo  = document.getElementById(btnRedoId);
-    if(btnReset) btnReset.onclick = ()=> reset();
-    if(btnUndo)  btnUndo.onclick  = ()=> undo();
-    if(btnRedo)  btnRedo.onclick  = ()=> redo();
+    function reset(){ engine.reset(); sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
+    function undo(){ const m=engine.undo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
+    function redo(){ const m=engine.redo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
 
     // First render
     drawBoard(); updateLog();
 
-    // Expose a tiny API for main.js
+    // Expose API untuk main.js
     return {
       engine,
       drawBoard,
       updateTurnBar,
       updateLog,
       reset, undo, redo,
-      setVsAI,
-      // helper for AI: commit move object returned by engine.think()
+      setVsAI(flag){ vsAI = !!flag; },
+      setAICallback(fn){ onAIMove = (typeof fn==='function') ? fn : null; },
       commitAIMove(move){
         if(!move) return false;
         engine.makeMove(move.from, move.to, move.promo||null);
         drawBoard(); updateLog();
         const st = engine.statusInfo();
-        if(st.end) showResult(st);
+        if(st.end){
+          const box = document.getElementById('resultModal');
+          const title = document.getElementById('resultTitle');
+          const desc  = document.getElementById('resultDesc');
+          if(st.type==='checkmate'){
+            title.textContent = 'Checkmate';
+            const w = (st.winner==='w') ? 'Putih' : 'Hitam';
+            desc.textContent  = `${w} menang. Tekan "Mulai Ulang" untuk main lagi.`;
+          }else if(st.type==='stalemate'){
+            title.textContent = 'Stalemate';
+            desc.textContent  = 'Seri. Tekan "Mulai Ulang" untuk main lagi.';
+          }else{
+            title.textContent = 'Hasil';
+            desc.textContent  = 'Permainan selesai.';
+          }
+          box.style.display='grid';
+        }
         return true;
       }
     };
