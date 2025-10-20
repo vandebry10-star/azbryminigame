@@ -1,0 +1,69 @@
+name: Organize to public
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  move-and-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Ensure public folder exists
+        run: |
+          mkdir -p public
+
+      - name: Move assets/ into public/assets (skip if already there)
+        run: |
+          if [ -d "assets" ]; then
+            mkdir -p public
+            # kalau sudah ada public/assets, gabung isinya
+            mkdir -p public/assets
+            rsync -a --remove-source-files assets/ public/assets/
+            rm -rf assets || true
+          fi
+
+      - name: Move root HTML files into public (skip yang sudah di public)
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for f in *.html; do
+            # jangan mindahin file yang memang tidak ada
+            [ -e "$f" ] || continue
+            echo "Moving $f -> public/$f"
+            mkdir -p public
+            git mv -f "$f" "public/$f" 2>/dev/null || mv -f "$f" "public/$f"
+          done
+
+      - name: Fix asset paths in HTML (make root-relative: /assets/…)
+        if: ${{ always() }}
+        run: |
+          set -e
+          if compgen -G "public/*.html" > /dev/null; then
+            # ubah href/src yg tadinya "assets/.." -> "/assets/.."
+            find public -type f -name "*.html" -print0 | xargs -0 sed -i \
+              -e 's|href="assets/|href="/assets/|g' \
+              -e 's|src="assets/|src="/assets/|g' \
+              -e "s|href='assets/|href='/assets/|g" \
+              -e "s|src='assets/|src='/assets/|g"
+          fi
+
+      - name: Show tree (debug)
+        run: |
+          echo "==== TREE ===="
+          ls -la
+          echo "==== PUBLIC ===="
+          ls -la public || true
+
+      - name: Commit changes (if any)
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: azbry-bot
+          author_email: bot@users.noreply.github.com
+          message: "chore: auto-organize to public + fix asset paths"
+          add: "."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
