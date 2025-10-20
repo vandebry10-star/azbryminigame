@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Azbry-MD • Mini Tests</title>
+
+<!-- pakai azbry.css bila ada, fallback style minimal kalau belum -->
+<link rel="stylesheet" href="assets/css/azbry.css" onerror="">
+<style>
+/* fallback ringan agar tetap rapi bila azbry.css belum tersedia */
+:root{
+  --bg:#0b0d10; --panel:#0f1213; --ink:#e6f0ff; --muted:#98a2b3;
+  --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#071012,#0b0d10);color:var(--ink)}
+.wrap{max-width:760px;margin:18px auto;padding:18px}
+.header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.h1{font-weight:800;color:var(--accent);letter-spacing:.6px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,.02), transparent);border-radius:14px;padding:14px;margin:14px 0;border:1px solid rgba(255,255,255,.04);box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:transparent;color:var(--ink)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#071012;border-radius:12px;font-weight:800;border:0;cursor:pointer}
+.small{font-size:0.9rem;color:var(--muted)}
+.result{font-weight:900;font-size:2rem;color:var(--accent);text-align:center;margin-top:8px;text-shadow:0 6px 20px var(--ring)}
+.note{font-size:0.86rem;color:var(--muted);margin-top:8px}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.footer{margin-top:18px;color:var(--muted);font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.badge{background:rgba(184,255,154,.06);padding:6px 10px;border-radius:12px;color:var(--accent)}
+/* tap friendly */
+button, input { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <div class="small">AZBRY-MD • MINI TESTS</div>
+        <div class="h1">Fun Tests</div>
+      </div>
+      <div class="badge">FebryWesker</div>
+    </div>
+
+    <!-- Love percentage -->
+    <section class="card" id="love-card">
+      <div class="flex-between">
+        <strong>💞 Tes Persentase Jodoh</strong>
+        <span class="small">Masukkan 2 nama</span>
+      </div>
+      <div style="margin-top:10px" class="row">
+        <input id="love-name-a" class="input" placeholder="Nama 1 — mis: Febry" />
+        <input id="love-name-b" class="input" placeholder="Nama 2 — mis: Rian" />
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
+        <button class="btn" id="love-go">Hitung Love %</button>
+        <button class="btn" id="love-random" style="background:#222;color:var(--accent)">Random contoh</button>
+      </div>
+      <div id="love-res" class="result" aria-live="polite">—</div>
+      <div class="note">Hasil deterministik berdasarkan kombinasi nama — cocok kalau mau share hasil yang "konsisten".</div>
+    </section>
+
+    <!-- Personality -->
+    <section class="card" id="person-card">
+      <div class="flex-between"><strong>🧠 Tes Kepribadian (nama)</strong><span class="small">Masukkan satu nama</span></div>
+      <div style="margin-top:10px">
+        <input id="person-name" class="input" placeholder="Nama kamu" />
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px">
+        <button class="btn" id="person-go">Tampilkan Kepribadian</button>
+        <button class="btn" id="person-clear" style="background:#222;color:var(--accent)">Clear</button>
+      </div>
+      <div id="person-res" class="result">—</div>
+      <div class="note">Ringan dan lucu — cocok untuk share di chat.</div>
+    </section>
+
+    <!-- Fortune -->
+    <section class="card" id="fortune-card">
+      <div class="flex-between"><strong>🔮 Fortune / Pesan Acak</strong><span class="small">Dari nama (opsional)</span></div>
+      <div style="margin-top:10px">
+        <input id="fortune-name" class="input" placeholder="Masukkan nama (opsional)" />
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px">
+        <button class="btn" id="fortune-go">Buka Fortune</button>
+        <button class="btn" id="fortune-random" style="background:#222;color:var(--accent)">Acak</button>
+      </div>
+      <div id="fortune-res" class="result" style="font-size:1.15rem">—</div>
+      <div class="note">Pesan dibuat dari pool yang bisa kamu edit di skrip.</div>
+    </section>
+
+    <div class="footer">
+      <a class="btn" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+      <div class="small">Lisensi MIT • © <span id="y"></span> Azbry-MD</div>
+    </div>
+  </div>
+
+<script>
+document.getElementById('y').textContent = (new Date()).getFullYear();
+
+/* util: hash string -> deterministic integer */
+function hashToInt(s, mod){
+  let h = 2166136261 >>> 0;
+  for(let i=0;i<s.length;i++){
+    h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
+  }
+  return (h % mod);
+}
+
+/* LOVE %: gabungkan nama, kasih 0-100 */
+function calcLove(a,b){
+  a = (a||'').trim().toLowerCase();
+  b = (b||'').trim().toLowerCase();
+  if(!a && !b) return null;
+  // gabung dua arah agar hasil simetris
+  const s = a + '::' + b;
+  const v = hashToInt(s, 101); // 0..100
+  return v;
+}
+
+/* personality: pilih trait berdasarkan hash */
+const traits = [
+  "Pemecah masalah cepat", "Hangat & peduli", "Lucu & spontan", "Tenang & bijak",
+  "Ambisius & fokus", "Kreatif & eksentrik", "Introvert pemikir", "Sosial & ceria",
+  "Setia & andal", "Pencari petualangan"
+];
+function personalityFrom(name){
+  const n = (name||'').trim().toLowerCase();
+  if(!n) return null;
+  const idx = hashToInt(n, traits.length);
+  const score = 50 + (hashToInt(n+'!s',51)-25); // -25..+25 offset
+  return { trait: traits[idx], score };
+}
+
+/* fortune pool */
+const fortunes = [
+  "Hari ini peluangmu bertambah: coba kirim pesan ke teman lama.",
+  "Jaga energi — ambil jeda 10 menit untuk me-refresh.",
+  "Sebuah ide kecil bisa jadi proyek besar — catat sekarang.",
+  "Berani bilang 'iya' pada kesempatan baru minggu ini.",
+  "Semua baik-baik saja; perlahan tapi pasti.",
+  "Jaga kesehatan: tidur lebih awal 1 jam malam ini.",
+  "Temanmu butuh bantuan — kamu orang yang tepat.",
+  "Keberuntungan kecil datang saat kamu konsisten."
+];
+
+function fortuneFor(name){
+  if(!(name||'').trim()) return fortunes[hashToInt('anon',fortunes.length)];
+  const s = name.trim().toLowerCase();
+  return fortunes[hashToInt(s,fortunes.length)];
+}
+
+/* UI wiring */
+const loveGo = document.getElementById('love-go');
+const loveRandom = document.getElementById('love-random');
+const loveRes = document.getElementById('love-res');
+loveGo.addEventListener('click', ()=>{
+  const a = document.getElementById('love-name-a').value;
+  const b = document.getElementById('love-name-b').value;
+  const v = calcLove(a,b);
+  if(v===null){ loveRes.textContent = 'Masukkan nama dulu'; return; }
+  // pesan tambahan sesuai rentang
+  let msg = `${v}%`;
+  if(v > 85) msg += " — Sempurna 🔥";
+  else if(v > 70) msg += " — Cocok sekali ✨";
+  else if(v > 45) msg += " — Cukup seru ❤️";
+  else if(v > 20) msg += " — Butuh usaha 🤝";
+  else msg += " — Berbeda, tapi unik 💫";
+  loveRes.textContent = msg;
+});
+loveRandom.addEventListener('click', ()=>{
+  const a = ['Febry','Rian','Indah','Nadia','Aldi','Repianz'][Math.floor(Math.random()*6)];
+  const b = ['Sita','Kevin','Wes','Desta','Said'][Math.floor(Math.random()*5)];
+  document.getElementById('love-name-a').value = a;
+  document.getElementById('love-name-b').value = b;
+  document.getElementById('love-go').click();
+});
+
+/* personality */
+const personGo = document.getElementById('person-go');
+const personClear = document.getElementById('person-clear');
+const personRes = document.getElementById('person-res');
+personGo.addEventListener('click', ()=>{
+  const n = document.getElementById('person-name').value;
+  const out = personalityFrom(n);
+  if(!out){ personRes.textContent = 'Masukkan nama dulu'; return; }
+  personRes.textContent = `${out.trait} — Skor: ${out.score}`;
+});
+personClear.addEventListener('click', ()=>{
+  document.getElementById('person-name').value = '';
+  personRes.textContent = '—';
+});
+
+/* fortune */
+const fortuneGo = document.getElementById('fortune-go');
+const fortuneRandom = document.getElementById('fortune-random');
+const fortuneRes = document.getElementById('fortune-res');
+fortuneGo.addEventListener('click', ()=>{
+  const n = document.getElementById('fortune-name').value;
+  fortuneRes.textContent = fortuneFor(n);
+});
+fortuneRandom.addEventListener('click', ()=>{
+  document.getElementById('fortune-name').value = '';
+  fortuneRes.textContent = fortunes[Math.floor(Math.random()*fortunes.length)];
+});
+
+/* keyboard friendly: Enter triggers primary button in focused card */
+['love-name-a','love-name-b'].forEach(id=>{
+  const el = document.getElementById(id);
+  el.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ document.getElementById('love-go').click(); }
+  });
+});
+document.getElementById('person-name').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') personGo.click();
+});
+document.getElementById('fortune-name').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') fortuneGo.click();
+});
+</script>
+</body>
+</html>
