@@ -1,200 +1,53 @@
 /* =====================================================
-   Azbry Chess - Style Sheet (fix)
-   Tema gelap neon untuk mode Azbry-MD
+   Azbry Chess Style — papan, bidak, indikator
    ===================================================== */
 
-html, body {
-  background: linear-gradient(180deg, #0b0d10 0%, #101315 100%) !important;
-  color: #eaf1e9;
-  min-height: 100vh;
-  margin: 0;
-  padding: 0;
-  font-family: "Inter", "Segoe UI", sans-serif;
-}
-
-:root {
-  --azbry-accent: #b8ff9a;
-  --azbry-accent-2: #94ef89;
-  --azbry-ink: #0b0d10;
-  --board-max: 820px;
-}
-
-/* ====== Container ====== */
-main.container {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 18px 16px 120px;
-}
-
-/* ====== Header ====== */
-header.top-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-header .title h1 {
-  margin: 0;
-  font-size: clamp(22px, 3.6vw, 34px);
-  color: var(--azbry-accent);
-}
-
-header .tag {
-  display: inline-block;
-  margin-right: 8px;
-  padding: 3px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  color: #a7b2be;
-  background: rgba(184, 255, 154, 0.08);
-  border: 1px solid rgba(184, 255, 154, 0.15);
-}
-
-/* ====== Mode Picker ====== */
-.mode-picker {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 8px 0 14px;
-}
-
-.seg {
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #dbe4ee;
-  transition: 0.2s ease;
-  cursor: pointer;
-}
-
-.seg.active {
-  background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
-  color: var(--azbry-ink);
-  border-color: transparent;
-  box-shadow: 0 0 12px rgba(184, 255, 154, 0.35);
-}
-
-/* ====== Board ====== */
-.board-wrap {
-  margin: 8px auto 16px;
-  max-width: var(--board-max);
-  border-radius: 22px;
-  padding: 14px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
 .board {
-  aspect-ratio: 1/1;
-  width: 100%;
-  margin: 0 auto;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* ====== Control Panel ====== */
-.panel {
   display: grid;
-  gap: 12px;
-  margin: 10px auto 18px;
-  max-width: var(--board-max);
-  grid-template-columns: 1fr;
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.btn {
-  padding: 10px 14px;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  aspect-ratio: 1/1;
   border-radius: 12px;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: #e8f0fb;
-  transition: 0.2s ease;
-  cursor: pointer;
+  overflow: hidden;
+  border: 2px solid rgba(184,255,154,.25);
+  box-shadow: 0 0 20px rgba(184,255,154,.15);
 }
 
-.btn.dark {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.btn.accent {
-  background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
-  color: var(--azbry-ink);
-  border-color: transparent;
-  box-shadow: 0 0 12px rgba(184, 255, 154, 0.25);
-}
-
-.btn:hover {
-  transform: translateY(-1px);
-  opacity: 0.9;
-}
-
-/* ====== Move Log ====== */
-.move-log {
-  padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.move-log h4 {
-  margin: 0 0 6px;
-  color: #cdd6e3;
-}
-
-#moveHistory {
-  margin: 0;
-  white-space: pre-wrap;
-  color: #aeb9c8;
-  font-family: monospace;
-}
-
-/* ====== Footer ====== */
-.footer {
-  max-width: var(--board-max);
-  margin: 0 auto;
+.square {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: center;
+  font-size: clamp(22px, 4vw, 42px);
+  cursor: pointer;
+  transition: background .1s ease;
 }
 
-/* ====== Board Only Mode ====== */
-body.board-only .panel,
-body.board-only .footer,
-body.board-only .mode-picker {
-  display: none;
+.square.white { background: #cfd3d5; }
+.square.black { background: #4a5057; }
+
+.square.highlight { outline: 3px solid #b8ff9a; }
+.square.move-option { background: radial-gradient(circle at center, rgba(184,255,154,.4) 20%, transparent 40%); }
+
+.piece {
+  user-select: none;
+  width: 80%;
+  height: auto;
+  filter: drop-shadow(0 0 8px rgba(0,0,0,.25));
+  transition: transform .1s ease;
 }
 
-body.board-only .board-wrap {
-  max-width: min(98vw, 1100px);
-  padding: 10px;
+.piece:hover {
+  transform: scale(1.05);
 }
 
-body.board-only main.container {
-  padding-bottom: 32px;
-}
-
-/* ====== License ====== */
-.license {
+/* turn indicator */
+.turn-indicator {
   text-align: center;
-  opacity: 0.6;
-  margin-top: 14px;
-  font-size: 14px;
+  font-weight: 700;
+  margin-top: 6px;
+  color: var(--azbry-accent);
+  text-shadow: 0 0 8px var(--azbry-ring);
 }
