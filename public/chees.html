@@ -1,388 +1,465 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Azbry Chess</title>
-<link rel="stylesheet" href="assets/css/azbry.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<link href="assets/css/azbry.css" rel="stylesheet">
+
 <style>
-/* --- Komponen lokal halaman ini --- */
-.wrap{max-width:1100px;margin:0 auto;padding:22px 16px 120px}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.title .eyebrow{font-weight:800;color:var(--muted);letter-spacing:.3px;font-size:12px}
-.title h1{margin:.25rem 0 .5rem;font-weight:800}
-.mode{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;background:rgba(184,255,154,.1);border:1px solid rgba(184,255,154,.2);font-weight:800}
-.grid{display:grid;grid-template-columns: 1fr minmax(300px,360px);gap:16px}
-
-/* Board shell */
-.board-wrap{
-  display:flex;align-items:center;justify-content:center;
-  border:1px solid rgba(255,255,255,.06);border-radius:18px;
-  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);
-  box-shadow: var(--shadow);
-  padding:12px;
-  min-height:360px;
+/* --- Chess page tweaks (di atas azbry.css) --- */
+.page-wrap { max-width: 1100px; margin: 0 auto; padding: 20px 14px 120px; }
+.header-line { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:6px 0 16px; }
+.h-sub { color: var(--muted, #98a2b3); font-weight:800; font-size:12px; letter-spacing:.25px; text-transform:uppercase; }
+.h-title { margin: 2px 0 0; font-weight: 800; font-size: clamp(22px, 4vw, 34px); letter-spacing:.2px; }
+.mode-pill{
+  padding:8px 14px; border-radius:999px; font-weight:800;
+  background:linear-gradient(180deg,var(--accent,#b8ff9a),var(--accent2,#8ee887));
+  color:#0b0d10; border:0; box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12);
 }
+.toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+.btn-ghost{
+  background:transparent; color:var(--ink,#e6e8ec);
+  border:1px solid rgba(255,255,255,.12); border-radius:12px;
+  padding:10px 12px; font-weight:800;
+}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
+  background:rgba(184,255,154,.08);border:1px solid rgba(184,255,154,.25);color:#dfffe0;font-weight:800;font-size:12px}
+
+.chess-shell{
+  display:grid; grid-template-columns: 1fr; gap:16px; align-items:start;
+}
+.board-card, .side-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--panel,#111418);
+  border:1px solid rgba(255,255,255,.06); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+}
+.board-card{ padding:16px; }
+.side-card{ padding:16px; }
+
+.board-wrap{ display:grid; place-items:center; }
 .board{
-  position:relative;
-  width:min(80vw, 640px);
-  height:min(80vw, 640px);
-  aspect-ratio:1/1;
-  border-radius:14px;
-  overflow:hidden;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.45);
-  --cell: calc(100% / 8);
+  width: min(92vw, 680px);
+  aspect-ratio: 1 / 1;            /* kotak selalu */
+  display:grid; grid-template-columns: repeat(8, 1fr);
+  gap:0; position:relative; border-radius: 14px; overflow:hidden;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 20px 60px rgba(184,255,154,.07);
+  background: #0e1013;
+}
+.square{
+  position:relative; display:grid; place-items:center;
+  font-size: clamp(18px, 4.2vw, 34px);
+  line-height:1; user-select:none;
+}
+.square.dark{ background:#151a1f; }
+.square.light{ background:#0f1317; }
+.square.sel { box-shadow: inset 0 0 0 2px rgba(184,255,154,.65); }
+.square.move { box-shadow: inset 0 0 0 2px rgba(184,255,154,.35); }
+.square .dot { width:10px; height:10px; border-radius:50%; background:rgba(184,255,154,.7); box-shadow:0 0 10px rgba(184,255,154,.7); }
+
+/* Notasi koordinat kecil (opsional) */
+.coord { position:absolute; font-size:11px; color:rgba(255,255,255,.28); }
+.coord.file { bottom:6px; right:8px; }
+.coord.rank { top:6px; left:8px; }
+
+/* “Brilliant (!!)” badge */
+.brilliant{
+  position:absolute; right:6px; top:6px; background:rgba(184,255,154,.2);
+  border:1px solid rgba(184,255,154,.5); color:#dfffe0; font-weight:900;
+  font-size:12px; padding:2px 6px; border-radius:10px; letter-spacing:.3px;
+  transform: translateY(-6px); opacity:0; animation:pop .45s ease-out forwards;
+}
+@keyframes pop{ to{ transform:none; opacity:1 } }
+
+.panel-grid{ display:grid; gap:12px; }
+.kv{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02)}
+.kv b{font-weight:800}
+.moves{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:13px; color:#cbd5e1; line-height:1.5}
+.hr{height:1px;background:rgba(255,255,255,.06);margin:8px 0}
+
+@media (min-width: 960px){
+  .chess-shell{ grid-template-columns: minmax(0,1fr) 340px; }
+  .side-card{ position:sticky; top:90px; }
 }
 
-/* ganti bagian ini di <style>  */
-
-.cell{
-  position:absolute;inset:auto auto;
-  width:var(--cell);height:var(--cell);
-  display:grid;place-items:center;
-  /* HAPUS baris ini: font-size:calc(var(--cell) * .62); */
-  user-select:none;-webkit-user-select:none;
-  transition:background-color .12s ease, transform .08s ease;
-}
-
-/* bidak */
-.p{
-  /* font spesifik yang punya simbol catur */
-  font-family: "Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols2",
-               "Noto Sans Symbols","Arial Unicode MS", system-ui, sans-serif;
-  font-size: calc(var(--cell) * .78); /* lebih besar & konsisten */
-  line-height: 1;
-  letter-spacing: 0;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.45));
-}
-/* piece */
-.p{filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
-.w{color:#eaf0f6} .b{color:#cfe9d0;opacity:.95}
-.pick{outline:2px solid rgba(184,255,154,.55);outline-offset:-3px}
-.move{box-shadow: inset 0 0 0 2px rgba(184,255,154,.45)}
-.capture{background:linear-gradient(180deg,rgba(255,75,75,.18),transparent)}
-
-/* side panel */
-.side{
-  border:1px solid rgba(255,255,255,.06);border-radius:18px;
-  background:var(--panel);box-shadow:var(--shadow);padding:14px;
-}
-.row{display:flex;align-items:center;justify-content:space-between;margin:6px 0}
-.badge{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-weight:800}
-.btns{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 10px}
-.log{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-size:13px;border-radius:12px;background:#0d1014;border:1px solid rgba(255,255,255,.06);padding:10px;height:160px;overflow:auto}
-small.meta{color:var(--muted)}
-
-/* --- Animasi Full Board (tambahan) --- */
-.board, .board-wrap, header, .side, .azbry-footer { transition: all .28s ease; }
-.side, .btns, .log, .meta, small.meta { transition: opacity .22s ease, transform .22s ease; }
-.side, .btns, .log, .meta, small.meta { opacity:1; transform:translateY(0); }
-
-.fullmode .side,
-.fullmode .btns,
-.fullmode .log,
-.fullmode .meta,
-.fullmode small.meta,
-.fullmode .azbry-footer{
-  opacity:0; transform:translateY(6px); pointer-events:none;
-}
-.fullmode header{justify-content:center;text-align:center}
-.fullmode .board-wrap{justify-content:center}
-.fullmode .board{
-  width:min(95vw,95vh); height:min(95vw,95vh);
-  --cell: calc(min(95vw,95vh) / 8);
-  box-shadow: 0 0 0 1px rgba(184,255,154,.14), 0 30px 60px rgba(0,0,0,.35);
-}
-@media (prefers-reduced-motion:reduce){
-  .board, .board-wrap, header, .side, .azbry-footer,
-  .btns, .log, .meta, small.meta{transition:none !important}
-}
+/* Mode papan penuh */
+.board-only .side-card, .board-only .toolbar .btn-full { display:none !important; }
+.board-only .board-card { padding:8px; }
+.board-only .board{ width:min(96vw, 900px); }
 </style>
 </head>
+
 <body>
-<div class="wrap">
-  <header>
-    <div class="title">
-      <div class="eyebrow">AZBRY-MD • BOARD</div>
-      <h1>Azbry Chess</h1>
-    </div>
-    <div class="mode">
-      <span>vs Human (Local)</span>
-    </div>
-  </header>
-
-  <section class="grid">
-    <div class="board-wrap">
-      <div class="board" id="board" aria-label="papan catur"></div>
-    </div>
-
-    <aside class="side">
-      <div class="row"><div class="badge">Giliran</div><div id="turn">Putih</div></div>
-      <div class="row"><div class="badge">Status</div><div id="status">Jalan</div></div>
-
-      <div class="btns">
-        <button class="btn" id="restart">Mulai Ulang</button>
-        <button class="btn ghost" id="undo">Undo 1 Langkah</button>
-        <button class="btn ghost" id="fullscreen">Mode Full Board</button>
+  <div class="page-wrap">
+    <header class="header-line">
+      <div>
+        <div class="h-sub">AZBRY-MD • BOARD</div>
+        <h1 class="h-title">Azbry Chess</h1>
       </div>
+      <div class="toolbar">
+        <span class="badge">vs Human (Local)</span>
+        <button class="btn-ghost btn-full" id="btnBoardOnly">Board Only</button>
+        <a class="btn-ghost" href="index.html">Kembali</a>
+      </div>
+    </header>
 
-      <div class="meta" style="margin-top:6px;margin-bottom:6px;font-weight:800">Catatan</div>
-      <p class="alert">Promotion otomatis jadi <b>Queen</b>. (Castling & en passant: belum)</p>
+    <div class="chess-shell">
+      <!-- BOARD -->
+      <section class="board-card">
+        <div class="board-wrap">
+          <div id="board" class="board" aria-label="Papan Catur"></div>
+        </div>
+      </section>
 
-      <div class="meta" style="margin-top:10px;font-weight:800">Log Langkah</div>
-      <div class="log" id="log"></div>
-      <small class="meta">Klik bidak untuk melihat langkah yang sah (dasar). Klik petak tujuan untuk bergerak.</small>
-    </aside>
-  </section>
-</div>
+      <!-- PANEL -->
+      <aside class="side-card">
+        <div class="panel-grid">
+          <div class="kv"><span><b>Giliran</b></span><span id="turnLabel">Putih</span></div>
+          <div class="kv"><span><b>Status</b></span><span id="statusLabel">Jalan</span></div>
+          <div class="hr"></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap">
+            <button id="btnReset" class="mode-pill">Mulai Ulang</button>
+            <button id="btnUndo" class="btn-ghost">Undo 1 Langkah</button>
+          </div>
+          <div class="hr"></div>
+          <div>
+            <div class="h-sub" style="margin-bottom:6px">Riwayat</div>
+            <div id="moves" class="moves">—</div>
+          </div>
+          <div class="hr"></div>
+          <small style="color:#9eb39f">Catatan: Tanpa castling & en passant. Promosi otomatis jadi Queen.</small>
+        </div>
+      </aside>
+    </div>
+  </div>
 
 <script>
-/* ====== Util & State ====== */
-const boardEl = document.getElementById('board');
-const logEl = document.getElementById('log');
-const turnEl = document.getElementById('turn');
-const statusEl = document.getElementById('status');
+/* ====== Chess core (sederhana) ====== */
 
-const initialFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"; // mulai standar
-
-// Unicode pieces
-const U = {
-  P:'♙', N:'♘', B:'♗', R:'♖', Q:'♕', K:'♔',
-  p:'♟', n:'♞', b:'♝', r:'♜', q:'♛', k:'♚'
+/* Unicode piece icons */
+const ICON = {
+  'P': '♙','N': '♘','B': '♗','R': '♖','Q': '♕','K': '♔',
+  'p': '♟','n': '♞','b': '♝','r': '♜','q': '♛','k': '♚'
 };
+/* piece values untuk heuristik Brilliant (!!) */
+const VAL = { 'P':1,'N':3,'B':3,'R':5,'Q':9,'K':100,
+              'p':1,'n':3,'b':3,'r':5,'q':9,'k':100 };
 
-let board = fenToArray(initialFEN); // 8x8
-let whiteTurn = true;
-let sel = null;          // {r,c}
-let moves = [];          // history untuk undo [{from,to,piece,captured,promo}]
-renderBoard();
+/* Board state: 8x8 array, a1 = [0,0] bawah-kiri (white side) */
+let board = [];
+let turn = 'w'; // w / b
+let sel = null; // selected square {r,c}
+let legal = []; // array of {r,c}
+let history = []; // stack of {from,to,piece,captured,promo}
 
-function fenToArray(fen){
-  const rows = fen.split('/');
-  return rows.map(r=>{
-    const row=[];
-    for(const ch of r){
-      if(/\d/.test(ch)){ for(let i=0;i<Number(ch);i++) row.push(''); }
-      else row.push(ch);
-    }
-    return row;
-  });
+/* init start position FEN-like inline */
+function startPos(){
+  const rows = [
+    'rnbqkbnr',
+    'pppppppp',
+    '........',
+    '........',
+    '........',
+    '........',
+    'PPPPPPPP',
+    'RNBQKBNR'
+  ];
+  board = rows.map(r => r.split(''));
+  turn = 'w';
+  sel = null; legal = []; history = [];
+  draw();
+  updateLabels('Jalan');
 }
 
-function renderBoard(){
-  boardEl.innerHTML='';
-  const size = 8;
-  const isEvenRow = (r)=> ((r%2)===0);
-  for(let r=0;r<size;r++){
-    for(let c=0;c<size;c++){
-      const cell = document.createElement('div');
-      cell.className = 'cell ' + ((r+c)%2? 'dark':'light') + (isEvenRow(r)?' row-even':'');
-      cell.style.left = `calc(var(--cell) * ${c})`;
-      cell.style.top  = `calc(var(--cell) * ${r})`;
-      cell.dataset.r=r; cell.dataset.c=c;
+const BOARD = document.getElementById('board');
+
+function draw(){
+  BOARD.innerHTML = '';
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const sq = document.createElement('div');
+      sq.className = 'square ' + ((r+c)%2? 'dark':'light');
+      sq.dataset.r = r; sq.dataset.c = c;
       const p = board[r][c];
-      if(p){
-        const span = document.createElement('span');
-        span.className = 'p ' + (p===p.toUpperCase() ? 'w':'b');
-        span.textContent = U[p];
-        cell.appendChild(span);
+      if(p !== '.'){
+        sq.textContent = ICON[p] || '';
       }
-      cell.addEventListener('click', onCellClick);
-      boardEl.appendChild(cell);
+      // small coords (optional)
+      if(r===7){ const f = document.createElement('span'); f.className='coord file'; f.textContent='abcdefgh'[c]; sq.appendChild(f); }
+      if(c===0){ const k = document.createElement('span'); k.className='coord rank'; k.textContent=8-r; sq.appendChild(k); }
+
+      sq.addEventListener('click', onSquareClick);
+      BOARD.appendChild(sq);
     }
   }
-  turnEl.textContent = whiteTurn ? 'Putih' : 'Hitam';
 }
 
-function onCellClick(e){
-  const r = +e.currentTarget.dataset.r;
-  const c = +e.currentTarget.dataset.c;
-  const piece = board[r][c];
+/* Helpers */
+const inb = (r,c)=> r>=0&&r<8&&c>=0&&c<8;
+const isWhite = p => /[PNBRQK]/.test(p);
+const isBlack = p => /[pnbrqk]/.test(p);
+const sideOf = p => isWhite(p)?'w':(isBlack(p)?'b':'.');
 
-  // memilih
-  if(!sel){
-    if(!piece) return;
-    const isWhite = piece===piece.toUpperCase();
-    if(isWhite !== whiteTurn) return;
-    sel = {r,c};
-    highlightMoves(r,c);
-    e.currentTarget.classList.add('pick');
-    return;
-  }
-
-  // jika klik petak yang sama: batal
-  if(sel.r===r && sel.c===c){
-    clearMarks(); sel=null; return;
-  }
-
-  // coba bergerak
-  const legal = genMoves(sel.r, sel.c);
-  if(legal.some(m=>m.r===r && m.c===c)){
-    doMove(sel.r, sel.c, r, c);
-    clearMarks(); sel=null;
-    whiteTurn = !whiteTurn;
-    renderBoard();
-    statusEl.textContent='Jalan';
-  }else{
-    // reselect
-    clearMarks(); sel=null;
-    onCellClick(e);
-  }
-}
-
-function clearMarks(){
-  boardEl.querySelectorAll('.cell').forEach(c=>{
-    c.classList.remove('pick','move','capture');
-  });
-}
-
-function highlightMoves(r,c){
-  clearMarks();
-  const fromCell = qCell(r,c);
-  if(fromCell) fromCell.classList.add('pick');
-  const legal = genMoves(r,c);
-  legal.forEach(m=>{
-    const cell = qCell(m.r,m.c);
-    if(!cell) return;
-    if(board[m.r][m.c]) cell.classList.add('capture');
-    else cell.classList.add('move');
-  });
-}
-
-function qCell(r,c){ return boardEl.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`); }
-
-function inside(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
-
+/* generate legal-ish moves (tanpa check validation penuh) */
 function genMoves(r,c){
-  const res=[];
-  const p = board[r][c];
-  if(!p) return res;
-  const white = p===p.toUpperCase();
-  const dir = white ? -1 : 1;
-
-  const add = (rr,cc)=>{
-    if(!inside(rr,cc)) return false;
-    const t = board[rr][cc];
-    if(!t){ res.push({r:rr,c:cc}); return true; }
-    if( (t===t.toUpperCase()) !== white ){ res.push({r:rr,c:cc}); }
+  const p = board[r][c]; if(p==='.') return [];
+  const side = sideOf(p); if((side==='w' && turn!=='w')||(side==='b'&&turn!=='b')) return [];
+  const moves=[];
+  const push = (rr,cc)=>{
+    if(!inb(rr,cc)) return;
+    const t=board[rr][cc];
+    if(t==='.') { moves.push({r:rr,c:cc,cap:false}); return true; }
+    if(sideOf(t)!==side) { moves.push({r:rr,c:cc,cap:true}); }
     return false;
   };
 
   switch(p.toLowerCase()){
     case 'p':{
-      // maju
-      if(inside(r+dir,c) && !board[r+dir][c]){ res.push({r:r+dir,c}); 
-        const start = white ? 6:1;
-        if(r===start && !board[r+2*dir][c]) res.push({r:r+2*dir,c});
-      }
-      // makan
-      [[dir,-1],[dir,1]].forEach(([dr,dc])=>{
-        const rr=r+dr, cc=c+dc;
-        if(inside(rr,cc) && board[rr][cc]){
-          const enemyWhite = board[rr][cc]===board[rr][cc].toUpperCase();
-          if(enemyWhite !== white) res.push({r:rr,c:cc});
+      const dir = isWhite(p)? -1 : 1;
+      const startRow = isWhite(p)? 6 : 1;
+      // forward
+      if(inb(r+dir,c) && board[r+dir][c]==='.') moves.push({r:r+dir,c,cap:false});
+      if(r===startRow && board[r+dir][c]==='.' && board[r+2*dir][c]==='.') moves.push({r:r+2*dir,c,cap:false});
+      // captures
+      for(const dc of [-1,1]){
+        const rr=r+dir, cc=c+dc;
+        if(inb(rr,cc) && board[rr][cc]!=='.' && sideOf(board[rr][cc])!==side){
+          moves.push({r:rr,c:cc,cap:true});
         }
-      });
+      }
       break;
     }
     case 'n':{
-      [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      const ds=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+      for(const [dr,dc] of ds){
         const rr=r+dr, cc=c+dc;
-        if(!inside(rr,cc)) return;
-        const t=board[rr][cc];
-        if(!t || (t===t.toUpperCase())!==white) res.push({r:rr,c:cc});
-      });
+        if(!inb(rr,cc)) continue;
+        const t = board[rr][cc];
+        if(t==='.' || sideOf(t)!==side) moves.push({r:rr,c:cc,cap:t!=='.'});
+      }
       break;
     }
     case 'b': slide([[1,1],[1,-1],[-1,1],[-1,-1]]); break;
     case 'r': slide([[1,0],[-1,0],[0,1],[0,-1]]); break;
     case 'q': slide([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]); break;
     case 'k':{
-      [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([dr,dc])=>{
-        const rr=r+dr, cc=c+dc;
-        if(!inside(rr,cc)) return;
-        const t=board[rr][cc];
-        if(!t || (t===t.toUpperCase())!==white) res.push({r:rr,c:cc});
-      });
+      for(const dr of [-1,0,1])for(const dc of [-1,0,1]){
+        if(!dr&&!dc) continue; const rr=r+dr,cc=c+dc;
+        if(!inb(rr,cc)) continue; const t=board[rr][cc];
+        if(t==='.'||sideOf(t)!==side) moves.push({r:rr,c:cc,cap:t!=='.'});
+      }
       break;
     }
   }
+  return moves;
+
   function slide(dirs){
     for(const [dr,dc] of dirs){
       let rr=r+dr, cc=c+dc;
-      while(inside(rr,cc)){
-        const t=board[rr][cc];
-        if(!t){ res.push({r:rr,c:cc}); }
-        else{
-          if((t===t.toUpperCase())!==white) res.push({r:rr,c:cc});
-          break;
-        }
+      while(inb(rr,cc)){
+        const cont = push(rr,cc);
+        if(cont===false) break;
+        if(board[rr][cc]!=='.') break;
         rr+=dr; cc+=dc;
       }
     }
   }
-  return res;
 }
 
+/* click flow */
+function onSquareClick(e){
+  const r = +e.currentTarget.dataset.r;
+  const c = +e.currentTarget.dataset.c;
+  const p = board[r][c];
+
+  // Jika belum memilih & kotak ada bidak dari sisi yang jalan -> pilih
+  if(!sel){
+    if(p!=='.' && ((turn==='w' && isWhite(p)) || (turn==='b' && isBlack(p)))){
+      sel = {r,c};
+      legal = genMoves(r,c);
+      markSelection();
+    }
+    return;
+  }
+
+  // Jika klik kotak asal -> batal
+  if(sel && sel.r===r && sel.c===c){
+    clearMarks(); sel=null; legal=[]; return;
+  }
+
+  // Jika tujuan legal -> jalankan
+  const mv = legal.find(m=>m.r===r && m.c===c);
+  if(mv){
+    doMove(sel.r, sel.c, r, c);
+    clearMarks(); sel=null; legal=[];
+  } else {
+    // pilih ulang jika klik bidak sisi yang jalan
+    if(p!=='.' && ((turn==='w' && isWhite(p)) || (turn==='b' && isBlack(p)))){
+      sel={r,c}; legal=genMoves(r,c); markSelection();
+    } else {
+      clearMarks(); sel=null; legal=[];
+    }
+  }
+}
+
+function markSelection(){
+  clearMarks();
+  const idx = sel.r*8+sel.c;
+  BOARD.children[idx].classList.add('sel');
+  for(const m of legal){
+    const i = m.r*8+m.c;
+    BOARD.children[i].classList.add('move');
+    // titik di tengah destinasi
+    const dot = document.createElement('div'); dot.className='dot';
+    BOARD.children[i].appendChild(dot);
+  }
+}
+function clearMarks(){
+  [...BOARD.children].forEach(el=>{
+    el.classList.remove('sel','move');
+    const d = el.querySelector('.dot'); if(d) d.remove();
+  });
+}
+
+/* Move apply + promotion + history + brilliant check */
 function doMove(r1,c1,r2,c2){
   const piece = board[r1][c1];
-  const captured = board[r2][c2] || '';
-  // promotion
-  let promo = '';
-  if(piece.toLowerCase()==='p' && (r2===0 || r2===7)){
-    promo = piece===piece.toUpperCase() ? 'Q' : 'q';
+  const target = board[r2][c2];
+  // promo sederhana otomatis queen
+  let promo = null;
+  if(piece==='P' && r2===0){ promo='Q'; }
+  if(piece==='p' && r2===7){ promo='q'; }
+
+  board[r2][c2] = promo ? promo : piece;
+  board[r1][c1] = '.';
+
+  history.push({from:{r:r1,c:c1}, to:{r:r2,c:c2}, piece, captured:target, promo});
+  draw();
+
+  // Cek brilliant untuk langkah pemain (sisi yang barusan jalan = turn sebelum di-switch)
+  const moverSide = turn;
+  showBrilliantIfAny({from:{r:r1,c:c1}, to:{r:r2,c:c2}, piece, captured:target, promo}, moverSide);
+
+  // push log text
+  logMove(history[history.length-1]);
+
+  // ganti giliran
+  turn = (turn==='w'?'b':'w');
+  updateLabels('Jalan');
+}
+
+/* Check & heuristik sederhana “Brilliant (!!)” */
+function showBrilliantIfAny(last, side){
+  // Heuristik:
+  // 1) Capture dengan keuntungan material ≥ 3 poin
+  // 2) ATAU non-capture yang menghasilkan CHECK ke raja lawan
+  let brilliant = false;
+
+  const gain = (last.captured && last.captured!=='.') ? (VAL[last.captured] - VAL[last.piece]) : 0;
+  if(gain >= 3) brilliant = true;
+
+  if(!brilliant && (!last.captured || last.captured==='.') ){
+    // cek apakah langkah memberi check
+    if(isCheckAfterMove(last, side)) brilliant = true;
   }
-  moves.push({from:{r:r1,c:c1}, to:{r:r2,c:c2}, piece, captured, promo});
-  board[r1][c1] = '';
-  board[r2][c2] = promo || piece;
 
-  // log
-  const files = ['a','b','c','d','e','f','g','h'];
-  const ranks = ['8','7','6','5','4','3','2','1'];
-  const icon = pieceIcon(piece);
-  const txt = `${icon} ${files[c1]}${ranks[r1]} → ${files[c2]}${ranks[r2]}${promo? ' = Q':''}${captured? ' ×':''}`;
-  appendLog(txt);
+  if(brilliant){
+    // taruh badge di kotak tujuan
+    const idx = last.to.r*8 + last.to.c;
+    const sq = BOARD.children[idx];
+    const b = document.createElement('div');
+    b.className='brilliant';
+    b.textContent='!!';
+    sq.appendChild(b);
+    // auto fade out (opsional tetap biar tinggal)
+    setTimeout(()=>{ b.style.opacity=.9; }, 1200);
+  }
 }
 
-function pieceIcon(p){
-  const base = p.toLowerCase();
-  const map = {p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
-  return map[base]||'•';
+/* naive check: apakah king lawan sedang diserang setelah move */
+function isCheckAfterMove(last, moverSide){
+  // Temukan posisi raja lawan
+  const enemyKing = (moverSide==='w')?'k':'K';
+  let kr=-1,kc=-1;
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      if(board[r][c]===enemyKing){ kr=r; kc=c; break; }
+    }
+    if(kr!==-1) break;
+  }
+  if(kr===-1) return false;
+
+  // Cek apakah ada bidak sisi "moverSide" yang bisa menyerang kotak raja lawan
+  const attackers = [];
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const p=board[r][c];
+      if(p==='.') continue;
+      if((moverSide==='w' && isWhite(p)) || (moverSide==='b' && isBlack(p))){
+        const ms = genMovesPure(r,c);
+        if(ms.some(m=>m.r===kr && m.c===kc)){
+          attackers.push({r,c});
+        }
+      }
+    }
+  }
+  return attackers.length>0;
+
+  // generator “pure” tanpa filter turn
+  function genMovesPure(r,c){
+    const saveTurn = turn;
+    turn = moverSide; // sementara set supaya genMoves jalan
+    const m = genMoves(r,c);
+    turn = saveTurn;
+    return m;
+  }
 }
 
-function appendLog(t){
-  const line = document.createElement('div');
-  line.textContent = t;
-  logEl.appendChild(line);
-  logEl.scrollTop = logEl.scrollHeight;
+function logMove(m){
+  const files='abcdefgh';
+  const from = files[m.from.c] + (8-m.from.r);
+  const to   = files[m.to.c] + (8-m.to.r);
+  const cap  = (m.captured && m.captured!=='.') ? 'x' : '–';
+  const promo = m.promo ? `=${m.promo.toUpperCase()}` : '';
+  const ply = history.length;
+  const mvTxt = `${ply}. ${from} ${cap} ${to}${promo}`;
+  const box = document.getElementById('moves');
+  box.textContent = (box.textContent==='—') ? mvTxt : (box.textContent + '\n' + mvTxt);
+  box.scrollTop = box.scrollHeight;
 }
 
-/* ====== Controls ====== */
-document.getElementById('restart').onclick = ()=>{
-  board = fenToArray(initialFEN);
-  whiteTurn = true; sel=null; moves.length=0; logEl.innerHTML='';
-  statusEl.textContent='Jalan';
-  renderBoard();
-};
-document.getElementById('undo').onclick = ()=>{
-  const m = moves.pop(); if(!m) return;
+function updateLabels(status){
+  document.getElementById('turnLabel').textContent = (turn==='w'?'Putih':'Hitam');
+  document.getElementById('statusLabel').textContent = status;
+}
+
+/* Undo 1 ply */
+function undo(){
+  const m = history.pop(); if(!m) return;
   board[m.from.r][m.from.c] = m.piece;
-  board[m.to.r][m.to.c] = m.captured;
-  whiteTurn = (m.piece===m.piece.toUpperCase()); // kembalikan giliran
-  logEl.lastChild && logEl.removeChild(logEl.lastChild);
-  renderBoard();
-};
+  board[m.to.r][m.to.c] = (m.captured && m.captured!=='.')? m.captured : '.';
+  draw();
+  turn = (turn==='w'?'b':'w');
+  // potong 1 baris riwayat
+  const box = document.getElementById('moves');
+  const lines = box.textContent.split('\n');
+  lines.pop();
+  box.textContent = lines.length? lines.join('\n') : '—';
+  updateLabels('Undo');
+}
 
-/* Full Board toggle */
-const fullBtn = document.getElementById('fullscreen');
-let full = false;
-fullBtn.onclick = () => {
-  full = !full;
-  document.body.classList.toggle('fullmode', full);
-  fullBtn.textContent = full ? 'Kembali ke Normal' : 'Mode Full Board';
-  document.querySelector('.board-wrap')?.scrollIntoView({ behavior:'smooth', block:'center' });
-};
+/* UI buttons */
+document.getElementById('btnReset').addEventListener('click', startPos);
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnBoardOnly').addEventListener('click', ()=>{
+  document.body.classList.toggle('board-only');
+});
+
+/* boot */
+startPos();
 </script>
 </body>
 </html>
