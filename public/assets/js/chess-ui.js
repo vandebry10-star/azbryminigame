@@ -24,11 +24,11 @@
     let sel=null, legal=[], onAIMove=null, vsAI=false;
 
     // ======== TRUE PERSPECTIVE (NO CSS ROTATE) ========
-    // 'w' = white bottom (default), 'b' = black bottom
     let perspective = localStorage.getItem('az_chess_persp') || 'w';
     function setPerspective(side){
       perspective = (side==='b') ? 'b' : 'w';
       localStorage.setItem('az_chess_persp', perspective);
+      sel=null; legal=[]; // hindari stale selection
       drawBoard();
     }
     function rowsOrder(){ return (perspective==='w') ? [...Array(8).keys()] : [...Array(8).keys()].reverse(); }
@@ -54,7 +54,7 @@
           const p = B[r][c];
           if(p!=='.') d.textContent = engine.ICON[p] || '';
 
-          // coordinates (render di sisi bawah/kanan papan sesuai perspektif)
+          // coordinates on visual bottom/left
           if(i===7){ const f=document.createElement('span'); f.className='coord file'; f.textContent=labelFile(j); d.appendChild(f); }
           if(j===0){ const k=document.createElement('span'); k.className='coord rank'; k.textContent=labelRank(i); d.appendChild(k); }
 
@@ -63,6 +63,8 @@
         }
       }
       updateTurnBar();
+      // kalau ada selection lama, tandai ulang (aman kalau null)
+      markSelected();
     }
 
     function clearMarks(){
@@ -74,9 +76,9 @@
     function markSelected(){
       clearMarks();
       if(!sel) return;
-      // cari index visual dari koordinat real
       const rIdx = rowsOrder(), cIdx = colsOrder();
       const vi = rIdx.indexOf(sel.r), vj = cIdx.indexOf(sel.c);
+      if(vi<0 || vj<0){ sel=null; legal=[]; return; }
       const idx = vi*8 + vj;
       BOARD.children[idx]?.classList.add('sel');
 
@@ -104,23 +106,50 @@
       LOG.scrollTop = LOG.scrollHeight;
     }
 
+    // ---- helper: validasi piece milik side yang jalan
+    function isOwnPieceAt(r,c){
+      const p = engine.getBoard()[r][c];
+      if(p==='.') return false;
+      const side = (/[PNBRQK]/.test(p) ? 'w' : 'b');
+      return side === engine.getTurn();
+    }
+
     function onSquareClick(e){
-      if(vsAI && engine.getTurn()==='b') return; // tunggu AI gerak
+      // di vs Human, tidak boleh ngeblok interaksi saat giliran Hitam
+      if(vsAI && engine.getTurn()==='b') return; // hanya jika mode AI
+
       const r = +e.currentTarget.dataset.r;
       const c = +e.currentTarget.dataset.c;
-      const B = engine.getBoard();
-      const p = B[r][c];
 
+      // (A) belum seleksi -> pilih buah sendiri
       if(!sel){
-        if(p!=='.' && ((engine.getTurn()==='w' && /[PNBRQK]/.test(p)) || (engine.getTurn()==='b' && /[pnbrqk]/.test(p)))){
-          sel={r,c};
-          legal=engine.legalMovesAt(r,c);
+        if(isOwnPieceAt(r,c)){
+          sel = {r,c};
+          legal = engine.legalMovesAt(r,c);
           markSelected();
         }
         return;
       }
+
+      // (B) klik petak yang sama -> batal
       if(sel.r===r && sel.c===c){ sel=null; legal=[]; clearMarks(); return; }
 
+      // (C) recompute legal untuk menghindari stale state
+      if(!isOwnPieceAt(sel.r, sel.c)){
+        sel=null; legal=[]; clearMarks(); return;
+      }
+      legal = engine.legalMovesAt(sel.r, sel.c); // ← REFRESH LEGAL
+      if(!legal || legal.length===0){
+        // selection tidak valid lagi
+        sel=null; legal=[]; clearMarks();
+        // allow reselect jika klik own piece
+        if(isOwnPieceAt(r,c)){
+          sel={r,c}; legal=engine.legalMovesAt(r,c); markSelected();
+        }
+        return;
+      }
+
+      // (D) coba eksekusi
       const mv = legal.find(m => m.to.r===r && m.to.c===c);
       if(mv){
         const promo = promoIfNeeded(sel,{r,c});
@@ -134,9 +163,12 @@
         return;
       }
 
-      if(p!=='.' && ((engine.getTurn()==='w' && /[PNBRQK]/.test(p)) || (engine.getTurn()==='b' && /[pnbrqk]/.test(p)))){
+      // (E) reselect jika klik buah sendiri; selain itu clear
+      if(isOwnPieceAt(r,c)){
         sel={r,c}; legal=engine.legalMovesAt(r,c); markSelected();
-      }else{ sel=null; legal=[]; clearMarks(); }
+      }else{
+        sel=null; legal=[]; clearMarks();
+      }
     }
 
     function promoIfNeeded(from,to){
@@ -159,9 +191,16 @@
       box.style.display='grid';
     }
 
+    // ===== tombol (FIX: bind ulang) =====
+    const btnReset = el(btnResetId);
+    const btnUndo  = el(btnUndoId);
+    const btnRedo  = el(btnRedoId);
     function reset(){ engine.reset(); sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
     function undo(){ const m=engine.undo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
     function redo(){ const m=engine.redo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
+    if(btnReset) btnReset.onclick = reset;
+    if(btnUndo)  btnUndo.onclick  = undo;
+    if(btnRedo)  btnRedo.onclick  = redo;
 
     // boot
     drawBoard(); updateLog();
@@ -173,10 +212,11 @@
       reset, undo, redo,
       setVsAI(flag){ vsAI=!!flag; },
       setAICallback(fn){ onAIMove = (typeof fn==='function') ? fn : null; },
-      setPerspective,   // ← panggil dari main/injeksi tombol flip
+      setPerspective,
       commitAIMove(move){
         if(!move) return false;
         engine.makeMove(move.from, move.to, move.promo||null);
+        sel=null; legal=[]; clearMarks();
         drawBoard(); updateLog();
         const st=engine.statusInfo();
         if(st.end) showResult(st);
