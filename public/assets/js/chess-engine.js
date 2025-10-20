@@ -293,3 +293,5 @@ export class ChessEngine {
     return false;
   }
 }
+// expose ke global agar bisa dipakai tanpa module import
+if (typeof window !== "undefined") window.ChessEngine = ChessEngine;
