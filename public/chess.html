@@ -5,59 +5,90 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess</title>
 
-  <!-- Tema global + style catur -->
+  <!-- Tema Global -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
 
   <style>
-    /* Sentuhan kecil agar center & responsif */
-    :root{
+    /* Tema dasar agar tidak putih */
+    html, body {
+      background: linear-gradient(180deg, #0b0d10 0%, #101315 100%) !important;
+      color: #eaf1e9;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
       --board-max: 820px;
     }
-    body{ min-height:100dvh; }
-    main.container{
+
+    main.container {
       max-width: 1080px;
       margin: 0 auto;
       padding: 18px 16px 120px;
     }
-    header.top-header{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin-bottom:14px;
+
+    header.top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
     }
-    header .title h1{
-      margin:0; font-size: clamp(22px, 3.6vw, 34px);
+
+    header .title h1 {
+      margin: 0;
+      font-size: clamp(22px, 3.6vw, 34px);
       color: var(--azbry-accent, #b8ff9a);
     }
-    header .tag{
-      display:inline-block; margin-right:8px; padding:3px 8px;
-      border-radius:10px; font-size:12px; color:#a7b2be;
-      background: rgba(184,255,154,.08); border:1px solid rgba(184,255,154,.15);
+
+    header .tag {
+      display: inline-block;
+      margin-right: 8px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      color: #a7b2be;
+      background: rgba(184, 255, 154, 0.08);
+      border: 1px solid rgba(184, 255, 154, 0.15);
     }
 
-    .mode-picker{
-      display:flex; gap:10px; flex-wrap:wrap; margin: 8px 0 14px;
+    .mode-picker {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 8px 0 14px;
     }
-    .seg{
-      padding:10px 14px; border-radius:12px; font-weight:700;
-      background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06);
-      color:#dbe4ee;
+
+    .seg {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #dbe4ee;
+      transition: 0.2s ease;
     }
-    .seg.active{
-      background: linear-gradient(180deg, var(--azbry-accent,#b8ff9a), var(--azbry-accent-2,#94ef89));
-      color: var(--azbry-ink,#0b0d10);
+
+    .seg.active {
+      background: linear-gradient(180deg, var(--azbry-accent, #b8ff9a), var(--azbry-accent-2, #94ef89));
+      color: var(--azbry-ink, #0b0d10);
       border-color: transparent;
+      box-shadow: 0 0 12px rgba(184, 255, 154, 0.35);
     }
 
-    .board-wrap{
+    .board-wrap {
       margin: 8px auto 16px;
       max-width: var(--board-max);
-      border-radius:22px;
+      border-radius: 22px;
       padding: 14px;
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid rgba(255,255,255,.06);
-      box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
     }
-    .board{
+
+    .board {
       aspect-ratio: 1/1;
       width: 100%;
       margin: 0 auto;
@@ -65,121 +96,162 @@
       overflow: hidden;
     }
 
-    .panel{
-      display:grid; gap:12px; margin: 10px auto 18px; max-width: var(--board-max);
+    .panel {
+      display: grid;
+      gap: 12px;
+      margin: 10px auto 18px;
+      max-width: var(--board-max);
       grid-template-columns: 1fr;
     }
-    .controls{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-start;
-      padding:12px; border:1px solid rgba(255,255,255,.06); border-radius:16px;
-      background: rgba(255,255,255,.02);
-    }
-    .btn{
-      padding:10px 14px; border-radius:12px; font-weight:700;
-      border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04);
-      color:#e8f0fb;
-    }
-    .btn.dark{ background: rgba(255,255,255,.03); }
-    .btn.accent{
-      background: linear-gradient(180deg, var(--azbry-accent,#b8ff9a), var(--azbry-accent-2,#94ef89));
-      color: var(--azbry-ink,#0b0d10); border-color: transparent;
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
     }
 
-    .move-log{
-      padding:12px; border:1px solid rgba(255,255,255,.06); border-radius:16px;
-      background: rgba(255,255,255,.02);
+    .btn {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: #e8f0fb;
+      transition: 0.2s ease;
     }
-    .move-log h4{ margin: 0 0 6px; color:#cdd6e3 }
-    #moveHistory{ margin:0; white-space:pre-wrap; color:#aeb9c8 }
 
-    /* Footer bar (Board Only / Kembali) */
-    .footer{
+    .btn.dark {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .btn.accent {
+      background: linear-gradient(180deg, var(--azbry-accent, #b8ff9a), var(--azbry-accent-2, #94ef89));
+      color: var(--azbry-ink, #0b0d10);
+      border-color: transparent;
+      box-shadow: 0 0 12px rgba(184, 255, 154, 0.25);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      opacity: 0.9;
+    }
+
+    .move-log {
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .move-log h4 {
+      margin: 0 0 6px;
+      color: #cdd6e3;
+    }
+
+    #moveHistory {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #aeb9c8;
+      font-family: monospace;
+    }
+
+    .footer {
       max-width: var(--board-max);
       margin: 0 auto;
-      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
     }
 
-    /* Board only mode: sembunyikan panel & footer */
     body.board-only .panel,
     body.board-only .footer,
-    body.board-only .mode-picker { display:none; }
-    body.board-only .board-wrap{ max-width:min(98vw, 1100px); padding:10px; }
-    body.board-only main.container{ padding-bottom: 32px; }
+    body.board-only .mode-picker {
+      display: none;
+    }
+
+    body.board-only .board-wrap {
+      max-width: min(98vw, 1100px);
+      padding: 10px;
+    }
+
+    body.board-only main.container {
+      padding-bottom: 32px;
+    }
+
+    .license {
+      text-align: center;
+      opacity: 0.6;
+      margin-top: 14px;
+    }
   </style>
 </head>
+
 <body>
-<main id="chess-app" class="container">
+  <main id="chess-app" class="container">
+    <header class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess</h1>
+      </div>
+    </header>
 
-  <!-- HEADER -->
-  <header class="top-header" aria-label="Judul">
-    <div class="title">
-      <span class="tag">AZBRY-MD • BOARD</span>
-      <h1>Azbry Chess</h1>
-    </div>
-  </header>
-
-  <!-- MODE PICKER -->
-  <div class="mode-picker" aria-label="Pilih Mode">
-    <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-    <button id="modeAI" class="seg" type="button" title="Mode vs Azbry-MD">vs Azbry-MD</button>
-  </div>
-
-  <!-- BOARD -->
-  <section class="board-wrap" aria-label="Papan Catur">
-    <div id="board" class="board" aria-live="polite"></div>
-  </section>
-
-  <!-- CONTROL PANEL -->
-  <section class="panel" aria-label="Kontrol Permainan">
-    <div class="controls">
-      <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-      <button id="btnUndo"  class="btn" type="button">Undo</button>
-      <button id="btnRedo"  class="btn" type="button">Redo</button>
-      <button id="btnFlip"  class="btn dark" type="button">Flip Board</button>
+    <div class="mode-picker">
+      <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
+      <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
     </div>
 
-    <div class="move-log">
-      <h4>Riwayat Langkah</h4>
-      <pre id="moveHistory">—</pre>
-    </div>
-  </section>
+    <section class="board-wrap">
+      <div id="board" class="board"></div>
+    </section>
 
-  <!-- FOOTER SHORTCUTS -->
-  <footer class="footer" aria-label="Aksi Tampilan">
-    <div class="left-btn">
-      <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
-    </div>
-    <div class="right-btn">
-      <button id="btnBack" class="btn dark" type="button">Kembali</button>
-    </div>
-  </footer>
+    <section class="panel">
+      <div class="controls">
+        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+        <button id="btnUndo" class="btn" type="button">Undo</button>
+        <button id="btnRedo" class="btn" type="button">Redo</button>
+        <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
+      </div>
 
-  <!-- Lisensi (jaga-jaga kalau footer auto tidak muncul) -->
-  <section class="license" aria-hidden="true" style="text-align:center;opacity:.7;margin-top:14px">
-    <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
-    <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
-  </section>
+      <div class="move-log">
+        <h4>Riwayat Langkah</h4>
+        <pre id="moveHistory">—</pre>
+      </div>
+    </section>
 
-</main>
+    <footer class="footer">
+      <button id="btnBoardOnly" class="btn dark">Board Only</button>
+      <button id="btnBack" class="btn dark">Kembali</button>
+    </footer>
 
-<!-- SCRIPTS (URUTAN WAJIB) -->
-<script type="module" src="assets/js/chess-engine.js"></script>
-<script type="module" src="assets/js/chess-ui.js"></script>
-<script type="module" src="assets/js/main.js"></script>
+    <section class="license">
+      <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
+      <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
+    </section>
+  </main>
 
-<!-- Pengikat ringan untuk tombol tampilan -->
-<script>
-  // Board Only toggle (bisa balik lagi dari mode board only)
-  document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
-    document.body.classList.toggle('board-only');
-  });
+  <!-- Script urutan wajib -->
+  <script type="module" src="assets/js/chess-engine.js"></script>
+  <script type="module" src="assets/js/chess-ui.js"></script>
+  <script type="module" src="assets/js/main.js"></script>
 
-  // Kembali: arahkan ke index (atau history.back jika dipanggil langsung)
-  document.getElementById('btnBack')?.addEventListener('click', () => {
-    const to = (location.pathname.endsWith('chess.html') ? 'index.html' : './');
-    try { history.length > 1 ? history.back() : location.assign(to); }
-    catch { location.assign(to); }
-  });
-</script>
+  <!-- Tambahan kecil -->
+  <script>
+    document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
+      document.body.classList.toggle('board-only');
+    });
+
+    document.getElementById('btnBack')?.addEventListener('click', () => {
+      const to = (location.pathname.endsWith('chess.html') ? 'index.html' : './');
+      try { history.length > 1 ? history.back() : location.assign(to); }
+      catch { location.assign(to); }
+    });
+  </script>
 </body>
 </html>
