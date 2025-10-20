@@ -1,462 +1,354 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Azbry Chess</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
-<link href="assets/css/azbry.css" rel="stylesheet">
+<link href="assets/css/azbry.css" rel="stylesheet"/>
 
 <style>
-/* --- Chess page tweaks (di atas azbry.css) --- */
-.page-wrap { max-width: 1100px; margin: 0 auto; padding: 20px 14px 120px; }
-.header-line { display:flex; justify-content:space-between; align-items:center; gap:12px; margin:6px 0 16px; }
-.h-sub { color: var(--muted, #98a2b3); font-weight:800; font-size:12px; letter-spacing:.25px; text-transform:uppercase; }
-.h-title { margin: 2px 0 0; font-weight: 800; font-size: clamp(22px, 4vw, 34px); letter-spacing:.2px; }
-.mode-pill{
-  padding:8px 14px; border-radius:999px; font-weight:800;
-  background:linear-gradient(180deg,var(--accent,#b8ff9a),var(--accent2,#8ee887));
-  color:#0b0d10; border:0; box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12);
-}
-.toolbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+:root{ --piece-size-min:22px; --piece-size-vw:6.6vw; --piece-size-max:52px; }
 
-.btn-ghost{
-  background:transparent; color:var(--ink,#e6e8ec);
-  border:1px solid rgba(255,255,255,.12); border-radius:12px;
-  padding:10px 12px; font-weight:800;
-}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;
-  background:rgba(184,255,154,.08);border:1px solid rgba(184,255,154,.25);color:#dfffe0;font-weight:800;font-size:12px}
+.page-wrap{max-width:1100px;margin:0 auto;padding:20px 14px 120px}
+.header-line{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:6px 0 16px}
+.h-sub{color:var(--muted,#9aa4b2);font-weight:800;font-size:12px;letter-spacing:.25px;text-transform:uppercase}
+.h-title{margin:2px 0 0;font-weight:800;font-size:clamp(22px,4vw,34px)}
+.mode-pill{padding:8px 14px;border-radius:999px;font-weight:800;background:linear-gradient(180deg,var(--accent,#b8ff9a),var(--accent2,#8ee887));color:#0b0d10;border:0;box-shadow:0 6px 22px rgba(184,255,154,.25)}
+.btn-ghost{background:transparent;color:var(--ink,#e6e8ec);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px;font-weight:800}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(184,255,154,.08);border:1px solid rgba(184,255,154,.25);color:#dfffe0;font-weight:800;font-size:12px}
 
-.chess-shell{
-  display:grid; grid-template-columns: 1fr; gap:16px; align-items:start;
-}
-.board-card, .side-card{
-  background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%), var(--panel,#111418);
-  border:1px solid rgba(255,255,255,.06); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.45);
-}
-.board-card{ padding:16px; }
-.side-card{ padding:16px; }
+.chess-shell{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+.board-card,.side-card{background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),var(--panel,#111418);border:1px solid rgba(255,255,255,.06);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.board-card{padding:16px}
+.side-card{padding:16px}
 
-.board-wrap{ display:grid; place-items:center; }
+.board-wrap{display:grid;place-items:center}
 .board{
-  width: min(92vw, 680px);
-  aspect-ratio: 1 / 1;            /* kotak selalu */
-  display:grid; grid-template-columns: repeat(8, 1fr);
-  gap:0; position:relative; border-radius: 14px; overflow:hidden;
-  box-shadow: 0 0 0 1px rgba(255,255,255,.04) inset, 0 20px 60px rgba(184,255,154,.07);
-  background: #0e1013;
+  width:min(92vw,700px); aspect-ratio:1/1;
+  display:grid;grid-template-columns:repeat(8,1fr);
+  border-radius:14px;overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04) inset,0 20px 60px rgba(184,255,154,.07);
+  background:#0e1013
 }
-.square{
-  position:relative; display:grid; place-items:center;
-  font-size: clamp(18px, 4.2vw, 34px);
-  line-height:1; user-select:none;
-}
-.square.dark{ background:#151a1f; }
-.square.light{ background:#0f1317; }
-.square.sel { box-shadow: inset 0 0 0 2px rgba(184,255,154,.65); }
-.square.move { box-shadow: inset 0 0 0 2px rgba(184,255,154,.35); }
-.square .dot { width:10px; height:10px; border-radius:50%; background:rgba(184,255,154,.7); box-shadow:0 0 10px rgba(184,255,154,.7); }
+.square{position:relative;display:grid;place-items:center;
+  font-size:clamp(var(--piece-size-min),var(--piece-size-vw),var(--piece-size-max));
+  line-height:1;user-select:none}
+.square.dark{background:#151a1f} .square.light{background:#0f1317}
+.square.sel{box-shadow:inset 0 0 0 2px rgba(184,255,154,.65)}
+.square.move{box-shadow:inset 0 0 0 2px rgba(184,255,154,.35)}
+.square .dot{width:12px;height:12px;border-radius:50%;background:rgba(184,255,154,.75);box-shadow:0 0 12px rgba(184,255,154,.8)}
+.coord{position:absolute;font-size:12px;color:rgba(255,255,255,.28)}
+.coord.file{bottom:6px;right:8px} .coord.rank{top:6px;left:8px}
 
-/* Notasi koordinat kecil (opsional) */
-.coord { position:absolute; font-size:11px; color:rgba(255,255,255,.28); }
-.coord.file { bottom:6px; right:8px; }
-.coord.rank { top:6px; left:8px; }
+.brilliant{position:absolute;right:6px;top:6px;background:rgba(184,255,154,.2);
+  border:1px solid rgba(184,255,154,.5);color:#dfffe0;font-weight:900;font-size:12px;
+  padding:2px 6px;border-radius:10px;letter-spacing:.3px;transform:translateY(-6px);opacity:0;animation:pop .45s ease-out forwards}
+@keyframes pop{to{transform:none;opacity:1}}
 
-/* “Brilliant (!!)” badge */
-.brilliant{
-  position:absolute; right:6px; top:6px; background:rgba(184,255,154,.2);
-  border:1px solid rgba(184,255,154,.5); color:#dfffe0; font-weight:900;
-  font-size:12px; padding:2px 6px; border-radius:10px; letter-spacing:.3px;
-  transform: translateY(-6px); opacity:0; animation:pop .45s ease-out forwards;
-}
-@keyframes pop{ to{ transform:none; opacity:1 } }
-
-.panel-grid{ display:grid; gap:12px; }
+.panel-grid{display:grid;gap:12px}
 .kv{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.02)}
 .kv b{font-weight:800}
-.moves{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size:13px; color:#cbd5e1; line-height:1.5}
-.hr{height:1px;background:rgba(255,255,255,.06);margin:8px 0}
+.moves{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:#cbd5e1;line-height:1.5;white-space:pre-wrap}
 
-@media (min-width: 960px){
-  .chess-shell{ grid-template-columns: minmax(0,1fr) 340px; }
-  .side-card{ position:sticky; top:90px; }
-}
+@media (min-width:960px){ .chess-shell{grid-template-columns:minmax(0,1fr) 340px} .side-card{position:sticky;top:90px}}
 
-/* Mode papan penuh */
-.board-only .side-card, .board-only .toolbar .btn-full { display:none !important; }
-.board-only .board-card { padding:8px; }
-.board-only .board{ width:min(96vw, 900px); }
+/* Board-only */
+.board-only .side-card,.board-only .btn-full{display:none!important}
+.board-only .board-card{padding:8px}
+.board-only .board{width:min(96vw,900px)}
 </style>
 </head>
-
 <body>
-  <div class="page-wrap">
-    <header class="header-line">
-      <div>
-        <div class="h-sub">AZBRY-MD • BOARD</div>
-        <h1 class="h-title">Azbry Chess</h1>
-      </div>
-      <div class="toolbar">
-        <span class="badge">vs Human (Local)</span>
-        <button class="btn-ghost btn-full" id="btnBoardOnly">Board Only</button>
-        <a class="btn-ghost" href="index.html">Kembali</a>
-      </div>
-    </header>
-
-    <div class="chess-shell">
-      <!-- BOARD -->
-      <section class="board-card">
-        <div class="board-wrap">
-          <div id="board" class="board" aria-label="Papan Catur"></div>
-        </div>
-      </section>
-
-      <!-- PANEL -->
-      <aside class="side-card">
-        <div class="panel-grid">
-          <div class="kv"><span><b>Giliran</b></span><span id="turnLabel">Putih</span></div>
-          <div class="kv"><span><b>Status</b></span><span id="statusLabel">Jalan</span></div>
-          <div class="hr"></div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap">
-            <button id="btnReset" class="mode-pill">Mulai Ulang</button>
-            <button id="btnUndo" class="btn-ghost">Undo 1 Langkah</button>
-          </div>
-          <div class="hr"></div>
-          <div>
-            <div class="h-sub" style="margin-bottom:6px">Riwayat</div>
-            <div id="moves" class="moves">—</div>
-          </div>
-          <div class="hr"></div>
-          <small style="color:#9eb39f">Catatan: Tanpa castling & en passant. Promosi otomatis jadi Queen.</small>
-        </div>
-      </aside>
+<div class="page-wrap">
+  <header class="header-line">
+    <div>
+      <div class="h-sub">AZBRY-MD • BOARD</div>
+      <h1 class="h-title">Azbry Chess</h1>
     </div>
+    <div class="toolbar">
+      <button class="mode-pill" id="btnMode">vs Human (Local)</button>
+      <button class="btn-ghost btn-full" id="btnBoardOnly">Board Only</button>
+      <a class="btn-ghost" href="index.html">Kembali</a>
+    </div>
+  </header>
+
+  <div class="chess-shell">
+    <section class="board-card">
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="Papan Catur"></div>
+      </div>
+    </section>
+
+    <aside class="side-card">
+      <div class="panel-grid">
+        <div class="kv"><span><b>Giliran</b></span><span id="turnLabel">Putih</span></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button id="btnReset" class="mode-pill">Mulai Ulang</button>
+          <button id="btnUndo" class="btn-ghost">Undo 1 Langkah</button>
+        </div>
+        <div>
+          <div class="h-sub" style="margin:8px 0 6px">Riwayat</div>
+          <div id="moves" class="moves">—</div>
+        </div>
+        <small style="color:#9eb39f">Promosi otomatis → Queen. (Tanpa castling & en passant.)</small>
+      </div>
+    </aside>
   </div>
+</div>
 
 <script>
-/* ====== Chess core (sederhana) ====== */
+/* ========== ICON & NILAI ========== */
+const ICON={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
+const VAL={P:1,N:3,B:3,R:5,Q:9,K:100,p:1,n:3,b:3,r:5,q:9,k:100};
 
-/* Unicode piece icons */
-const ICON = {
-  'P': '♙','N': '♘','B': '♗','R': '♖','Q': '♕','K': '♔',
-  'p': '♟','n': '♞','b': '♝','r': '♜','q': '♛','k': '♚'
-};
-/* piece values untuk heuristik Brilliant (!!) */
-const VAL = { 'P':1,'N':3,'B':3,'R':5,'Q':9,'K':100,
-              'p':1,'n':3,'b':3,'r':5,'q':9,'k':100 };
+let board=[], turn='w', sel=null, legal=[], history=[];
+let vsAI=false; // false: human vs human, true: black = AI (Easy)
 
-/* Board state: 8x8 array, a1 = [0,0] bawah-kiri (white side) */
-let board = [];
-let turn = 'w'; // w / b
-let sel = null; // selected square {r,c}
-let legal = []; // array of {r,c}
-let history = []; // stack of {from,to,piece,captured,promo}
+const BOARD=document.getElementById('board');
+const MOVES=document.getElementById('moves');
 
-/* init start position FEN-like inline */
+/* ===== START POS ===== */
 function startPos(){
-  const rows = [
-    'rnbqkbnr',
-    'pppppppp',
-    '........',
-    '........',
-    '........',
-    '........',
-    'PPPPPPPP',
-    'RNBQKBNR'
-  ];
-  board = rows.map(r => r.split(''));
-  turn = 'w';
-  sel = null; legal = []; history = [];
-  draw();
-  updateLabels('Jalan');
+  const rows=['rnbqkbnr','pppppppp','........','........','........','........','PPPPPPPP','RNBQKBNR'];
+  board=rows.map(r=>r.split(''));
+  turn='w'; sel=null; legal=[]; history=[];
+  MOVES.textContent='—';
+  draw(); updateTurn();
 }
 
-const BOARD = document.getElementById('board');
-
+/* ===== DRAW ===== */
 function draw(){
-  BOARD.innerHTML = '';
+  BOARD.innerHTML='';
   for(let r=0;r<8;r++){
     for(let c=0;c<8;c++){
-      const sq = document.createElement('div');
-      sq.className = 'square ' + ((r+c)%2? 'dark':'light');
-      sq.dataset.r = r; sq.dataset.c = c;
-      const p = board[r][c];
-      if(p !== '.'){
-        sq.textContent = ICON[p] || '';
-      }
-      // small coords (optional)
-      if(r===7){ const f = document.createElement('span'); f.className='coord file'; f.textContent='abcdefgh'[c]; sq.appendChild(f); }
-      if(c===0){ const k = document.createElement('span'); k.className='coord rank'; k.textContent=8-r; sq.appendChild(k); }
-
-      sq.addEventListener('click', onSquareClick);
-      BOARD.appendChild(sq);
+      const dv=document.createElement('div');
+      dv.className='square '+((r+c)%2?'dark':'light');
+      dv.dataset.r=r; dv.dataset.c=c;
+      const p=board[r][c]; if(p!=='.') dv.textContent=ICON[p]||'';
+      if(r===7){const f=document.createElement('span');f.className='coord file';f.textContent='abcdefgh'[c];dv.appendChild(f)}
+      if(c===0){const k=document.createElement('span');k.className='coord rank';k.textContent=8-r;dv.appendChild(k)}
+      dv.onclick=onSquare;
+      BOARD.appendChild(dv);
     }
   }
 }
 
-/* Helpers */
-const inb = (r,c)=> r>=0&&r<8&&c>=0&&c<8;
-const isWhite = p => /[PNBRQK]/.test(p);
-const isBlack = p => /[pnbrqk]/.test(p);
-const sideOf = p => isWhite(p)?'w':(isBlack(p)?'b':'.');
+/* ===== HELPERS ===== */
+const inb=(r,c)=>r>=0&&r<8&&c>=0&&c<8;
+const isW=p=>/[PNBRQK]/.test(p), isB=p=>/[pnbrqk]/.test(p);
+const sideOf=p=>isW(p)?'w':(isB(p)?'b':'.');
 
-/* generate legal-ish moves (tanpa check validation penuh) */
-function genMoves(r,c){
-  const p = board[r][c]; if(p==='.') return [];
-  const side = sideOf(p); if((side==='w' && turn!=='w')||(side==='b'&&turn!=='b')) return [];
-  const moves=[];
-  const push = (rr,cc)=>{
-    if(!inb(rr,cc)) return;
-    const t=board[rr][cc];
-    if(t==='.') { moves.push({r:rr,c:cc,cap:false}); return true; }
-    if(sideOf(t)!==side) { moves.push({r:rr,c:cc,cap:true}); }
-    return false;
-  };
-
+/* ===== GEN MOVES (pseudolegal) ===== */
+function genPseudo(r,c){
+  const p=board[r][c]; if(p=='.') return [];
+  const side=sideOf(p); const mv=[];
+  const slide=(dirs)=>{for(const[dr,dc]of dirs){let rr=r+dr,cc=c+dc;while(inb(rr,cc)){const t=board[rr][cc];if(t=='.'){mv.push({r:rr,c:cc,cap:false})}else{ if(sideOf(t)!==side) mv.push({r:rr,c:cc,cap:true}); break } rr+=dr;cc+=dc }}};
   switch(p.toLowerCase()){
-    case 'p':{
-      const dir = isWhite(p)? -1 : 1;
-      const startRow = isWhite(p)? 6 : 1;
-      // forward
-      if(inb(r+dir,c) && board[r+dir][c]==='.') moves.push({r:r+dir,c,cap:false});
-      if(r===startRow && board[r+dir][c]==='.' && board[r+2*dir][c]==='.') moves.push({r:r+2*dir,c,cap:false});
-      // captures
-      for(const dc of [-1,1]){
-        const rr=r+dir, cc=c+dc;
-        if(inb(rr,cc) && board[rr][cc]!=='.' && sideOf(board[rr][cc])!==side){
-          moves.push({r:rr,c:cc,cap:true});
-        }
-      }
-      break;
-    }
-    case 'n':{
-      const ds=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
-      for(const [dr,dc] of ds){
-        const rr=r+dr, cc=c+dc;
-        if(!inb(rr,cc)) continue;
-        const t = board[rr][cc];
-        if(t==='.' || sideOf(t)!==side) moves.push({r:rr,c:cc,cap:t!=='.'});
-      }
-      break;
-    }
+    case 'p':{const dir=isW(p)?-1:1; const start=isW(p)?6:1;
+      if(inb(r+dir,c)&&board[r+dir][c]=='.') mv.push({r:r+dir,c,cap:false});
+      if(r===start&&board[r+dir][c]=='.'&&board[r+2*dir][c]=='.') mv.push({r:r+2*dir,c,cap:false});
+      for(const dc of[-1,1]){const rr=r+dir,cc=c+dc;if(inb(rr,cc)&&board[rr][cc]!='.'&&sideOf(board[rr][cc])!==side) mv.push({r:rr,c:cc,cap:true})}
+      break;}
+    case 'n':{const d=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+      for(const[dr,dc]of d){const rr=r+dr,cc=c+dc;if(!inb(rr,cc))continue;const t=board[rr][cc];if(t=='.'||sideOf(t)!==side) mv.push({r:rr,c:cc,cap:t!='.'})} break;}
     case 'b': slide([[1,1],[1,-1],[-1,1],[-1,-1]]); break;
     case 'r': slide([[1,0],[-1,0],[0,1],[0,-1]]); break;
     case 'q': slide([[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]); break;
-    case 'k':{
-      for(const dr of [-1,0,1])for(const dc of [-1,0,1]){
-        if(!dr&&!dc) continue; const rr=r+dr,cc=c+dc;
-        if(!inb(rr,cc)) continue; const t=board[rr][cc];
-        if(t==='.'||sideOf(t)!==side) moves.push({r:rr,c:cc,cap:t!=='.'});
-      }
-      break;
-    }
+    case 'k': for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const rr=r+dr,cc=c+dc;if(!inb(rr,cc))continue;const t=board[rr][cc];if(t=='.'||sideOf(t)!==side) mv.push({r:rr,c:cc,cap:t!='.'})} break;
   }
-  return moves;
+  // jangan boleh target king (biar "raja dimakan" nggak terjadi)
+  const enemyKing = side==='w'?'k':'K';
+  return mv.filter(m=>board[m.r][m.c]!==enemyKing);
+}
 
-  function slide(dirs){
-    for(const [dr,dc] of dirs){
-      let rr=r+dr, cc=c+dc;
-      while(inb(rr,cc)){
-        const cont = push(rr,cc);
-        if(cont===false) break;
-        if(board[rr][cc]!=='.') break;
-        rr+=dr; cc+=dc;
-      }
+/* ===== KING CHECK ===== */
+function kingPos(side){
+  const k = side==='w'?'K':'k';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++) if(board[r][c]===k) return {r,c};
+  return null;
+}
+function isSquareAttacked(r,c,bySide){
+  // brute: lihat semua bidak bySide punya gerakan ke (r,c)
+  for(let rr=0;rr<8;rr++)for(let cc=0;cc<8;cc++){
+    const p=board[rr][cc]; if(p==='.') continue;
+    if(bySide==='w' && !isW(p)) continue;
+    if(bySide==='b' && !isB(p)) continue;
+    const moves=genPseudo(rr,cc);
+    if(moves.some(m=>m.r===r && m.c===c)) return true;
+  }
+  return false;
+}
+function inCheck(side){
+  const k=kingPos(side); if(!k) return false;
+  const enemy = side==='w'?'b':'w';
+  return isSquareAttacked(k.r,k.c,enemy);
+}
+
+/* ===== LEGAL MOVES (filter self-check) ===== */
+function genLegal(r,c){
+  const p=board[r][c]; if(p==='.') return [];
+  const side=sideOf(p); if(side!==turn) return [];
+  const out=[];
+  for(const m of genPseudo(r,c)){
+    const snap=board[m.r][m.c]; const from=board[r][c];
+    board[m.r][m.c]=from; board[r][c]='.';
+    const ok=!inCheck(side);
+    board[r][c]=from; board[m.r][m.c]=snap;
+    if(ok) out.push(m);
+  }
+  return out;
+}
+function allLegal(side){
+  const acc=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(p==='.') continue;
+    if(side==='w' && !isW(p)) continue; if(side==='b' && !isB(p)) continue;
+    const ms = (side===turn)?genLegal(r,c):filterSelf(r,c,genPseudo(r,c),side);
+    for(const m of ms) acc.push({from:{r,c}, to:{r:m.r,c:m.c}, cap:m.cap, piece:p});
+  }
+  return acc;
+  function filterSelf(r,c,moves,side){
+    const o=[];
+    for(const m of moves){
+      const snap=board[m.r][m.c]; const from=board[r][c];
+      board[m.r][m.c]=from; board[r][c]='.';
+      const ok=!inCheck(side);
+      board[r][c]=from; board[m.r][m.c]=snap;
+      if(ok) o.push(m);
     }
+    return o;
   }
 }
 
-/* click flow */
-function onSquareClick(e){
-  const r = +e.currentTarget.dataset.r;
-  const c = +e.currentTarget.dataset.c;
-  const p = board[r][c];
+/* ===== MOVE APPLY ===== */
+function doMove(r1,c1,r2,c2){
+  const piece=board[r1][c1]; const target=board[r2][c2];
+  let promo=null;
+  if(piece==='P'&&r2===0) promo='Q';
+  if(piece==='p'&&r2===7) promo='q';
+  board[r2][c2]=promo?promo:piece; board[r1][c1]='.';
+  const rec={from:{r:r1,c:c1},to:{r:r2,c:c2},piece,captured:target,promo};
+  history.push(rec);
+  draw(); logMove(rec);
 
-  // Jika belum memilih & kotak ada bidak dari sisi yang jalan -> pilih
+  // Brilliant (!!): capture gain >=3 atau memberi check
+  showBrilliantIfAny(rec, sideOf(piece));
+
+  // switch turn, lalu cek end game
+  turn=(turn==='w')?'b':'w'; updateTurn();
+  const mateInfo = checkEndGame();
+  if(mateInfo){ announce(mateInfo.text); }
+  else if(vsAI && turn==='b'){ setTimeout(aiMoveEasy, 180); }
+}
+function logMove(m){
+  const f='abcdefgh'; const from=f[m.from.c]+(8-m.from.r); const to=f[m.to.c]+(8-m.to.r);
+  const cap=(m.captured&&m.captured!=='.')?'x':'–'; const promo=m.promo?('='+m.promo.toUpperCase()):'';
+  const ply=history.length; const line=`${ply}. ${from} ${cap} ${to}${promo}`;
+  MOVES.textContent = (MOVES.textContent==='—') ? line : MOVES.textContent+'\n'+line;
+  MOVES.scrollTop=MOVES.scrollHeight;
+}
+function updateTurn(){ document.getElementById('turnLabel').textContent = (turn==='w'?'Putih':'Hitam'); }
+
+/* ===== CLICK ===== */
+function onSquare(ev){
+  const r=+ev.currentTarget.dataset.r, c=+ev.currentTarget.dataset.c, p=board[r][c];
+
   if(!sel){
-    if(p!=='.' && ((turn==='w' && isWhite(p)) || (turn==='b' && isBlack(p)))){
-      sel = {r,c};
-      legal = genMoves(r,c);
-      markSelection();
+    if(p!=='.' && ((turn==='w'&&isW(p))||(turn==='b'&&isB(p)))){
+      sel={r,c}; legal=genLegal(r,c); markSel();
     }
     return;
   }
+  if(sel.r===r&&sel.c===c){ clearSel(); return; }
 
-  // Jika klik kotak asal -> batal
-  if(sel && sel.r===r && sel.c===c){
-    clearMarks(); sel=null; legal=[]; return;
-  }
-
-  // Jika tujuan legal -> jalankan
-  const mv = legal.find(m=>m.r===r && m.c===c);
-  if(mv){
-    doMove(sel.r, sel.c, r, c);
-    clearMarks(); sel=null; legal=[];
-  } else {
-    // pilih ulang jika klik bidak sisi yang jalan
-    if(p!=='.' && ((turn==='w' && isWhite(p)) || (turn==='b' && isBlack(p)))){
-      sel={r,c}; legal=genMoves(r,c); markSelection();
-    } else {
-      clearMarks(); sel=null; legal=[];
-    }
+  const mv=legal.find(m=>m.r===r&&m.c===c);
+  if(mv){ doMove(sel.r,sel.c,r,c); clearSel(); }
+  else{
+    if(p!=='.' && ((turn==='w'&&isW(p))||(turn==='b'&&isB(p)))){
+      sel={r,c}; legal=genLegal(r,c); markSel();
+    } else clearSel();
   }
 }
-
-function markSelection(){
-  clearMarks();
-  const idx = sel.r*8+sel.c;
-  BOARD.children[idx].classList.add('sel');
+function markSel(){
+  clearSel();
+  BOARD.children[sel.r*8+sel.c].classList.add('sel');
   for(const m of legal){
-    const i = m.r*8+m.c;
-    BOARD.children[i].classList.add('move');
-    // titik di tengah destinasi
-    const dot = document.createElement('div'); dot.className='dot';
-    BOARD.children[i].appendChild(dot);
+    const el=BOARD.children[m.r*8+m.c]; el.classList.add('move');
+    const dot=document.createElement('div'); dot.className='dot'; el.appendChild(dot);
   }
 }
-function clearMarks(){
-  [...BOARD.children].forEach(el=>{
-    el.classList.remove('sel','move');
-    const d = el.querySelector('.dot'); if(d) d.remove();
-  });
+function clearSel(){
+  [...BOARD.children].forEach(e=>{e.classList.remove('sel','move'); const d=e.querySelector('.dot'); if(d)d.remove();});
+  sel=null; legal=[];
 }
 
-/* Move apply + promotion + history + brilliant check */
-function doMove(r1,c1,r2,c2){
-  const piece = board[r1][c1];
-  const target = board[r2][c2];
-  // promo sederhana otomatis queen
-  let promo = null;
-  if(piece==='P' && r2===0){ promo='Q'; }
-  if(piece==='p' && r2===7){ promo='q'; }
-
-  board[r2][c2] = promo ? promo : piece;
-  board[r1][c1] = '.';
-
-  history.push({from:{r:r1,c:c1}, to:{r:r2,c:c2}, piece, captured:target, promo});
-  draw();
-
-  // Cek brilliant untuk langkah pemain (sisi yang barusan jalan = turn sebelum di-switch)
-  const moverSide = turn;
-  showBrilliantIfAny({from:{r:r1,c:c1}, to:{r:r2,c:c2}, piece, captured:target, promo}, moverSide);
-
-  // push log text
-  logMove(history[history.length-1]);
-
-  // ganti giliran
-  turn = (turn==='w'?'b':'w');
-  updateLabels('Jalan');
-}
-
-/* Check & heuristik sederhana “Brilliant (!!)” */
-function showBrilliantIfAny(last, side){
-  // Heuristik:
-  // 1) Capture dengan keuntungan material ≥ 3 poin
-  // 2) ATAU non-capture yang menghasilkan CHECK ke raja lawan
-  let brilliant = false;
-
-  const gain = (last.captured && last.captured!=='.') ? (VAL[last.captured] - VAL[last.piece]) : 0;
-  if(gain >= 3) brilliant = true;
-
-  if(!brilliant && (!last.captured || last.captured==='.') ){
-    // cek apakah langkah memberi check
-    if(isCheckAfterMove(last, side)) brilliant = true;
+/* ===== BRILLIANT (!!) ===== */
+function showBrilliantIfAny(last, moverSide){
+  let brilliant=false;
+  const gain=(last.captured&&last.captured!=='.')?(VAL[last.captured]-VAL[last.piece]):0;
+  if(gain>=3) brilliant=true;
+  if(!brilliant && (!last.captured||last.captured==='.') ){
+    // apakah memberi check?
+    const enemy=moverSide==='w'?'b':'w';
+    if(inCheck(enemy)) brilliant=true;
   }
-
   if(brilliant){
-    // taruh badge di kotak tujuan
-    const idx = last.to.r*8 + last.to.c;
-    const sq = BOARD.children[idx];
-    const b = document.createElement('div');
-    b.className='brilliant';
-    b.textContent='!!';
+    const idx=last.to.r*8+last.to.c, sq=BOARD.children[idx];
+    const b=document.createElement('div'); b.className='brilliant'; b.textContent='!!';
     sq.appendChild(b);
-    // auto fade out (opsional tetap biar tinggal)
-    setTimeout(()=>{ b.style.opacity=.9; }, 1200);
   }
 }
 
-/* naive check: apakah king lawan sedang diserang setelah move */
-function isCheckAfterMove(last, moverSide){
-  // Temukan posisi raja lawan
-  const enemyKing = (moverSide==='w')?'k':'K';
-  let kr=-1,kc=-1;
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-      if(board[r][c]===enemyKing){ kr=r; kc=c; break; }
-    }
-    if(kr!==-1) break;
+/* ===== END GAME ===== */
+function checkEndGame(){
+  const side=turn;
+  const moves=allLegal(side);
+  if(moves.length>0){
+    if(inCheck(side)) return {text:'Check!'}; // hanya info
+    return null;
   }
-  if(kr===-1) return false;
-
-  // Cek apakah ada bidak sisi "moverSide" yang bisa menyerang kotak raja lawan
-  const attackers = [];
-  for(let r=0;r<8;r++){
-    for(let c=0;c<8;c++){
-      const p=board[r][c];
-      if(p==='.') continue;
-      if((moverSide==='w' && isWhite(p)) || (moverSide==='b' && isBlack(p))){
-        const ms = genMovesPure(r,c);
-        if(ms.some(m=>m.r===kr && m.c===kc)){
-          attackers.push({r,c});
-        }
-      }
-    }
-  }
-  return attackers.length>0;
-
-  // generator “pure” tanpa filter turn
-  function genMovesPure(r,c){
-    const saveTurn = turn;
-    turn = moverSide; // sementara set supaya genMoves jalan
-    const m = genMoves(r,c);
-    turn = saveTurn;
-    return m;
+  if(inCheck(side)){
+    const winner=(side==='w')?'Hitam':'Putih';
+    return {text:`Checkmate • ${winner} menang`};
+  } else {
+    return {text:'Stalemate • Seri'};
   }
 }
-
-function logMove(m){
-  const files='abcdefgh';
-  const from = files[m.from.c] + (8-m.from.r);
-  const to   = files[m.to.c] + (8-m.to.r);
-  const cap  = (m.captured && m.captured!=='.') ? 'x' : '–';
-  const promo = m.promo ? `=${m.promo.toUpperCase()}` : '';
-  const ply = history.length;
-  const mvTxt = `${ply}. ${from} ${cap} ${to}${promo}`;
-  const box = document.getElementById('moves');
-  box.textContent = (box.textContent==='—') ? mvTxt : (box.textContent + '\n' + mvTxt);
-  box.scrollTop = box.scrollHeight;
+function announce(t){ // ringkas: tampilkan di riwayat
+  MOVES.textContent += `\n— ${t}`;
+  MOVES.scrollTop=MOVES.scrollHeight;
 }
 
-function updateLabels(status){
-  document.getElementById('turnLabel').textContent = (turn==='w'?'Putih':'Hitam');
-  document.getElementById('statusLabel').textContent = status;
+/* ===== AI EASY (BLACK) ===== */
+function aiMoveEasy(){
+  if(turn!=='b' || !vsAI) return;
+  const moves=allLegal('b');
+  if(!moves.length){ const info=checkEndGame(); if(info) announce(info.text); return; }
+  // pilih capture terbaik, kalau nggak ada -> random
+  let best=null, bestGain=-1;
+  for(const m of moves){
+    const gain = m.cap ? (VAL[board[m.to.r][m.to.c]] - VAL[m.piece]) : -0.1;
+    if(gain>bestGain){ bestGain=gain; best=m; }
+  }
+  const pick = best || moves[Math.floor(Math.random()*moves.length)];
+  doMove(pick.from.r,pick.from.c,pick.to.r,pick.to.c);
 }
 
-/* Undo 1 ply */
-function undo(){
-  const m = history.pop(); if(!m) return;
-  board[m.from.r][m.from.c] = m.piece;
-  board[m.to.r][m.to.c] = (m.captured && m.captured!=='.')? m.captured : '.';
+/* ===== UI ===== */
+document.getElementById('btnReset').onclick=startPos;
+document.getElementById('btnUndo').onclick=function(){
+  const m=history.pop(); if(!m) return;
+  board[m.from.r][m.from.c]=m.piece; board[m.to.r][m.to.c]=(m.captured&&m.captured!=='.')?m.captured:'.';
   draw();
-  turn = (turn==='w'?'b':'w');
-  // potong 1 baris riwayat
-  const box = document.getElementById('moves');
-  const lines = box.textContent.split('\n');
-  lines.pop();
-  box.textContent = lines.length? lines.join('\n') : '—';
-  updateLabels('Undo');
-}
-
-/* UI buttons */
-document.getElementById('btnReset').addEventListener('click', startPos);
-document.getElementById('btnUndo').addEventListener('click', undo);
-document.getElementById('btnBoardOnly').addEventListener('click', ()=>{
-  document.body.classList.toggle('board-only');
-});
+  turn=(turn==='w')?'b':'w'; updateTurn();
+  const lines=MOVES.textContent.split('\n'); lines.pop(); MOVES.textContent=lines.length?lines.join('\n'):'—';
+};
+document.getElementById('btnBoardOnly').onclick=()=>document.body.classList.toggle('board-only');
+document.getElementById('btnMode').onclick=function(){
+  vsAI=!vsAI;
+  this.textContent = vsAI? 'vs AI (Easy)' : 'vs Human (Local)';
+  startPos();
+};
 
 /* boot */
 startPos();
