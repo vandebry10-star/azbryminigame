@@ -1,1 +1,90 @@
 
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Azbry Chess</title>
+
+  <!-- Tema Azbry (biarkan sesuai repo kamu) -->
+  <link rel="stylesheet" href="assets/css/azbry.css">
+  <link rel="stylesheet" href="assets/css/chess.css">
+
+  <style>
+    /* Safety: pastikan panel/tombol di atas board */
+    .top-header, .mode-picker, .panel, .footer, .license { position: relative; z-index: 5; }
+    .board-wrap { position: relative; z-index: 1; }
+
+    /* Mode board-only: sembunyikan panel & license (sesuai request) */
+    body.board-only .panel,
+    body.board-only .license { display: none; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <!-- Header -->
+    <header class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess</h1>
+      </div>
+    </header>
+
+    <!-- Mode picker (ID WAJIB) -->
+    <div class="mode-picker" aria-label="Pilih Mode">
+      <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
+      <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
+    </div>
+
+    <!-- Board -->
+    <section class="board-wrap" aria-label="Papan Catur">
+      <div id="board" class="board">
+        <div id="grid" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- Panel kontrol -->
+    <section class="panel" aria-label="Kontrol Permainan">
+      <div class="controls">
+        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+        <button id="btnUndo" class="btn" type="button">Undo</button>
+        <button id="btnRedo" class="btn" type="button">Redo</button>
+        <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
+      </div>
+
+      <div class="move-log">
+        <h4>Riwayat Langkah</h4>
+        <pre id="moveHistory">_</pre>
+      </div>
+    </section>
+
+    <!-- Footer action -->
+    <footer class="footer">
+      <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
+      <button id="btnBack" class="btn dark" type="button">Kembali</button>
+    </footer>
+
+    <!-- Lisensi -->
+    <div class="license">
+      Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh <b>FebryWesker</b>
+    </div>
+  </main>
+
+  <!-- Modal hasil (dipakai chess-ui.js; kalau lupa, UI bikin fallback) -->
+  <div id="modal" style="display:none;position:fixed;inset:0;place-items:center;background:rgba(0,0,0,.45);z-index:9999">
+    <div class="card" style="min-width:260px;text-align:center;padding:16px 18px">
+      <h3 id="mTitle" style="margin:.2rem 0 .4rem">Hasil</h3>
+      <p id="mDesc" style="opacity:.8;margin:.25rem 0 1rem">—</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button id="mRestart" class="btn accent" type="button">Mulai Ulang</button>
+        <button id="mClose" class="btn" type="button">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS (URUTAN PENTING) -->
+  <script src="assets/js/chess-engine.js"></script>
+  <script src="assets/js/chess-ui.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
