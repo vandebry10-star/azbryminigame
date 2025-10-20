@@ -13,14 +13,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Ensure public folder exists
-        run: |
-          mkdir -p public
+        run: mkdir -p public
 
       - name: Move assets/ into public/assets (skip if already there)
         run: |
           if [ -d "assets" ]; then
-            mkdir -p public
-            # kalau sudah ada public/assets, gabung isinya
             mkdir -p public/assets
             rsync -a --remove-source-files assets/ public/assets/
             rm -rf assets || true
@@ -31,19 +28,16 @@ jobs:
         run: |
           shopt -s nullglob
           for f in *.html; do
-            # jangan mindahin file yang memang tidak ada
             [ -e "$f" ] || continue
             echo "Moving $f -> public/$f"
             mkdir -p public
             git mv -f "$f" "public/$f" 2>/dev/null || mv -f "$f" "public/$f"
           done
 
-      - name: Fix asset paths in HTML (make root-relative: /assets/…)
-        if: ${{ always() }}
+      - name: Fix asset paths in HTML (make root-relative)
         run: |
           set -e
           if compgen -G "public/*.html" > /dev/null; then
-            # ubah href/src yg tadinya "assets/.." -> "/assets/.."
             find public -type f -name "*.html" -print0 | xargs -0 sed -i \
               -e 's|href="assets/|href="/assets/|g' \
               -e 's|src="assets/|src="/assets/|g' \
@@ -53,7 +47,7 @@ jobs:
 
       - name: Show tree (debug)
         run: |
-          echo "==== TREE ===="
+          echo "==== ROOT ===="
           ls -la
           echo "==== PUBLIC ===="
           ls -la public || true
