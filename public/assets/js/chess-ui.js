@@ -1,230 +1,203 @@
-/* Azbry Chess — UI (render, interaksi papan & panel) + TRUE perspective
- * Butuh: createChessEngine() dari chess-engine.js
- */
-(function(global){
-  "use strict";
+/* Azbry Chess UI — render papan, kontrol, mode, riwayat, modal */
+(function () {
+  // ===== Helper DOM =====
+  const $ = (id) => document.getElementById(id);
 
-  function el(id){ return document.getElementById(id); }
+  const boardEl = $("board");
+  const grid = $("grid") || (function () {
+    const g = document.createElement("div");
+    g.id = "grid";
+    g.className = "grid";
+    boardEl && boardEl.appendChild(g);
+    return g;
+  })();
 
-  function createChessUI(opts){
-    const {
-      boardId='board',
-      turnLabelId='turnLabel',
-      moveHistoryId='moveHistory',
-      btnResetId='btnReset',
-      btnUndoId='btnUndo',
-      btnRedoId='btnRedo'
-    } = opts || {};
+  const btnHuman = $("modeHuman");
+  const btnAI = $("modeAI");
 
-    const BOARD = el(boardId);
-    const TURN  = el(turnLabelId);
-    const LOG   = el(moveHistoryId);
+  const btnReset = $("btnReset");
+  const btnUndo = $("btnUndo");
+  const btnRedo = $("btnRedo");
+  const btnFlip = $("btnFlip");
 
-    const engine = global.createChessEngine();
-    let sel=null, legal=[], onAIMove=null, vsAI=false;
+  const btnBoardOnly = $("btnBoardOnly");
+  const btnBack = $("btnBack");
 
-    // ======== TRUE PERSPECTIVE (NO CSS ROTATE) ========
-    let perspective = localStorage.getItem('az_chess_persp') || 'w';
-    function setPerspective(side){
-      perspective = (side==='b') ? 'b' : 'w';
-      localStorage.setItem('az_chess_persp', perspective);
-      sel=null; legal=[]; // hindari stale selection
-      drawBoard();
-    }
-    function rowsOrder(){ return (perspective==='w') ? [...Array(8).keys()] : [...Array(8).keys()].reverse(); }
-    function colsOrder(){ return (perspective==='w') ? [...Array(8).keys()] : [...Array(8).keys()].reverse(); }
-    function labelFile(idx){ const files='abcdefgh'; return (perspective==='w') ? files[idx] : files[7-idx]; }
-    function labelRank(idx){ const ranks=[8,7,6,5,4,3,2,1]; return (perspective==='w') ? ranks[idx] : ranks[7-idx]; }
+  const histEl = $("moveHistory");
 
-    function fmtTurn(){
-      const isWhite = (engine.getTurn()==='w');
-      return `${isWhite?'⚪':'⚫'} ${isWhite?'Putih':'Hitam'}`;
-    }
+  // Modal (fallback jika belum ada di HTML)
+  let modal = $("modal"),
+      mTitle = $("mTitle"),
+      mDesc = $("mDesc"),
+      mRestart = $("mRestart"),
+      mClose = $("mClose");
 
-    function drawBoard(){
-      const B = engine.getBoard();
-      BOARD.innerHTML = '';
-      const rIdx = rowsOrder(), cIdx = colsOrder();
-      for(let i=0;i<8;i++){
-        for(let j=0;j<8;j++){
-          const r = rIdx[i], c = cIdx[j];
-          const d = document.createElement('div');
-          d.className = 'square ' + (((r+c)%2)?'dark':'light');
-          d.dataset.r = r; d.dataset.c = c;
-          const p = B[r][c];
-          if(p!=='.') d.textContent = engine.ICON[p] || '';
-
-          // coordinates on visual bottom/left
-          if(i===7){ const f=document.createElement('span'); f.className='coord file'; f.textContent=labelFile(j); d.appendChild(f); }
-          if(j===0){ const k=document.createElement('span'); k.className='coord rank'; k.textContent=labelRank(i); d.appendChild(k); }
-
-          d.addEventListener('click', onSquareClick);
-          BOARD.appendChild(d);
-        }
-      }
-      updateTurnBar();
-      // kalau ada selection lama, tandai ulang (aman kalau null)
-      markSelected();
-    }
-
-    function clearMarks(){
-      [...BOARD.children].forEach(e=>{
-        e.classList.remove('sel','move');
-        const d=e.querySelector('.dot'); if(d) d.remove();
-      });
-    }
-    function markSelected(){
-      clearMarks();
-      if(!sel) return;
-      const rIdx = rowsOrder(), cIdx = colsOrder();
-      const vi = rIdx.indexOf(sel.r), vj = cIdx.indexOf(sel.c);
-      if(vi<0 || vj<0){ sel=null; legal=[]; return; }
-      const idx = vi*8 + vj;
-      BOARD.children[idx]?.classList.add('sel');
-
-      for(const m of legal){
-        const ti = rIdx.indexOf(m.to.r), tj = cIdx.indexOf(m.to.c);
-        const el = BOARD.children[ti*8 + tj];
-        if(!el) continue;
-        el.classList.add('move');
-        const dot=document.createElement('div'); dot.className='dot'; el.appendChild(dot);
-      }
-    }
-
-    function updateTurnBar(){
-      TURN.textContent = fmtTurn();
-      const sb = document.getElementById('statusBar');
-      if(sb){
-        if(engine.isCheck(engine.getTurn())){ sb.style.display='block'; sb.textContent='CHECK!'; }
-        else { sb.style.display='none'; }
-      }
-    }
-
-    function updateLog(){
-      const lines = engine.historySAN();
-      LOG.textContent = lines.length ? lines.join('\n') : '_';
-      LOG.scrollTop = LOG.scrollHeight;
-    }
-
-    // ---- helper: validasi piece milik side yang jalan
-    function isOwnPieceAt(r,c){
-      const p = engine.getBoard()[r][c];
-      if(p==='.') return false;
-      const side = (/[PNBRQK]/.test(p) ? 'w' : 'b');
-      return side === engine.getTurn();
-    }
-
-    function onSquareClick(e){
-      // di vs Human, tidak boleh ngeblok interaksi saat giliran Hitam
-      if(vsAI && engine.getTurn()==='b') return; // hanya jika mode AI
-
-      const r = +e.currentTarget.dataset.r;
-      const c = +e.currentTarget.dataset.c;
-
-      // (A) belum seleksi -> pilih buah sendiri
-      if(!sel){
-        if(isOwnPieceAt(r,c)){
-          sel = {r,c};
-          legal = engine.legalMovesAt(r,c);
-          markSelected();
-        }
-        return;
-      }
-
-      // (B) klik petak yang sama -> batal
-      if(sel.r===r && sel.c===c){ sel=null; legal=[]; clearMarks(); return; }
-
-      // (C) recompute legal untuk menghindari stale state
-      if(!isOwnPieceAt(sel.r, sel.c)){
-        sel=null; legal=[]; clearMarks(); return;
-      }
-      legal = engine.legalMovesAt(sel.r, sel.c); // ← REFRESH LEGAL
-      if(!legal || legal.length===0){
-        // selection tidak valid lagi
-        sel=null; legal=[]; clearMarks();
-        // allow reselect jika klik own piece
-        if(isOwnPieceAt(r,c)){
-          sel={r,c}; legal=engine.legalMovesAt(r,c); markSelected();
-        }
-        return;
-      }
-
-      // (D) coba eksekusi
-      const mv = legal.find(m => m.to.r===r && m.to.c===c);
-      if(mv){
-        const promo = promoIfNeeded(sel,{r,c});
-        engine.makeMove(sel,{r,c},promo);
-        sel=null; legal=[]; clearMarks();
-        drawBoard(); updateLog();
-
-        const st=engine.statusInfo();
-        if(st.end){ showResult(st); }
-        else if(vsAI && engine.getTurn()==='b' && typeof onAIMove==='function'){ onAIMove(); }
-        return;
-      }
-
-      // (E) reselect jika klik buah sendiri; selain itu clear
-      if(isOwnPieceAt(r,c)){
-        sel={r,c}; legal=engine.legalMovesAt(r,c); markSelected();
-      }else{
-        sel=null; legal=[]; clearMarks();
-      }
-    }
-
-    function promoIfNeeded(from,to){
-      const p=engine.getBoard()[from.r][from.c];
-      if(p==='P' && to.r===0) return 'Q';
-      if(p==='p' && to.r===7) return 'q';
-      return null;
-    }
-
-    function showResult(st){
-      const box=el('resultModal'), title=el('resultTitle'), desc=el('resultDesc');
-      if(!box||!title||!desc) return;
-      if(st.type==='checkmate'){
-        title.textContent='Checkmate';
-        const w=(st.winner==='w')?'Putih':'Hitam';
-        desc.textContent=`${w} menang. Tekan "Mulai Ulang" untuk main lagi.`;
-      }else if(st.type==='stalemate'){
-        title.textContent='Stalemate'; desc.textContent='Seri. Tekan "Mulai Ulang" untuk main lagi.';
-      }else{ title.textContent='Hasil'; desc.textContent='Permainan selesai.'; }
-      box.style.display='grid';
-    }
-
-    // ===== tombol (FIX: bind ulang) =====
-    const btnReset = el(btnResetId);
-    const btnUndo  = el(btnUndoId);
-    const btnRedo  = el(btnRedoId);
-    function reset(){ engine.reset(); sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
-    function undo(){ const m=engine.undo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
-    function redo(){ const m=engine.redo(); if(!m) return; sel=null; legal=[]; clearMarks(); drawBoard(); updateLog(); }
-    if(btnReset) btnReset.onclick = reset;
-    if(btnUndo)  btnUndo.onclick  = undo;
-    if(btnRedo)  btnRedo.onclick  = redo;
-
-    // boot
-    drawBoard(); updateLog();
-
-    // Public API
-    return {
-      engine,
-      drawBoard, updateTurnBar, updateLog,
-      reset, undo, redo,
-      setVsAI(flag){ vsAI=!!flag; },
-      setAICallback(fn){ onAIMove = (typeof fn==='function') ? fn : null; },
-      setPerspective,
-      commitAIMove(move){
-        if(!move) return false;
-        engine.makeMove(move.from, move.to, move.promo||null);
-        sel=null; legal=[]; clearMarks();
-        drawBoard(); updateLog();
-        const st=engine.statusInfo();
-        if(st.end) showResult(st);
-        return true;
-      }
-    };
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "modal";
+    modal.style.cssText = "position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:9999";
+    modal.innerHTML =
+      '<div class="card" style="background:#0f1418;border:1px solid rgba(255,255,255,.08);padding:16px 18px;border-radius:16px;min-width:260px;text-align:center">' +
+      '<h3 id="mTitle" style="margin:.2rem 0 .4rem">Hasil</h3>' +
+      '<p id="mDesc" style="opacity:.8;margin:.25rem 0 1rem">—</p>' +
+      '<div style="display:flex;gap:10px;justify-content:center">' +
+      '<button id="mRestart" class="btn accent">Mulai Ulang</button>' +
+      '<button id="mClose" class="btn">Tutup</button>' +
+      "</div></div>";
+    document.body.appendChild(modal);
+    mTitle = $("mTitle"); mDesc = $("mDesc"); mRestart = $("mRestart"); mClose = $("mClose");
   }
 
-  global.createChessUI = createChessUI;
+  // ===== Game state =====
+  let game = new AzChess();      // dari chess-engine.js
+  let vsAI = false;              // false: vs Human, true: vs Azbry-MD
+  let selected = null;           // kotak terpilih, ex: "e2"
 
-})(window);
+  const PIECE = {
+    w: { p: "♙", n: "♘", b: "♗", r: "♖", q: "♕", k: "♔" },
+    b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" },
+  };
+
+  // Algebra <-> Index (UI)
+  const a2i = (a) => [8 - parseInt(a[1], 10), a.charCodeAt(0) - 97];
+  const i2a = (r, c) => String.fromCharCode(97 + c) + (8 - r);
+  function pieceAt(a){ const [r,c]=a2i(a); return game.s.b[r][c]; }
+
+  // ===== Render papan =====
+  function renderBoard() {
+    if (!boardEl) return;
+    grid.innerHTML = "";
+    const s = game.s;
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const cell = document.createElement("div");
+        cell.className = "sq";
+        const a = i2a(r, c);
+        cell.dataset.square = a;
+
+        const P = s.b[r][c];
+        if (P) {
+          cell.innerHTML = `<div>${PIECE[P.c][P.t]}</div>`;
+          if (boardEl.classList.contains("flip")) {
+            cell.firstChild.style.transform = "rotate(180deg)";
+          }
+        }
+        grid.appendChild(cell);
+      }
+    }
+
+    const end = game.isGameOver();
+    if (end) {
+      const winner = game.turn()==="w" ? "Hitam" : "Putih"; // side to move no legal -> lawan menang
+      showResult(end==="checkmate" ? `Checkmate — ${winner} menang!` : "Stalemate — Seri.");
+    }
+    updateHistory();
+  }
+
+  // ===== Riwayat langkah =====
+  function updateHistory() {
+    if (!histEl) return;
+    const mv = game.hist;
+    if (!mv.length) { histEl.textContent = "_"; return; }
+    let out = "", n = 1;
+    for (let i = 0; i < mv.length; i += 2) {
+      const w = mv[i] ? `${mv[i].from}→${mv[i].to}` : "";
+      const b = mv[i+1] ? `${mv[i+1].from}→${mv[i+1].to}` : "";
+      out += `${n}. ${w}  ${b}\n`; n++;
+    }
+    histEl.textContent = out.trim();
+    histEl.scrollTop = histEl.scrollHeight;
+  }
+
+  // ===== Highlight legal =====
+  function clearMarks() {
+    grid.querySelectorAll(".dot,.cap").forEach(n=>n.remove());
+    grid.querySelectorAll(".sq.sel").forEach(n=>n.classList.remove("sel"));
+  }
+  function highlightMoves(from) {
+    clearMarks();
+    const src = grid.querySelector(`[data-square="${from}"]`);
+    if (src) src.classList.add("sel");
+    const legal = game.legal().filter(m=>m.from===from);
+    for (const mv of legal) {
+      const el = grid.querySelector(`[data-square="${mv.to}"]`);
+      if (!el) continue;
+      const mark = document.createElement("div");
+      if (mv.cap) {
+        mark.className = "cap";
+        mark.style.borderRadius = "12px";
+        mark.style.inset = "6px";
+        mark.style.position = "absolute";
+        mark.style.border = "3px solid rgba(184,255,154,.65)";
+      } else {
+        mark.className = "dot";
+        mark.style.width = "14px";
+        mark.style.height = "14px";
+        mark.style.borderRadius = "50%";
+        mark.style.background = "rgba(184,255,154,.65)";
+        mark.style.boxShadow = "0 0 16px rgba(184,255,154,.6)";
+        mark.style.margin = "auto";
+      }
+      el.appendChild(mark);
+    }
+  }
+
+  // ===== Interaksi papan =====
+  grid.addEventListener("click", (e) => {
+    const cell = e.target.closest(".sq"); if (!cell) return;
+    const sq = cell.dataset.square;
+    const P = pieceAt(sq);
+
+    if (selected && sq !== selected) {
+      const moved = game.move({ from: selected, to: sq });
+      selected = null; clearMarks(); renderBoard();
+
+      if (moved && vsAI && game.turn()==="b" && !game.isGameOver()) {
+        setTimeout(() => {
+          const mv = game.bestMove(2) || game.legal()[0];
+          if (mv) { game.move(mv); renderBoard(); }
+        }, 160);
+      }
+      return;
+    }
+
+    if (P && (!vsAI || P.c === "w")) {
+      selected = sq; highlightMoves(sq);
+    } else {
+      selected = null; clearMarks();
+    }
+  });
+
+  // ===== Kontrol =====
+  btnReset && (btnReset.onclick = () => { game = new AzChess(); selected=null; clearMarks(); renderBoard(); });
+  btnUndo  && (btnUndo.onclick  = () => { if (game.undo()) { selected=null; clearMarks(); renderBoard(); } });
+  btnRedo  && (btnRedo.onclick  = () => { if (game.redo()) { selected=null; clearMarks(); renderBoard(); } });
+  btnFlip  && (btnFlip.onclick  = () => { boardEl && boardEl.classList.toggle("flip"); renderBoard(); });
+
+  btnBoardOnly && (btnBoardOnly.onclick = () => document.body.classList.toggle("board-only"));
+  btnBack      && (btnBack.onclick      = () => document.body.classList.remove("board-only"));
+
+  // ===== Mode =====
+  function setMode(ai) {
+    vsAI = !!ai;
+    btnAI && btnAI.classList.toggle("active", vsAI);
+    btnHuman && btnHuman.classList.toggle("active", !vsAI);
+    game = new AzChess(); selected=null; clearMarks(); renderBoard();
+  }
+  btnHuman && (btnHuman.onclick = () => setMode(false));
+  btnAI    && (btnAI.onclick    = () => setMode(true));
+
+  // ===== Modal =====
+  function showResult(text) {
+    if (!modal || !mTitle || !mDesc) return;
+    mTitle.textContent = "Permainan Selesai";
+    mDesc.textContent = text || "Game selesai.";
+    modal.style.display = "grid";
+  }
+  mClose   && (mClose.onclick   = () => modal.style.display = "none");
+  mRestart && (mRestart.onclick = () => { modal.style.display="none"; game=new AzChess(); selected=null; clearMarks(); renderBoard(); });
+
+  // Boot
+  setMode(false); // default: vs Human
+})();
