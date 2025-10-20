@@ -1,203 +1,120 @@
-/* Azbry Chess UI — render papan, kontrol, mode, riwayat, modal */
-(function () {
-  // ===== Helper DOM =====
-  const $ = (id) => document.getElementById(id);
+// ================================
+//  AZBRY CHESS UI
+// ================================
 
-  const boardEl = $("board");
-  const grid = $("grid") || (function () {
-    const g = document.createElement("div");
-    g.id = "grid";
-    g.className = "grid";
-    boardEl && boardEl.appendChild(g);
-    return g;
-  })();
+import { initializeGame, movePiece, getValidMoves, isCheckmate, resetGame } from "./chess-engine.js";
 
-  const btnHuman = $("modeHuman");
-  const btnAI = $("modeAI");
+let boardEl;
+let selectedSquare = null;
+let gameState;
 
-  const btnReset = $("btnReset");
-  const btnUndo = $("btnUndo");
-  const btnRedo = $("btnRedo");
-  const btnFlip = $("btnFlip");
+export function initUI() {
+  boardEl = document.getElementById("board");
+  createBoard();
+  newGame();
 
-  const btnBoardOnly = $("btnBoardOnly");
-  const btnBack = $("btnBack");
+  document.getElementById("btnReset").addEventListener("click", newGame);
+  document.getElementById("btnUndo").addEventListener("click", undoMove);
+  document.getElementById("btnRedo").addEventListener("click", redoMove);
+}
 
-  const histEl = $("moveHistory");
+function createBoard() {
+  boardEl.innerHTML = "";
+  const ranks = 8;
+  const files = 8;
 
-  // Modal (fallback jika belum ada di HTML)
-  let modal = $("modal"),
-      mTitle = $("mTitle"),
-      mDesc = $("mDesc"),
-      mRestart = $("mRestart"),
-      mClose = $("mClose");
-
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "modal";
-    modal.style.cssText = "position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45);z-index:9999";
-    modal.innerHTML =
-      '<div class="card" style="background:#0f1418;border:1px solid rgba(255,255,255,.08);padding:16px 18px;border-radius:16px;min-width:260px;text-align:center">' +
-      '<h3 id="mTitle" style="margin:.2rem 0 .4rem">Hasil</h3>' +
-      '<p id="mDesc" style="opacity:.8;margin:.25rem 0 1rem">—</p>' +
-      '<div style="display:flex;gap:10px;justify-content:center">' +
-      '<button id="mRestart" class="btn accent">Mulai Ulang</button>' +
-      '<button id="mClose" class="btn">Tutup</button>' +
-      "</div></div>";
-    document.body.appendChild(modal);
-    mTitle = $("mTitle"); mDesc = $("mDesc"); mRestart = $("mRestart"); mClose = $("mClose");
-  }
-
-  // ===== Game state =====
-  let game = new AzChess();      // dari chess-engine.js
-  let vsAI = false;              // false: vs Human, true: vs Azbry-MD
-  let selected = null;           // kotak terpilih, ex: "e2"
-
-  const PIECE = {
-    w: { p: "♙", n: "♘", b: "♗", r: "♖", q: "♕", k: "♔" },
-    b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" },
-  };
-
-  // Algebra <-> Index (UI)
-  const a2i = (a) => [8 - parseInt(a[1], 10), a.charCodeAt(0) - 97];
-  const i2a = (r, c) => String.fromCharCode(97 + c) + (8 - r);
-  function pieceAt(a){ const [r,c]=a2i(a); return game.s.b[r][c]; }
-
-  // ===== Render papan =====
-  function renderBoard() {
-    if (!boardEl) return;
-    grid.innerHTML = "";
-    const s = game.s;
-
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const cell = document.createElement("div");
-        cell.className = "sq";
-        const a = i2a(r, c);
-        cell.dataset.square = a;
-
-        const P = s.b[r][c];
-        if (P) {
-          cell.innerHTML = `<div>${PIECE[P.c][P.t]}</div>`;
-          if (boardEl.classList.contains("flip")) {
-            cell.firstChild.style.transform = "rotate(180deg)";
-          }
-        }
-        grid.appendChild(cell);
-      }
-    }
-
-    const end = game.isGameOver();
-    if (end) {
-      const winner = game.turn()==="w" ? "Hitam" : "Putih"; // side to move no legal -> lawan menang
-      showResult(end==="checkmate" ? `Checkmate — ${winner} menang!` : "Stalemate — Seri.");
-    }
-    updateHistory();
-  }
-
-  // ===== Riwayat langkah =====
-  function updateHistory() {
-    if (!histEl) return;
-    const mv = game.hist;
-    if (!mv.length) { histEl.textContent = "_"; return; }
-    let out = "", n = 1;
-    for (let i = 0; i < mv.length; i += 2) {
-      const w = mv[i] ? `${mv[i].from}→${mv[i].to}` : "";
-      const b = mv[i+1] ? `${mv[i+1].from}→${mv[i+1].to}` : "";
-      out += `${n}. ${w}  ${b}\n`; n++;
-    }
-    histEl.textContent = out.trim();
-    histEl.scrollTop = histEl.scrollHeight;
-  }
-
-  // ===== Highlight legal =====
-  function clearMarks() {
-    grid.querySelectorAll(".dot,.cap").forEach(n=>n.remove());
-    grid.querySelectorAll(".sq.sel").forEach(n=>n.classList.remove("sel"));
-  }
-  function highlightMoves(from) {
-    clearMarks();
-    const src = grid.querySelector(`[data-square="${from}"]`);
-    if (src) src.classList.add("sel");
-    const legal = game.legal().filter(m=>m.from===from);
-    for (const mv of legal) {
-      const el = grid.querySelector(`[data-square="${mv.to}"]`);
-      if (!el) continue;
-      const mark = document.createElement("div");
-      if (mv.cap) {
-        mark.className = "cap";
-        mark.style.borderRadius = "12px";
-        mark.style.inset = "6px";
-        mark.style.position = "absolute";
-        mark.style.border = "3px solid rgba(184,255,154,.65)";
-      } else {
-        mark.className = "dot";
-        mark.style.width = "14px";
-        mark.style.height = "14px";
-        mark.style.borderRadius = "50%";
-        mark.style.background = "rgba(184,255,154,.65)";
-        mark.style.boxShadow = "0 0 16px rgba(184,255,154,.6)";
-        mark.style.margin = "auto";
-      }
-      el.appendChild(mark);
+  for (let rank = ranks; rank >= 1; rank--) {
+    for (let file = 0; file < files; file++) {
+      const square = document.createElement("div");
+      square.classList.add("square");
+      const isDark = (rank + file) % 2 === 1;
+      square.classList.add(isDark ? "dark" : "light");
+      square.dataset.pos = String.fromCharCode(97 + file) + rank;
+      square.addEventListener("click", onSquareClick);
+      boardEl.appendChild(square);
     }
   }
+}
 
-  // ===== Interaksi papan =====
-  grid.addEventListener("click", (e) => {
-    const cell = e.target.closest(".sq"); if (!cell) return;
-    const sq = cell.dataset.square;
-    const P = pieceAt(sq);
+function renderBoard() {
+  const squares = document.querySelectorAll(".square");
+  squares.forEach((sq) => {
+    const piece = gameState.board[sq.dataset.pos];
+    sq.innerHTML = piece ? `<span class="piece">${piece.symbol}</span>` : "";
+  });
+}
 
-    if (selected && sq !== selected) {
-      const moved = game.move({ from: selected, to: sq });
-      selected = null; clearMarks(); renderBoard();
-
-      if (moved && vsAI && game.turn()==="b" && !game.isGameOver()) {
-        setTimeout(() => {
-          const mv = game.bestMove(2) || game.legal()[0];
-          if (mv) { game.move(mv); renderBoard(); }
-        }, 160);
-      }
+function onSquareClick(e) {
+  const pos = e.currentTarget.dataset.pos;
+  if (selectedSquare) {
+    if (selectedSquare === pos) {
+      selectedSquare = null;
+      clearHighlights();
       return;
     }
 
-    if (P && (!vsAI || P.c === "w")) {
-      selected = sq; highlightMoves(sq);
-    } else {
-      selected = null; clearMarks();
+    const moveResult = movePiece(gameState, selectedSquare, pos);
+    if (moveResult.valid) {
+      renderBoard();
+      updateHistory();
+      if (isCheckmate(gameState)) {
+        showResult(`${gameState.turn === "w" ? "Hitam" : "Putih"} Menang!`);
+      }
     }
+    selectedSquare = null;
+    clearHighlights();
+  } else {
+    const validMoves = getValidMoves(gameState, pos);
+    if (validMoves.length > 0) {
+      selectedSquare = pos;
+      highlightSquares(validMoves);
+    }
+  }
+}
+
+function highlightSquares(moves) {
+  clearHighlights();
+  moves.forEach((m) => {
+    const sq = document.querySelector(`[data-pos="${m}"]`);
+    if (sq) sq.classList.add("highlight");
   });
+}
 
-  // ===== Kontrol =====
-  btnReset && (btnReset.onclick = () => { game = new AzChess(); selected=null; clearMarks(); renderBoard(); });
-  btnUndo  && (btnUndo.onclick  = () => { if (game.undo()) { selected=null; clearMarks(); renderBoard(); } });
-  btnRedo  && (btnRedo.onclick  = () => { if (game.redo()) { selected=null; clearMarks(); renderBoard(); } });
-  btnFlip  && (btnFlip.onclick  = () => { boardEl && boardEl.classList.toggle("flip"); renderBoard(); });
+function clearHighlights() {
+  document.querySelectorAll(".square").forEach((sq) => sq.classList.remove("highlight"));
+}
 
-  btnBoardOnly && (btnBoardOnly.onclick = () => document.body.classList.toggle("board-only"));
-  btnBack      && (btnBack.onclick      = () => document.body.classList.remove("board-only"));
+function updateHistory() {
+  const moveText = gameState.history
+    .map((m, i) => `${i + 1}. ${m.from} → ${m.to}`)
+    .join("\n");
+  document.getElementById("moveHistory").innerText = moveText || "-";
+}
 
-  // ===== Mode =====
-  function setMode(ai) {
-    vsAI = !!ai;
-    btnAI && btnAI.classList.toggle("active", vsAI);
-    btnHuman && btnHuman.classList.toggle("active", !vsAI);
-    game = new AzChess(); selected=null; clearMarks(); renderBoard();
+function showResult(text) {
+  alert(text);
+  newGame();
+}
+
+function newGame() {
+  gameState = initializeGame();
+  renderBoard();
+  selectedSquare = null;
+  updateHistory();
+}
+
+function undoMove() {
+  if (gameState.undo()) {
+    renderBoard();
+    updateHistory();
   }
-  btnHuman && (btnHuman.onclick = () => setMode(false));
-  btnAI    && (btnAI.onclick    = () => setMode(true));
+}
 
-  // ===== Modal =====
-  function showResult(text) {
-    if (!modal || !mTitle || !mDesc) return;
-    mTitle.textContent = "Permainan Selesai";
-    mDesc.textContent = text || "Game selesai.";
-    modal.style.display = "grid";
+function redoMove() {
+  if (gameState.redo()) {
+    renderBoard();
+    updateHistory();
   }
-  mClose   && (mClose.onclick   = () => modal.style.display = "none");
-  mRestart && (mRestart.onclick = () => { modal.style.display="none"; game=new AzChess(); selected=null; clearMarks(); renderBoard(); });
+}
 
-  // Boot
-  setMode(false); // default: vs Human
-})();
+document.addEventListener("DOMContentLoaded", initUI);
