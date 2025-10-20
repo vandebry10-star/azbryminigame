@@ -5,196 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess</title>
 
-  <!-- Tema Global -->
-  <link rel="stylesheet" href="assets/css/azbry.css">
-  <link rel="stylesheet" href="assets/css/chess.css">
-
-  <style>
-    /* Tema dasar agar tidak putih */
-    html, body {
-      background: linear-gradient(180deg, #0b0d10 0%, #101315 100%) !important;
-      color: #eaf1e9;
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-    }
-
-    :root {
-      --board-max: 820px;
-    }
-
-    main.container {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 18px 16px 120px;
-    }
-
-    header.top-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    header .title h1 {
-      margin: 0;
-      font-size: clamp(22px, 3.6vw, 34px);
-      color: var(--azbry-accent, #b8ff9a);
-    }
-
-    header .tag {
-      display: inline-block;
-      margin-right: 8px;
-      padding: 3px 8px;
-      border-radius: 10px;
-      font-size: 12px;
-      color: #a7b2be;
-      background: rgba(184, 255, 154, 0.08);
-      border: 1px solid rgba(184, 255, 154, 0.15);
-    }
-
-    .mode-picker {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 8px 0 14px;
-    }
-
-    .seg {
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-weight: 700;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      color: #dbe4ee;
-      transition: 0.2s ease;
-    }
-
-    .seg.active {
-      background: linear-gradient(180deg, var(--azbry-accent, #b8ff9a), var(--azbry-accent-2, #94ef89));
-      color: var(--azbry-ink, #0b0d10);
-      border-color: transparent;
-      box-shadow: 0 0 12px rgba(184, 255, 154, 0.35);
-    }
-
-    .board-wrap {
-      margin: 8px auto 16px;
-      max-width: var(--board-max);
-      border-radius: 22px;
-      padding: 14px;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.03);
-    }
-
-    .board {
-      aspect-ratio: 1/1;
-      width: 100%;
-      margin: 0 auto;
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    .panel {
-      display: grid;
-      gap: 12px;
-      margin: 10px auto 18px;
-      max-width: var(--board-max);
-      grid-template-columns: 1fr;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .btn {
-      padding: 10px 14px;
-      border-radius: 12px;
-      font-weight: 700;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.04);
-      color: #e8f0fb;
-      transition: 0.2s ease;
-    }
-
-    .btn.dark {
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .btn.accent {
-      background: linear-gradient(180deg, var(--azbry-accent, #b8ff9a), var(--azbry-accent-2, #94ef89));
-      color: var(--azbry-ink, #0b0d10);
-      border-color: transparent;
-      box-shadow: 0 0 12px rgba(184, 255, 154, 0.25);
-    }
-
-    .btn:hover {
-      transform: translateY(-1px);
-      opacity: 0.9;
-    }
-
-    .move-log {
-      padding: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .move-log h4 {
-      margin: 0 0 6px;
-      color: #cdd6e3;
-    }
-
-    #moveHistory {
-      margin: 0;
-      white-space: pre-wrap;
-      color: #aeb9c8;
-      font-family: monospace;
-    }
-
-    .footer {
-      max-width: var(--board-max);
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    body.board-only .panel,
-    body.board-only .footer,
-    body.board-only .mode-picker {
-      display: none;
-    }
-
-    body.board-only .board-wrap {
-      max-width: min(98vw, 1100px);
-      padding: 10px;
-    }
-
-    body.board-only main.container {
-      padding-bottom: 32px;
-    }
-
-    .license {
-      text-align: center;
-      opacity: 0.6;
-      margin-top: 14px;
-    }
-  </style>
+  <!-- Tema Azbry Chess -->
+  <link rel="stylesheet" href="assets/css/chess.css" />
 </head>
-
 <body>
   <main id="chess-app" class="container">
+    <!-- HEADER -->
     <header class="top-header">
       <div class="title">
         <span class="tag">AZBRY-MD • BOARD</span>
@@ -202,16 +18,19 @@
       </div>
     </header>
 
-    <div class="mode-picker">
+    <!-- MODE PICKER -->
+    <div class="mode-picker" aria-label="Pilih Mode">
       <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-      <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
+      <button id="modeAI" class="seg" type="button" aria-label="Mode vs Azbry-MD">vs Azbry-MD</button>
     </div>
 
-    <section class="board-wrap">
-      <div id="board" class="board"></div>
+    <!-- BOARD -->
+    <section class="board-wrap" aria-label="Papan Catur">
+      <div id="board" class="board" aria-live="polite"></div>
     </section>
 
-    <section class="panel">
+    <!-- CONTROL PANEL -->
+    <section class="panel" aria-label="Kontrol Permainan">
       <div class="controls">
         <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
         <button id="btnUndo" class="btn" type="button">Undo</button>
@@ -221,37 +40,75 @@
 
       <div class="move-log">
         <h4>Riwayat Langkah</h4>
-        <pre id="moveHistory">—</pre>
+        <pre id="moveHistory">_</pre>
       </div>
     </section>
 
-    <footer class="footer">
-      <button id="btnBoardOnly" class="btn dark">Board Only</button>
-      <button id="btnBack" class="btn dark">Kembali</button>
+    <!-- FOOTER NAV -->
+    <footer class="footer" role="navigation">
+      <div class="left-btn">
+        <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
+      </div>
+      <div class="right-btn">
+        <button id="btnBack" class="btn dark" type="button">Kembali</button>
+      </div>
     </footer>
-
-    <section class="license">
-      <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
-      <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
-    </section>
   </main>
 
-  <!-- Script urutan wajib -->
-  <script type="module" src="assets/js/chess-engine.js"></script>
-  <script type="module" src="assets/js/chess-ui.js"></script>
-  <script type="module" src="assets/js/main.js"></script>
+  <!-- SCRIPTS (urut wajib) -->
+  <script src="assets/js/chess-engine.js"></script>
+  <script src="assets/js/chess-ui.js"></script>
+  <script src="assets/js/main.js"></script>
 
-  <!-- Tambahan kecil -->
+  <!-- Lem perekat tipis supaya tombol dasar selalu hidup walau main.js belum kebaca -->
   <script>
-    document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
-      document.body.classList.toggle('board-only');
-    });
+    // Board Only toggle
+    (function(){
+      const byId = id => document.getElementById(id);
+      const boardOnlyBtn = byId('btnBoardOnly');
+      if (boardOnlyBtn) {
+        boardOnlyBtn.addEventListener('click', () => {
+          document.body.classList.toggle('board-only');
+        });
+      }
 
-    document.getElementById('btnBack')?.addEventListener('click', () => {
-      const to = (location.pathname.endsWith('chess.html') ? 'index.html' : './');
-      try { history.length > 1 ? history.back() : location.assign(to); }
-      catch { location.assign(to); }
-    });
+      // Kembali: prioritas history, fallback ke index.html
+      const backBtn = byId('btnBack');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          if (history.length > 1) history.back();
+          else window.location.href = 'index.html';
+        });
+      }
+
+      // Flip Board (fallback; main.js juga mengikat ini)
+      const flipBtn = byId('btnFlip');
+      if (flipBtn) {
+        flipBtn.addEventListener('click', () => {
+          const b = byId('board');
+          if (b) b.classList.toggle('flip');
+          if (window.AzbryChess?.flipBoard) { try { window.AzbryChess.flipBoard(); } catch(e){} }
+        });
+      }
+
+      // Mode buttons: set kelas aktif + panggil setter kalau ada
+      const btnHuman = byId('modeHuman');
+      const btnAI = byId('modeAI');
+      function setActive(btn, other){
+        btn.classList.add('active');
+        other.classList.remove('active');
+      }
+      if (btnHuman && btnAI) {
+        btnHuman.addEventListener('click', () => {
+          setActive(btnHuman, btnAI);
+          if (window.AzbryChess?.setMode) { try { window.AzbryChess.setMode('human'); } catch(e){} }
+        });
+        btnAI.addEventListener('click', () => {
+          setActive(btnAI, btnHuman);
+          if (window.AzbryChess?.setMode) { try { window.AzbryChess.setMode('ai'); } catch(e){} }
+        });
+      }
+    })();
   </script>
 </body>
 </html>
