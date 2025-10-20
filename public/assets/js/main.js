@@ -49,22 +49,15 @@
   btnAI?.addEventListener('click',    ()=>{ vsAI=true;  saveMode(); applyMode(); ui.reset(); });
   applyMode();
 
-  // ===== AI scheduling (Hitam) =====
-  function scheduleAI(){
+  // ===== AI callback: jalan tiap selesai langkah Putih (kalau mode AI) =====
+  ui.setAICallback(()=>{
     if(!vsAI) return;
     if(ui.engine.getTurn() !== 'b') return;
     setTimeout(()=>{
       const best = ui.engine.think(2,'b'); // minimax depth-2
       ui.commitAIMove(best);
     }, 250);
-  }
-
-  // hook ke updateTurnBar supaya AI otomatis jalan
-  const _origUpdate = ui.updateTurnBar;
-  ui.updateTurnBar = function(){
-    _origUpdate();
-    scheduleAI();
-  };
+  });
 
   // ===== Board Only / Back =====
   document.getElementById('btnBoardOnly')?.addEventListener('click', ()=>{
@@ -73,5 +66,17 @@
   document.getElementById('btnBack')?.addEventListener('click', ()=>{
     document.body.classList.remove('board-only');
   });
+
+  // ===== Tambah tombol Flip (orientasi papan) tanpa edit HTML =====
+  (function injectFlip(){
+    const footer = document.querySelector('.footer');
+    if(!footer) return;
+    const b = document.createElement('button');
+    b.id='btnFlip'; b.className='btn dark'; b.textContent='Flip';
+    footer.insertBefore(b, footer.firstChild);
+    b.addEventListener('click', ()=>{
+      document.getElementById('board')?.classList.toggle('flip');
+    });
+  })();
 
 })();
