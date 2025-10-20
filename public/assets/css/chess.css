@@ -5,7 +5,6 @@
   --piece-max:64px;
 }
 
-/* page container mengikuti azbry.css */
 .container{max-width:1100px;margin:0 auto;padding:20px 14px 128px}
 
 /* header */
@@ -55,7 +54,7 @@
 .coord.file{bottom:6px;right:8px}
 .coord.rank{top:6px;left:8px}
 
-/* panel kanan/bawah */
+/* panel */
 .panel{
   background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%), var(--panel,#111418);
   border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.45);
@@ -84,7 +83,7 @@
   font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; color:#cbd5e1
 }
 
-/* footer control (board only, back) */
+/* footer control */
 .footer{
   position:sticky; bottom:0; margin-top:14px;
   display:flex; justify-content:space-between; gap:12px;
@@ -93,18 +92,18 @@
   border:1px solid rgba(255,255,255,.06); box-shadow:0 10px 30px rgba(0,0,0,.35)
 }
 
-/* license text */
+/* license */
 .license{margin-top:10px;text-align:center;color:#b8c0cc;font-size:12px}
 .license .credit{color:rgba(184,255,154,.8);font-weight:700}
 
-/* board only mode */
+/* board only */
 body.board-only .panel,
 body.board-only .footer,
 body.board-only .mode-picker,
 body.board-only .license{ display:none !important }
 body.board-only .board{ width:min(96vw,900px) }
 
-/* status bar + modal (di-inject lewat main.js jika belum ada) */
+/* status + modal */
 #statusBar{
   position:fixed;left:50%;transform:translateX(-50%);top:10px;
   padding:8px 12px;border-radius:12px;background:rgba(184,255,154,.12);
@@ -118,3 +117,7 @@ body.board-only .board{ width:min(96vw,900px) }
 }
 #resultTitle{font-weight:900;font-size:18px;margin-bottom:6px}
 #resultDesc{color:#b8c0cc;margin-bottom:14px}
+
+/* Flip orientation: rotate board + isi agar teks tetap tegak */
+.board.flip{ transform:rotate(180deg); }
+.board.flip .square{ transform:rotate(180deg); }
