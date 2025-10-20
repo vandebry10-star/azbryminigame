@@ -1,240 +1,393 @@
-/* Azbry Chess Engine — aturan catur lengkap + AI */
-(function () {
-  const W = "w", B = "b";
-  const START =
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+// ================================
+// AZBRY CHESS ENGINE (ESM)
+// ================================
 
-  const clone = (o) => JSON.parse(JSON.stringify(o));
-  const a2i = (a) => [8 - parseInt(a[1]), a.charCodeAt(0) - 97];
-  const i2a = (r, c) => String.fromCharCode(97 + c) + (8 - r);
-  const inBoard = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+/*
+  Representasi:
+  - Papan: array 64 (0..63), rank 8..1 dari atas ke bawah (a8 index 0).
+  - Bidak: { t:'p|n|b|r|q|k', c:'w|b' }
+  - Warna: 'w' putih, 'b' hitam.
+  - Koordinat algebraic: 'a1'..'h8'
+*/
 
-  function parseFEN(fen) {
-    const [bStr, t, cast, ep, half, full] = fen.split(" ");
-    const rows = bStr.split("/");
-    const b = Array.from({ length: 8 }, () => Array(8).fill(null));
-    for (let r = 0; r < 8; r++) {
-      let c = 0;
-      for (const ch of rows[r]) {
-        if (/\d/.test(ch)) c += +ch;
-        else {
-          const color = ch === ch.toLowerCase() ? B : W;
-          b[r][c++] = { t: ch.toLowerCase(), c: color };
-        }
-      }
-    }
-    return { b, t, cast, ep: ep === "-" ? null : ep, h: +half, f: +full };
+const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w";
+
+const PIECE_VALUE = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+const DIRS = {
+  n: [-17, -15, -10, -6, 6, 10, 15, 17], // knight (pakai grid 8x8 guard)
+};
+
+function inBounds(i){ return i>=0 && i<64; }
+function file(i){ return i % 8; }
+function rank(i){ return Math.floor(i/8); }
+function sameFile(a,b){ return file(a)===file(b); }
+function sameRank(a,b){ return rank(a)===rank(b); }
+
+function idxFromAlg(alg){
+  const f = alg.charCodeAt(0)-97; // a->0
+  const r = parseInt(alg[1],10)-1; // 1 -> 0
+  return (7-r)*8 + f;
+}
+function algFromIdx(i){
+  const f = String.fromCharCode(97 + (i%8));
+  const r = 8 - Math.floor(i/8);
+  return f + r;
+}
+
+// ---------------- Game ----------------
+
+export function createGame(fen = START_FEN){
+  const [rows, side] = fen.split(" ");
+  const board = new Array(64).fill(null);
+  let r = 0, c = 0;
+  for (const ch of rows){
+    if (ch === "/"){ r++; c = 0; continue; }
+    if (/\d/.test(ch)){ c += parseInt(ch,10); continue; }
+    const color = ch === ch.toUpperCase() ? 'w' : 'b';
+    const t = ch.toLowerCase();
+    board[r*8 + c] = { t, c: color };
+    c++;
   }
-
-  function toFEN(s) {
-    let rows = [];
-    for (let r = 0; r < 8; r++) {
-      let run = 0, row = "";
-      for (let c = 0; c < 8; c++) {
-        const p = s.b[r][c];
-        if (!p) run++;
-        else {
-          if (run) row += run, (run = 0);
-          row += p.c === W ? p.t.toUpperCase() : p.t;
-        }
-      }
-      if (run) row += run;
-      rows.push(row);
-    }
-    return rows.join("/") + " " + s.t + " " + s.cast + " " + (s.ep || "-") + " " + s.h + " " + s.f;
-  }
-
-  function findKing(b, color) {
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++)
-        if (b[r][c] && b[r][c].c === color && b[r][c].t === "k")
-          return [r, c];
-    return null;
-  }
-
-  function inCheck(s, color) {
-    const enemy = color === W ? B : W;
-    const king = findKing(s.b, color);
-    if (!king) return true;
-    const target = i2a(king[0], king[1]);
-    const temp = clone(s);
-    temp.t = enemy;
-    return _genPseudo(temp).some((m) => m.to === target);
-  }
-
-  function _genPseudo(s) {
-    const M = [];
-    const { b, t } = s;
-    const enemy = t === W ? B : W;
-    const dir = t === W ? -1 : 1;
-    const add = (from, to, opts = {}) => M.push({ from, to, ...opts });
-
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const P = b[r][c];
-        if (!P || P.c !== t) continue;
-        const from = i2a(r, c);
-
-        if (P.t === "p") {
-          const r1 = r + dir;
-          if (inBoard(r1, c) && !b[r1][c]) add(from, i2a(r1, c));
-          const start = P.c === W ? 6 : 1;
-          const r2 = r + dir * 2;
-          if (r === start && !b[r1][c] && !b[r2][c]) add(from, i2a(r2, c));
-          for (const dc of [-1, 1]) {
-            const cc = c + dc;
-            if (!inBoard(r1, cc)) continue;
-            const tgt = b[r1][cc];
-            if (tgt && tgt.c === enemy) add(from, i2a(r1, cc), { cap: true });
-          }
-        }
-
-        const slide = (dirs) => {
-          for (const [dr, dc] of dirs) {
-            let r2 = r + dr, c2 = c + dc;
-            while (inBoard(r2, c2)) {
-              const tgt = b[r2][c2];
-              if (!tgt) add(from, i2a(r2, c2));
-              else {
-                if (tgt.c === enemy) add(from, i2a(r2, c2), { cap: true });
-                break;
-              }
-              r2 += dr;
-              c2 += dc;
-            }
-          }
-        };
-
-        if (P.t === "n") {
-          const d = [
-            [1, 2], [2, 1], [-1, 2], [-2, 1],
-            [1, -2], [2, -1], [-1, -2], [-2, -1],
-          ];
-          for (const [dr, dc] of d) {
-            const r2 = r + dr, c2 = c + dc;
-            if (!inBoard(r2, c2)) continue;
-            const tgt = b[r2][c2];
-            if (!tgt || tgt.c === enemy)
-              add(from, i2a(r2, c2), { cap: !!tgt });
-          }
-        }
-        if (P.t === "b") slide([[1, 1], [1, -1], [-1, 1], [-1, -1]]);
-        if (P.t === "r") slide([[1, 0], [-1, 0], [0, 1], [0, -1]]);
-        if (P.t === "q")
-          slide([[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]);
-        if (P.t === "k") {
-          for (const dr of [-1, 0, 1]) {
-            for (const dc of [-1, 0, 1]) {
-              if (!dr && !dc) continue;
-              const r2 = r + dr, c2 = c + dc;
-              if (!inBoard(r2, c2)) continue;
-              const tgt = b[r2][c2];
-              if (!tgt || tgt.c === enemy)
-                add(from, i2a(r2, c2), { cap: !!tgt });
-            }
-          }
-        }
-      }
-    }
-    return M;
-  }
-
-  function genLegal(s) {
-    return _genPseudo(s).filter((m) => !inCheck(makeMove(s, m), s.t));
-  }
-
-  function makeMove(s, m) {
-    const ns = clone(s);
-    const [fr, fc] = a2i(m.from);
-    const [tr, tc] = a2i(m.to);
-    const P = ns.b[fr][fc];
-    ns.b[fr][fc] = null;
-    ns.b[tr][tc] = { t: m.promo || P.t, c: P.c };
-    ns.t = s.t === W ? B : W;
-    return ns;
-  }
-
-  const val = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
-  const score = (b) => {
-    let s = 0;
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++) {
-        const p = b[r][c];
-        if (p) s += (p.c === W ? 1 : -1) * val[p.t];
-      }
-    return s;
+  return {
+    board,
+    turn: side || 'w',
+    history: [],
+    future: [],
+    winner: null,
+    draw: false,
+    // opsional flags (castling/en-passant) bisa ditambah kelak
   };
+}
 
-  function minimax(s, d, a, b) {
-    const L = genLegal(s);
-    if (!L.length) {
-      if (inCheck(s, s.t)) return [s.t === W ? +Infinity : -Infinity, null];
-      return [0, null];
-    }
-    if (d === 0) return [score(s.b), null];
-    if (s.t === W) {
-      let best = [-Infinity, null];
-      for (const m of L) {
-        const [sc] = minimax(makeMove(s, m), d - 1, a, b);
-        if (sc > best[0]) best = [sc, m];
-        a = Math.max(a, sc);
-        if (b <= a) break;
-      }
-      return best;
-    } else {
-      let best = [Infinity, null];
-      for (const m of L) {
-        const [sc] = minimax(makeMove(s, m), d - 1, a, b);
-        if (sc < best[0]) best = [sc, m];
-        b = Math.min(b, sc);
-        if (b <= a) break;
-      }
-      return best;
+export function cloneState(s){
+  return {
+    board: s.board.map(p=>p?{...p}:null),
+    turn: s.turn,
+    history: s.history.slice(),
+    future: s.future.slice(),
+    winner: s.winner,
+    draw: s.draw,
+  };
+}
+
+export function getTurn(s){ return s.turn; }
+export function getBoard(s){ return s.board; }
+
+// ---------- Move generation ----------
+
+function pushMove(moves, from, to, capture=false, promo=null){
+  moves.push({ from, to, capture, promo });
+}
+
+function genPawn(s, i, moves){
+  const p = s.board[i];
+  const dir = p.c === 'w' ? -1 : 1;
+  const startRank = p.c === 'w' ? 6 : 1;
+  const r = rank(i), f = file(i);
+
+  // maju 1
+  const fwd1 = i + dir*8;
+  if (inBounds(fwd1) && !s.board[fwd1]){
+    // promosi
+    if ((p.c==='w' && rank(fwd1)===0) || (p.c==='b' && rank(fwd1)===7)){
+      for (const promo of ['q','r','b','n']) pushMove(moves,i,fwd1,false,promo);
+    } else pushMove(moves, i, fwd1);
+    // maju 2
+    const fwd2 = i + dir*16;
+    if (rank(i)===startRank && !s.board[fwd2] && !s.board[fwd1]){
+      pushMove(moves, i, fwd2);
     }
   }
+  // makan kiri/kanan
+  for (const df of [-1, 1]){
+    const nf = f + df;
+    if (nf<0 || nf>7) continue;
+    const to = i + dir*8 + df;
+    if (!inBounds(to)) continue;
+    const tgt = s.board[to];
+    if (tgt && tgt.c !== p.c){
+      // promosi
+      if ((p.c==='w' && rank(to)===0) || (p.c==='b' && rank(to)===7)){
+        for (const promo of ['q','r','b','n']) pushMove(moves,i,to,true,promo);
+      } else pushMove(moves, i, to, true);
+    }
+  }
+  // (en-passant belum diaktifkan di versi ini)
+}
 
-  window.AzChess = class {
-    constructor(fen = START) {
-      this.s = parseFEN(fen);
-      this.undoStack = [];
-      this.redoStack = [];
-      this.hist = [];
-    }
+function ray(s, i, df, dr, moves, color){
+  let f=file(i), r=rank(i);
+  while (true){
+    f+=df; r+=dr;
+    if (f<0||f>7||r<0||r>7) break;
+    const to = r*8 + f;
+    if (!s.board[to]){ pushMove(moves, i, to); continue; }
+    if (s.board[to].c !== color){ pushMove(moves, i, to, true); }
+    break;
+  }
+}
 
-    legal() { return genLegal(this.s); }
-    move(m) {
-      const legal = this.legal().find((x) => x.from === m.from && x.to === m.to);
-      if (!legal) return false;
-      this.undoStack.push(this.s);
-      this.s = makeMove(this.s, legal);
-      this.redoStack = [];
-      this.hist.push(legal);
-      return true;
+function genMovesForIndex(s, i){
+  const p = s.board[i];
+  if (!p) return [];
+  const moves = [];
+  switch (p.t){
+    case 'p':
+      genPawn(s,i,moves);
+      break;
+    case 'n': {
+      for (const d of DIRS.n){
+        const to = i + d;
+        if (!inBounds(to)) continue;
+        // guard tepi papan knight
+        const df = Math.abs(file(to)-file(i));
+        const dr = Math.abs(rank(to)-rank(i));
+        if (!((df===1 && dr===2) || (df===2 && dr===1))) continue;
+        const tgt = s.board[to];
+        if (!tgt || tgt.c!==p.c) pushMove(moves, i, to, !!tgt);
+      }
+      break;
     }
-    undo() {
-      if (!this.undoStack.length) return false;
-      this.redoStack.push(this.s);
-      this.s = this.undoStack.pop();
-      this.hist.pop();
-      return true;
+    case 'b':
+      ray(s,i,1,1,moves,p.c);
+      ray(s,i,1,-1,moves,p.c);
+      ray(s,i,-1,1,moves,p.c);
+      ray(s,i,-1,-1,moves,p.c);
+      break;
+    case 'r':
+      ray(s,i,1,0,moves,p.c);
+      ray(s,i,-1,0,moves,p.c);
+      ray(s,i,0,1,moves,p.c);
+      ray(s,i,0,-1,moves,p.c);
+      break;
+    case 'q':
+      ray(s,i,1,0,moves,p.c); ray(s,i,-1,0,moves,p.c);
+      ray(s,i,0,1,moves,p.c); ray(s,i,0,-1,moves,p.c);
+      ray(s,i,1,1,moves,p.c); ray(s,i,1,-1,moves,p.c);
+      ray(s,i,-1,1,moves,p.c); ray(s,i,-1,-1,moves,p.c);
+      break;
+    case 'k': {
+      for (let df=-1; df<=1; df++){
+        for (let dr=-1; dr<=1; dr++){
+          if (df===0 && dr===0) continue;
+          const nf=file(i)+df, nr=rank(i)+dr;
+          if (nf<0||nf>7||nr<0||nr>7) continue;
+          const to=nr*8+nf;
+          const tgt=s.board[to];
+          if (!tgt || tgt.c!==p.c) pushMove(moves,i,to,!!tgt);
+        }
+      }
+      // (castling belum diaktifkan di versi ini)
+      break;
     }
-    redo() {
-      if (!this.redoStack.length) return false;
-      this.undoStack.push(this.s);
-      this.s = this.redoStack.pop();
-      return true;
+  }
+  return moves;
+}
+
+export function generateMoves(s){
+  const side = s.turn;
+  let pseudo = [];
+  for (let i=0;i<64;i++){
+    const p = s.board[i];
+    if (p && p.c===side){
+      const mv = genMovesForIndex(s,i);
+      for (const m of mv) pseudo.push(m);
     }
-    bestMove(d = 2) {
-      const [, m] = minimax(this.s, d, -Infinity, +Infinity);
-      return m;
-    }
-    turn() { return this.s.t; }
-    fen() { return toFEN(this.s); }
-    inCheck(color = this.s.t) { return inCheck(this.s, color); }
-    isGameOver() {
-      const L = genLegal(this.s);
-      if (L.length) return null;
-      return this.inCheck(this.s.t) ? "checkmate" : "stalemate";
-    }
+  }
+  // saring yang bikin raja sendiri terserang
+  const legal = [];
+  for (const m of pseudo){
+    const ns = cloneState(s);
+    makeMoveNoRecord(ns,m);
+    if (!isKingAttacked(ns, side)) legal.push(m);
+  }
+  return legal;
+}
+
+// ---------- Checks ----------
+
+function locateKing(s, color){
+  for (let i=0;i<64;i++){
+    const p=s.board[i];
+    if (p && p.t==='k' && p.c===color) return i;
+  }
+  return -1;
+}
+
+function squaresAttackedBy(s, color){
+  // generate pseudo moves semua bidak color tanpa filter self-check
+  const attacks = new Set();
+  for (let i=0;i<64;i++){
+    const p=s.board[i];
+    if (!p || p.c!==color) continue;
+    const mv=genMovesForIndex(s,i);
+    for (const m of mv) attacks.add(m.to);
+  }
+  return attacks;
+}
+
+function isKingAttacked(s, color){
+  const k = locateKing(s,color);
+  if (k<0) return true; // safety
+  const opp = color==='w'?'b':'w';
+  const att = squaresAttackedBy(s,opp);
+  return att.has(k);
+}
+
+export function inCheck(s, color=s.turn){
+  return isKingAttacked(s,color);
+}
+
+export function isCheckmate(s){
+  if (!inCheck(s,s.turn)) return false;
+  const legal = generateMoves(s);
+  return legal.length===0;
+}
+
+export function isStalemate(s){
+  if (inCheck(s,s.turn)) return false;
+  const legal = generateMoves(s);
+  return legal.length===0;
+}
+
+// ---------- Make/Undo ----------
+
+function makeMoveNoRecord(s, m){
+  const piece = s.board[m.from];
+  // promosi
+  if (m.promo){
+    s.board[m.to] = { t:m.promo, c: piece.c };
+    s.board[m.from] = null;
+  } else {
+    s.board[m.to] = piece;
+    s.board[m.from] = null;
+  }
+  s.turn = s.turn==='w'?'b':'w';
+}
+
+export function makeMove(s, m){
+  const before = {
+    board: s.board.map(p=>p?{...p}:null),
+    turn: s.turn,
   };
-})();
+  makeMoveNoRecord(s,m);
+  s.history.push(before);
+  s.future.length = 0;
+
+  // set status akhir
+  s.winner = null; s.draw = false;
+  if (isCheckmate(s)){
+    s.winner = s.turn==='w' ? 'b' : 'w'; // karena turn sudah dibalik
+  } else if (isStalemate(s)){
+    s.draw = true;
+  }
+}
+
+export function undo(s){
+  if (!s.history.length) return false;
+  const prev = s.history.pop();
+  s.future.push({ board:s.board.map(p=>p?{...p}:null), turn:s.turn });
+  s.board = prev.board;
+  s.turn = prev.turn;
+  s.winner = null; s.draw = false;
+  return true;
+}
+
+export function redo(s){
+  if (!s.future.length) return false;
+  const next = s.future.pop();
+  s.history.push({ board:s.board.map(p=>p?{...p}:null), turn:s.turn });
+  s.board = next.board;
+  s.turn = next.turn;
+  s.winner = null; s.draw = false;
+  return true;
+}
+
+// ---------- Evaluation & AI ----------
+
+function evaluate(s){
+  // material simple
+  let score = 0;
+  for (const p of s.board){
+    if (!p) continue;
+    score += (p.c==='w' ? 1 : -1) * (PIECE_VALUE[p.t]||0);
+  }
+  return score;
+}
+
+function minimax(s, depth, alpha, beta, maximizing){
+  if (depth===0){
+    return { score: evaluate(s) };
+  }
+  if (isCheckmate(s)){
+    // jika checkmate saat turn s.turn, maka side lawan menang
+    const val = s.turn==='w' ? -Infinity : Infinity;
+    return { score: val };
+  }
+  if (isStalemate(s)) return { score: 0 };
+
+  const moves = generateMoves(s);
+  if (moves.length===0){
+    // redundan, sudah di-handle di atas, tapi jaga-jaga
+    return { score: evaluate(s) };
+  }
+
+  let best = null;
+
+  if (maximizing){
+    let bestScore = -Infinity;
+    for (const m of moves){
+      const ns = cloneState(s);
+      makeMoveNoRecord(ns,m);
+      const val = minimax(ns, depth-1, alpha, beta, false).score;
+      if (val > bestScore){ bestScore = val; best = m; }
+      alpha = Math.max(alpha, val);
+      if (beta <= alpha) break;
+    }
+    return { score: bestScore, move: best };
+  } else {
+    let bestScore = Infinity;
+    for (const m of moves){
+      const ns = cloneState(s);
+      makeMoveNoRecord(ns,m);
+      const val = minimax(ns, depth-1, alpha, beta, true).score;
+      if (val < bestScore){ bestScore = val; best = m; }
+      beta = Math.min(beta, val);
+      if (beta <= alpha) break;
+    }
+    return { score: bestScore, move: best };
+  }
+}
+
+export function aiBestMove(s, depth=2){
+  // AI jalan untuk side s.turn (anggap putih = maximizing)
+  const maximizing = s.turn==='w';
+  const { move } = minimax(s, depth, -Infinity, Infinity, maximizing);
+  return move || null;
+}
+
+// ---------- Helpers untuk UI ----------
+
+export function legalMovesFrom(s, fromIdx){
+  const legal = generateMoves(s);
+  return legal.filter(m => m.from === fromIdx);
+}
+
+export function tryMoveAlg(s, fromAlg, toAlg, promo=null){
+  const from = idxFromAlg(fromAlg);
+  const to = idxFromAlg(toAlg);
+  const legal = generateMoves(s).find(m => m.from===from && m.to===to && (m.promo? m.promo===promo : true));
+  if (!legal) return false;
+  makeMove(s, legal);
+  return true;
+}
+
+export function getStatus(s){
+  if (s.winner) return { type:"mate", winner: s.winner };
+  if (s.draw) return { type:"draw" };
+  if (inCheck(s)) return { type:"check", turn: s.turn };
+  return { type:"running", turn: s.turn };
+}
+
+export function algebraic(i){ return algFromIdx(i); }
+export function indexOfAlg(a){ return idxFromAlg(a); }
