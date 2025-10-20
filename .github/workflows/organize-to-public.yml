@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write   # <-- kasih write ke GITHUB_TOKEN
+
 jobs:
   move-and-fix:
     runs-on: ubuntu-latest
@@ -47,10 +50,8 @@ jobs:
 
       - name: Show tree (debug)
         run: |
-          echo "==== ROOT ===="
-          ls -la
-          echo "==== PUBLIC ===="
-          ls -la public || true
+          echo "==== ROOT ====" && ls -la
+          echo "==== PUBLIC ====" && ls -la public || true
 
       - name: Commit changes (if any)
         uses: EndBug/add-and-commit@v9
