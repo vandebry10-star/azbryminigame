@@ -1,53 +1,60 @@
-/* =====================================================
-   Azbry Chess Style — papan, bidak, indikator
-   ===================================================== */
-
-.board {
+/* Azbry Chess — layout papan fix */
+#board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  width: 100%;
-  aspect-ratio: 1/1;
-  border-radius: 12px;
+  gap: 0;
+  width: min(92vw, 640px);
+  aspect-ratio: 1 / 1;          /* kotak selalu bujur sangkar */
+  margin: 0 auto;
+  position: relative;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04), 0 20px 50px rgba(0,0,0,.45);
   overflow: hidden;
-  border: 2px solid rgba(184,255,154,.25);
-  box-shadow: 0 0 20px rgba(184,255,154,.15);
+  pointer-events: auto;
 }
 
-.square {
-  width: 100%;
-  height: 100%;
+#board.flip { transform: rotate(180deg); }
+#board.flip .sq { transform: rotate(180deg); } /* biar glyph nggak ikut kebalik */
+
+.sq {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(22px, 4vw, 42px);
+  font-size: clamp(18px, 5.5vw, 42px);
+  line-height: 1;
   cursor: pointer;
-  transition: background .1s ease;
 }
 
-.square.white { background: #cfd3d5; }
-.square.black { background: #4a5057; }
+.sq.light { background: #e6eaee; }
+.sq.dark  { background: #3b424a; }
 
-.square.highlight { outline: 3px solid #b8ff9a; }
-.square.move-option { background: radial-gradient(circle at center, rgba(184,255,154,.4) 20%, transparent 40%); }
+.piece.white { color: #f8fafc; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+.piece.black { color: #0d1116; text-shadow: 0 1px 0 rgba(255,255,255,.08); filter: drop-shadow(0 1px 0 rgba(0,0,0,.25)); }
 
-.piece {
-  user-select: none;
-  width: 80%;
-  height: auto;
-  filter: drop-shadow(0 0 8px rgba(0,0,0,.25));
-  transition: transform .1s ease;
+/* highlight */
+.sq.selected { outline: 3px solid rgba(167, 255, 167, 0.6); outline-offset: -3px; }
+.sq.legal .legal-dot{
+  width: 28%;
+  aspect-ratio: 1/1;
+  border-radius: 999px;
+  background: rgba(167,255,167,.65);
+  box-shadow: 0 0 10px rgba(167,255,167,.55);
 }
 
-.piece:hover {
-  transform: scale(1.05);
+/* toast kecil untuk result/checkmate */
+.az-toast{
+  position: fixed;
+  left: 50%; top: 18px; transform: translateX(-50%) translateY(-12px);
+  background: rgba(20,24,20,.9);
+  color: #dfffd0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(167,255,167,.2);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 10000;
 }
-
-/* turn indicator */
-.turn-indicator {
-  text-align: center;
-  font-weight: 700;
-  margin-top: 6px;
-  color: var(--azbry-accent);
-  text-shadow: 0 0 8px var(--azbry-ring);
-}
+.az-toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
