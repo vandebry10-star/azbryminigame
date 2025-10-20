@@ -99,7 +99,7 @@
     <section class="board-card"><div class="board-wrap"><div id="board" class="board" aria-label="Papan Catur"></div></div></section>
     <aside class="side-card">
       <div class="panel-grid">
-        <div class="kv"><b>Giliran</b><span id="turnLabel">Putih</span></div>
+        <div class="kv"><b>Giliran</b><span id="turnLabel">⚪ Putih</span></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button id="btnReset" class="mode-pill">Mulai Ulang</button>
           <button id="btnUndo" class="btn-ghost">Undo</button>
@@ -120,19 +120,18 @@
 </div>
 
 <script>
-/* ========== BASIC ENGINE (ringkas; sama fungsi, versi stabil) ========== */
+/* ====== ENGINE RINGKAS + AI ====== */
 const ICON={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔',p:'♟',n:'♞',b:'♝',r:'♜',q:'♛',k:'♚'};
 const VAL={P:1,N:3,B:3,R:5,Q:9,K:100,p:1,n:3,b:3,r:5,q:9,k:100};
 
 let board=[], turn='w', sel=null, legal=[], history=[], redoStack=[];
-let vsAI=false;
+let vsAI=false; // AI selalu main Hitam
 
 const BOARD=document.getElementById('board');
 const MOVES=document.getElementById('moves');
 
 const StatusBar=(()=>{const el=document.getElementById('statusBar');return{
-  show(t,tone){el.textContent=t;el.style.display='block';el.style.background=tone==='warn'?'rgba(255,120,120,.15)':'rgba(184,255,154,.12)';
-  el.style.borderColor=tone==='warn'?'rgba(255,120,120,.45)':'rgba(184,255,154,.35)';},
+  show(t,tone){el.textContent=t;el.style.display='block';el.style.background=tone==='warn'?'rgba(255,120,120,.15)':'rgba(184,255,154,.12)';el.style.borderColor=tone==='warn'?'rgba(255,120,120,.45)':'rgba(184,255,154,.35)';},
   hide(){el.style.display='none'}
 }})();
 const Modal=(()=>{const box=document.getElementById('resultModal');
@@ -161,7 +160,11 @@ function draw(){
     dv.onclick=onSquare; BOARD.appendChild(dv);
   }
 }
-function updateTurn(){document.getElementById('turnLabel').textContent=(turn==='w'?'Putih':'Hitam'); if(inCheck(turn)) StatusBar.show('CHECK!','warn'); else StatusBar.hide();}
+function updateTurn(){
+  const lbl=(turn==='w')?'⚪ Putih':'⚫ Hitam';
+  document.getElementById('turnLabel').textContent=lbl;
+  if(inCheck(turn)) StatusBar.show('CHECK!','warn'); else StatusBar.hide();
+}
 
 /* Move gen */
 function genPseudo(r,c){
@@ -232,6 +235,7 @@ function clearMarks(){[...BOARD.children].forEach(e=>{e.classList.remove('sel','
 function clearSel(){sel=null;legal=[];clearMarks();}
 function markSel(){clearMarks(); const idx=sel.r*8+sel.c; BOARD.children[idx].classList.add('sel'); for(const m of legal){const el=BOARD.children[m.r*8+m.c]; el.classList.add('move'); const d=document.createElement('div'); d.className='dot'; el.appendChild(d);} }
 function onSquare(e){
+  if(vsAI && turn==='b') return; // tunggu AI
   const r=+e.currentTarget.dataset.r, c=+e.currentTarget.dataset.c, p=board[r][c];
   if(!sel){ if(p!=='.'&&((turn==='w'&&isW(p))||(turn==='b'&&isB(p)))){ sel={r,c}; legal=genLegal(r,c); markSel(); } return; }
   if(sel.r===r&&sel.c===c){ clearSel(); return; }
@@ -239,24 +243,65 @@ function onSquare(e){
   if(mv){ doMove(sel.r,sel.c,r,c); clearSel(); return; }
   if(p!=='.'&&((turn==='w'&&isW(p))||(turn==='b'&&isB(p)))){ sel={r,c}; legal=genLegal(r,c); markSel(); } else clearSel();
 }
-function logMove(m){const f='abcdefgh'; const from=f[m.from.c]+(8-m.from.r), to=f[m.to.c]+(8-m.to.r); const line=`${history.length}. ${from} – ${to}`; MOVES.textContent=(MOVES.textContent==='—')?line:(MOVES.textContent+'\n'+line); MOVES.scrollTop=MOVES.scrollHeight;}
+function logMove(m){
+  const f='abcdefgh'; const from=f[m.from.c]+(8-m.from.r), to=f[m.to.c]+(8-m.to.r);
+  const line=`${history.length}. ${from} – ${to}`;
+  MOVES.textContent=(MOVES.textContent==='—')?line:(MOVES.textContent+'\n'+line);
+  MOVES.scrollTop=MOVES.scrollHeight;
+}
 function doMove(r1,c1,r2,c2){
-  const piece=board[r1][c1], target=board[r2][c2]; let promo=null; if(piece==='P'&&r2===0) promo='Q'; if(piece==='p'&&r2===7) promo='q';
+  const piece=board[r1][c1], target=board[r2][c2];
+  let promo=null; if(piece==='P'&&r2===0) promo='Q'; if(piece==='p'&&r2===7) promo='q';
   board[r2][c2]=promo?promo:piece; board[r1][c1]='.';
   const rec={from:{r:r1,c:c1},to:{r:r2,c:c2},piece,captured:target,promo}; history.push(rec); redoStack.length=0;
-  draw(); logMove(rec); turn=(turn==='w')?'b':'w'; updateTurn(); checkEndGame();
+  draw(); logMove(rec); turn=(turn==='w')?'b':'w'; updateTurn(); 
+  if(!checkEndGame() && vsAI && turn==='b'){ setTimeout(aiMove,300); }
+  return rec;
 }
 
 /* Undo / Redo */
-document.getElementById('btnUndo').onclick=()=>{const m=history.pop(); if(!m)return; board[m.from.r][m.from.c]=m.piece; board[m.to.r][m.to.c]=(m.captured&&m.captured!=='.')?m.captured:'.'; redoStack.push(m); const lines=MOVES.textContent.split('\n'); lines.pop(); MOVES.textContent=lines.length?lines.join('\n'):'—'; turn=(turn==='w')?'b':'w'; draw(); updateTurn();};
-document.getElementById('btnRedo').onclick=()=>{const m=redoStack.pop(); if(!m)return; board[m.to.r][m.to.c]=m.promo?m.promo:m.piece; board[m.from.r][m.from.c]='.'; history.push(m); draw(); logMove(m); turn=(turn==='w')?'b':'w'; updateTurn(); checkEndGame();};
+document.getElementById('btnUndo').onclick=()=>{const m=history.pop(); if(!m)return;
+  board[m.from.r][m.from.c]=m.piece; board[m.to.r][m.to.c]=(m.captured&&m.captured!=='.')?m.captured:'.';
+  redoStack.push(m);
+  const lines=MOVES.textContent.split('\n'); lines.pop(); MOVES.textContent=lines.length?lines.join('\n'):'—';
+  turn=(turn==='w')?'b':'w'; draw(); updateTurn();
+};
+document.getElementById('btnRedo').onclick=()=>{const m=redoStack.pop(); if(!m)return;
+  board[m.to.r][m.to.c]=m.promo?m.promo:m.piece; board[m.from.r][m.from.c]='.'; history.push(m);
+  draw(); logMove(m); turn=(turn==='w')?'b':'w'; updateTurn(); checkEndGame();
+};
 
 /* Endgame */
 function checkEndGame(){
   const side=turn; const moves=allLegal(side);
-  if(moves.length>0){ if(inCheck(side)) StatusBar.show('CHECK!','warn'); else StatusBar.hide(); return; }
+  if(moves.length>0){ if(inCheck(side)) StatusBar.show('CHECK!','warn'); else StatusBar.hide(); return false; }
   if(inCheck(side)){ const winner=(side==='w')?'Hitam':'Putih'; Modal.open('Checkmate', `${winner} menang. Tekan "Mulai Ulang" untuk main lagi.`); }
   else { Modal.open('Stalemate','Seri. Tekan "Mulai Ulang" untuk main lagi.'); }
+  return true;
+}
+
+/* ====== AI (Hitam): greedy satu langkah + tie random ====== */
+function score(){
+  let s=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){const p=board[r][c]; if(p==='.')continue; s+= (isW(p)?VAL[p]:-VAL[p]);}
+  return s; // skor positif = unggul Putih
+}
+function aiMove(){
+  if(turn!=='b') return;
+  const moves=allLegal('b');
+  if(moves.length===0){ checkEndGame(); return; }
+  let best=[], bestVal=Infinity;
+  for(const mv of moves){
+    const {from,to}=mv;
+    const snap=board[to.r][to.c], piece=board[from.r][from.c];
+    board[to.r][to.c]= (piece==='p' && to.r===7)?'q':piece; board[from.r][from.c]='.';
+    const v=score(); // AI ingin MIN kan skor (merugikan putih)
+    board[from.r][from.c]=piece; board[to.r][to.c]=snap;
+    if(v<bestVal-1e-6){ bestVal=v; best=[mv]; }
+    else if(Math.abs(v-bestVal)<=1e-6){ best.push(mv); }
+  }
+  const pick=best[Math.floor(Math.random()*best.length)];
+  doMove(pick.from.r,pick.from.c,pick.to.r,pick.to.c);
 }
 
 /* Board-only */
@@ -265,7 +310,7 @@ function applyBoardOnly(state){document.body.classList.toggle('board-only',state
 btnBoardOnly.onclick=()=>applyBoardOnly(!document.body.classList.contains('board-only'));
 applyBoardOnly(localStorage.getItem('az_chess_boardonly')==='1');
 
-/* Start menu logic (kebal error) */
+/* Start menu */
 const menu=document.getElementById('startMenu');
 document.getElementById('pickAI').onclick=()=>{vsAI=true;localStorage.setItem('az_chess_mode','ai');menu.classList.remove('show');startPos();};
 document.getElementById('pick2P').onclick=()=>{vsAI=false;localStorage.setItem('az_chess_mode','2p');menu.classList.remove('show');startPos();};
@@ -274,13 +319,8 @@ function safeInit(){
   try{
     const saved=localStorage.getItem('az_chess_mode');
     if(saved==='ai'||saved==='2p'){ vsAI=(saved==='ai'); startPos(); }
-    else { // default langsung main 2 pemain, menu bisa dibuka lagi via Mulai Ulang
-      vsAI=false; startPos(); menu.classList.add('show');
-    }
-  }catch(e){
-    // kalau storage error, tetap render papan 2P
-    vsAI=false; startPos();
-  }
+    else { vsAI=false; startPos(); menu.classList.add('show'); }
+  }catch(e){ vsAI=false; startPos(); }
 }
 document.getElementById('btnReset').onclick=()=>{ menu.classList.add('show'); };
 window.addEventListener('DOMContentLoaded', safeInit);
