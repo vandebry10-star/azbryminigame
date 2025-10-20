@@ -34,20 +34,27 @@ header{display:flex;align-items:center;justify-content:space-between;margin-bott
   --cell: calc(100% / 8);
 }
 
-/* cells */
+/* ganti bagian ini di <style>  */
+
 .cell{
   position:absolute;inset:auto auto;
   width:var(--cell);height:var(--cell);
   display:grid;place-items:center;
-  font-size:calc(var(--cell) * .62);
+  /* HAPUS baris ini: font-size:calc(var(--cell) * .62); */
   user-select:none;-webkit-user-select:none;
   transition:background-color .12s ease, transform .08s ease;
 }
-.dark{background:#0f1318}
-.light{background:#141920}
-.cell:nth-child(odd).row-even.light{background:#0f1318}
-.cell:nth-child(odd).row-even.dark{background:#141920}
 
+/* bidak */
+.p{
+  /* font spesifik yang punya simbol catur */
+  font-family: "Segoe UI Symbol","DejaVu Sans","Noto Sans Symbols2",
+               "Noto Sans Symbols","Arial Unicode MS", system-ui, sans-serif;
+  font-size: calc(var(--cell) * .78); /* lebih besar & konsisten */
+  line-height: 1;
+  letter-spacing: 0;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.45));
+}
 /* piece */
 .p{filter:drop-shadow(0 2px 8px rgba(0,0,0,.45))}
 .w{color:#eaf0f6} .b{color:#cfe9d0;opacity:.95}
