@@ -1,0 +1,120 @@
+/* === Azbry Chess — layout papan & panel === */
+:root{
+  --piece-min:28px;
+  --piece-vw:8.2vw;
+  --piece-max:64px;
+}
+
+/* page container mengikuti azbry.css */
+.container{max-width:1100px;margin:0 auto;padding:20px 14px 128px}
+
+/* header */
+.top-header{display:flex;justify-content:space-between;align-items:center;margin:6px 0 12px}
+.title .tag{color:var(--muted,#98a2b3);font-weight:800;font-size:12px;letter-spacing:.25px;text-transform:uppercase}
+.title h1{margin:2px 0 0;font-weight:800;font-size:clamp(22px,4vw,34px)}
+
+/* mode picker */
+.mode-picker{display:flex;gap:10px;margin:8px 0 14px}
+.mode-picker .seg{
+  padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--ink,#e6e8ec)
+}
+.mode-picker .seg.active{
+  background:linear-gradient(180deg,var(--accent,#b8ff9a),var(--accent2,#8ee887));
+  color:#0b0d10; box-shadow:0 8px 28px rgba(184,255,154,.22), inset 0 -1px 0 rgba(255,255,255,.08)
+}
+
+/* board card */
+.board-wrap{
+  display:grid;place-items:center;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%), var(--panel,#111418);
+  border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.45);
+  padding:16px; margin-bottom:14px
+}
+
+.board{
+  width:min(92vw,700px);
+  aspect-ratio:1/1;
+  display:grid; grid-template-columns:repeat(8,1fr); grid-auto-rows:1fr;
+  border-radius:14px; overflow:hidden; background:#0e1013;
+  box-shadow:0 0 0 1px rgba(255,255,255,.04) inset, 0 20px 60px rgba(184,255,154,.07)
+}
+
+.square{
+  display:grid; place-items:center;
+  font-size:clamp(var(--piece-min),var(--piece-vw),var(--piece-max));
+  aspect-ratio:1/1; line-height:1; user-select:none; position:relative
+}
+.square.dark{background:#151a1f}
+.square.light{background:#0f1317}
+.square.sel{box-shadow:inset 0 0 0 3px rgba(184,255,154,.75)}
+.square.move{box-shadow:inset 0 0 0 2px rgba(184,255,154,.45)}
+.square .dot{width:10px;height:10px;border-radius:50%;background:rgba(184,255,154,.8);box-shadow:0 0 12px rgba(184,255,154,.9);pointer-events:none}
+
+.coord{position:absolute;font-size:12px;color:rgba(255,255,255,.28);pointer-events:none}
+.coord.file{bottom:6px;right:8px}
+.coord.rank{top:6px;left:8px}
+
+/* panel kanan/bawah */
+.panel{
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%), var(--panel,#111418);
+  border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.45);
+  padding:16px
+}
+.turn-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.turn-label h3{margin:0;font-size:14px;color:var(--muted,#98a2b3);letter-spacing:.25px;text-transform:uppercase}
+#turnLabel{font-weight:900}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+
+.btn{
+  padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--ink,#e6e8ec)
+}
+.btn.accent{
+  background:linear-gradient(180deg,var(--accent,#b8ff9a),var(--accent2,#8ee887)); color:#0b0d10;
+  border:0; box-shadow:0 8px 28px rgba(184,255,154,.22), inset 0 -1px 0 rgba(255,255,255,.08)
+}
+.btn.dark{background:rgba(255,255,255,.02)}
+
+.move-log h4{margin:6px 0 6px}
+#moveHistory{
+  margin:0; padding:12px; border-radius:12px;
+  background:rgba(255,255,255,.02); border:1px solid rgba(255,255,255,.06);
+  min-height:120px; max-height:240px; overflow:auto;
+  font-family:ui-monospace,Menlo,Consolas,monospace; font-size:13px; color:#cbd5e1
+}
+
+/* footer control (board only, back) */
+.footer{
+  position:sticky; bottom:0; margin-top:14px;
+  display:flex; justify-content:space-between; gap:12px;
+  padding:10px 12px; border-radius:14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent), var(--panel,#111418);
+  border:1px solid rgba(255,255,255,.06); box-shadow:0 10px 30px rgba(0,0,0,.35)
+}
+
+/* license text */
+.license{margin-top:10px;text-align:center;color:#b8c0cc;font-size:12px}
+.license .credit{color:rgba(184,255,154,.8);font-weight:700}
+
+/* board only mode */
+body.board-only .panel,
+body.board-only .footer,
+body.board-only .mode-picker,
+body.board-only .license{ display:none !important }
+body.board-only .board{ width:min(96vw,900px) }
+
+/* status bar + modal (di-inject lewat main.js jika belum ada) */
+#statusBar{
+  position:fixed;left:50%;transform:translateX(-50%);top:10px;
+  padding:8px 12px;border-radius:12px;background:rgba(184,255,154,.12);
+  border:1px solid rgba(184,255,154,.35);color:#dfffe0;font-weight:800;letter-spacing:.2px;z-index:9999;display:none
+}
+#resultModal{position:fixed;inset:0;display:none;place-items:center;z-index:10000;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
+#resultModal .card{
+  min-width:280px;max-width:92vw;padding:16px;border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),#111418;
+  border:1px solid rgba(255,255,255,.06);box-shadow:0 10px 30px rgba(0,0,0,.45)
+}
+#resultTitle{font-weight:900;font-size:18px;margin-bottom:6px}
+#resultDesc{color:#b8c0cc;margin-bottom:14px}
