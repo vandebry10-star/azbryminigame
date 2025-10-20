@@ -1,41 +1,42 @@
-// ================================
-// AZBRY CHESS MAIN CONTROLLER
-// ================================
+// =====================================================
+// Azbry Chess Main — wiring tombol & mode
+// =====================================================
+import { initUI, newGame, setModeAI, undoOne, redoOne } from './chess-ui.js';
 
-import { initUI, newGame, setModeAI } from "./chess-ui.js";
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   initUI();
 
-  // --- Mode tombol (Human vs Azbry-MD) ---
-  const modeHumanBtn = document.getElementById("modeHuman");
-  const modeAIBtn = document.getElementById("modeAI");
+  // Mode
+  const btnHuman = document.getElementById('modeHuman');
+  const btnAI    = document.getElementById('modeAI');
 
-  modeHumanBtn.addEventListener("click", () => {
-    modeHumanBtn.classList.add("seg", "active");
-    modeAIBtn.classList.remove("active");
+  btnHuman?.addEventListener('click', () => {
+    btnHuman.classList.add('active');
+    btnAI?.classList.remove('active');
     setModeAI(false);
-    newGame();
   });
 
-  modeAIBtn.addEventListener("click", () => {
-    modeAIBtn.classList.add("seg", "active");
-    modeHumanBtn.classList.remove("active");
+  btnAI?.addEventListener('click', () => {
+    btnAI.classList.add('active');
+    btnHuman?.classList.remove('active');
     setModeAI(true);
-    newGame();
   });
 
-  // --- Tombol lainnya ---
-  document.getElementById("btnBoardOnly").addEventListener("click", () => {
-    document.querySelector(".panel").classList.toggle("hidden");
-    document.querySelector(".footer").classList.toggle("hidden");
+  // Kontrol
+  document.getElementById('btnReset')?.addEventListener('click', newGame);
+  document.getElementById('btnUndo') ?.addEventListener('click', undoOne);
+  document.getElementById('btnRedo') ?.addEventListener('click', redoOne);
+  document.getElementById('btnFlip') ?.addEventListener('click', () => {
+    document.getElementById('board')?.classList.toggle('flip');
   });
 
-  document.getElementById("btnBack").addEventListener("click", () => {
-    window.location.href = "index.html"; // balik ke menu utama
+  // Tampilan (board only / kembali)
+  document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
+    document.body.classList.toggle('board-only');
   });
 
-  document.getElementById("btnFlip").addEventListener("click", () => {
-    document.getElementById("board").classList.toggle("flip");
+  document.getElementById('btnBack')?.addEventListener('click', () => {
+    if (history.length > 1) history.back();
+    else location.href = 'index.html';
   });
 });
