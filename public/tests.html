@@ -3,219 +3,328 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Azbry-MD • Mini Tests</title>
+<title>Azbry-MD • Tests</title>
 
-<!-- pakai azbry.css bila ada, fallback style minimal kalau belum -->
-<link rel="stylesheet" href="/assets/css/azbry.css" onerror="">
+<!-- Tema utama Azbry -->
+<link rel="stylesheet" href="assets/css/azbry.css" />
+
 <style>
-/* fallback ringan agar tetap rapi bila azbry.css belum tersedia */
+/* ===== Scoped add-on yang mengikuti variabel di azbry.css ===== */
 :root{
-  --bg:#0b0d10; --panel:#0f1213; --ink:#e6f0ff; --muted:#98a2b3;
-  --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.12);
+  --az-bg: var(--bg, #0b0d10);
+  --az-ink: var(--ink, #e6e8ec);
+  --az-muted: var(--muted, #98a2b3);
+  --az-panel: var(--panel, #111418);
+  --az-accent: var(--accent, #b8ff9a);
+  --az-accent2: var(--accent2, #8ee887);
+  --az-ring: var(--ring, rgba(184,255,154,.22));
+  --az-r: 16px;
 }
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:linear-gradient(180deg,#071012,#0b0d10);color:var(--ink)}
-.wrap{max-width:760px;margin:18px auto;padding:18px}
-.header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.h1{font-weight:800;color:var(--accent);letter-spacing:.6px}
-.card{background:linear-gradient(180deg, rgba(255,255,255,.02), transparent);border-radius:14px;padding:14px;margin:14px 0;border:1px solid rgba(255,255,255,.04);box-shadow:0 8px 30px rgba(0,0,0,.5)}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.input{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:transparent;color:var(--ink)}
-.btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#071012;border-radius:12px;font-weight:800;border:0;cursor:pointer}
-.small{font-size:0.9rem;color:var(--muted)}
-.result{font-weight:900;font-size:2rem;color:var(--accent);text-align:center;margin-top:8px;text-shadow:0 6px 20px var(--ring)}
-.note{font-size:0.86rem;color:var(--muted);margin-top:8px}
-.flex-between{display:flex;justify-content:space-between;align-items:center}
-.footer{margin-top:18px;color:var(--muted);font-size:0.85rem;display:flex;justify-content:space-between;align-items:center;gap:10px}
-.badge{background:rgba(184,255,154,.06);padding:6px 10px;border-radius:12px;color:var(--accent)}
-/* tap friendly */
-button, input { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+
+body{background: var(--az-bg); color: var(--az-ink);}
+
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 140px;}
+header{display:flex;justify-content:space-between;align-items:end;gap:12px}
+.brand .kicker{font:700 12px/1 Inter,system-ui,sans-serif;letter-spacing:.24px;color:var(--az-muted)}
+.brand h1{margin:.2rem 0;font:800 clamp(22px,4.2vw,30px)/1.2 Inter,system-ui,sans-serif;letter-spacing:.2px}
+.badge{display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.09);color:#dfffe0;border:1px solid var(--az-ring);padding:6px 10px;border-radius:999px;font:800 12px/1 Inter}
+.hint{margin:14px 0 6px;color:var(--az-muted);font-weight:600}
+
+/* grid kartu */
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-top:8px}
+.card{grid-column:span 6;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 58%),var(--az-panel);
+  border:1px solid rgba(255,255,255,.06);border-radius:var(--az-r);padding:16px;position:relative;overflow:hidden}
+.card h3{margin:2px 0 8px;font-weight:800}
+.card p{margin:0 0 12px;color:var(--az-muted)}
+.card .btn{display:inline-flex;gap:10px;align-items:center;padding:11px 14px;border-radius:12px;font-weight:800;text-decoration:none;color:#0b0d10;background:linear-gradient(180deg,var(--az-accent),var(--az-accent2));border:0;box-shadow:0 6px 22px rgba(184,255,154,.25)}
+.card:hover{box-shadow:0 14px 44px rgba(184,255,154,.15);transform:translateY(-2px);transition:.18s}
+
+/* panel tes (SPA) */
+.panel{display:none;margin-top:18px;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 58%),var(--az-panel);
+  border:1px solid rgba(255,255,255,.08);border-radius:var(--az-r);padding:18px}
+.panel.active{display:block;animation:fade .2s ease-out}
+.panel h2{margin:0 0 10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+input[type="text"]{width:100%;padding:12px 12px;border-radius:12px;background:#0f1216;border:1px solid rgba(255,255,255,.08);color:var(--az-ink)}
+select, .field{width:100%}
+.control{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.btn-ghost{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--az-ink)}
+.result{margin-top:12px;padding:12px;border-radius:12px;background:rgba(184,255,154,.06);border:1px solid var(--az-ring)}
+small.muted{color:var(--az-muted)}
+.progress{height:10px;border-radius:999px;background:#0f1216;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.progress>span{display:block;height:100%;background:linear-gradient(180deg,var(--az-accent),var(--az-accent2))}
+
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@media (max-width:860px){.card{grid-column:span 12}.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="header">
-      <div>
-        <div class="small">AZBRY-MD • MINI TESTS</div>
-        <div class="h1">Fun Tests</div>
-      </div>
-      <div class="badge">FebryWesker</div>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="kicker">AZBRY-MD • TESTS</div>
+      <h1>Game Test Hub</h1>
     </div>
+    <span class="badge">Have fun!</span>
+  </header>
 
-    <!-- Love percentage -->
-    <section class="card" id="love-card">
-      <div class="flex-between">
-        <strong>💞 Tes Persentase Jodoh</strong>
-        <span class="small">Masukkan 2 nama</span>
-      </div>
-      <div style="margin-top:10px" class="row">
-        <input id="love-name-a" class="input" placeholder="Nama 1 — mis: Febry" />
-        <input id="love-name-b" class="input" placeholder="Nama 2 — mis: Rian" />
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px;align-items:center">
-        <button class="btn" id="love-go">Hitung Love %</button>
-        <button class="btn" id="love-random" style="background:#222;color:var(--accent)">Random contoh</button>
-      </div>
-      <div id="love-res" class="result" aria-live="polite">—</div>
-      <div class="note">Hasil deterministik berdasarkan kombinasi nama — cocok kalau mau share hasil yang "konsisten".</div>
-    </section>
+  <p class="hint">Pilih salah satu kartu di bawah. Tes akan muncul <b>di halaman yang sama</b>.</p>
 
-    <!-- Personality -->
-    <section class="card" id="person-card">
-      <div class="flex-between"><strong>🧠 Tes Kepribadian (nama)</strong><span class="small">Masukkan satu nama</span></div>
-      <div style="margin-top:10px">
-        <input id="person-name" class="input" placeholder="Nama kamu" />
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px">
-        <button class="btn" id="person-go">Tampilkan Kepribadian</button>
-        <button class="btn" id="person-clear" style="background:#222;color:var(--accent)">Clear</button>
-      </div>
-      <div id="person-res" class="result">—</div>
-      <div class="note">Ringan dan lucu — cocok untuk share di chat.</div>
-    </section>
+  <!-- MENU GRID -->
+  <section class="grid">
+    <article class="card">
+      <h3>💚 Tes Persentase Jodoh</h3>
+      <p>Masukkan dua nama. Hasil persentase bersifat fun & deterministik (nama yang sama → hasil sama).</p>
+      <button class="btn" data-open="panel-jodoh">Mulai Tes</button>
+    </article>
 
-    <!-- Fortune -->
-    <section class="card" id="fortune-card">
-      <div class="flex-between"><strong>🔮 Fortune / Pesan Acak</strong><span class="small">Dari nama (opsional)</span></div>
-      <div style="margin-top:10px">
-        <input id="fortune-name" class="input" placeholder="Masukkan nama (opsional)" />
-      </div>
-      <div style="margin-top:10px;display:flex;gap:10px">
-        <button class="btn" id="fortune-go">Buka Fortune</button>
-        <button class="btn" id="fortune-random" style="background:#222;color:var(--accent)">Acak</button>
-      </div>
-      <div id="fortune-res" class="result" style="font-size:1.15rem">—</div>
-      <div class="note">Pesan dibuat dari pool yang bisa kamu edit di skrip.</div>
-    </section>
+    <article class="card">
+      <h3>🫶 Kecocokan Teman</h3>
+      <p>Lihat seberapa klop kalian dalam hal gaya ngobrol & kebiasaan.</p>
+      <button class="btn" data-open="panel-teman">Mulai Tes</button>
+    </article>
 
-    <div class="footer">
-      <a class="btn" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
-      <div class="small">Lisensi MIT • © <span id="y"></span> Azbry-MD</div>
+    <article class="card">
+      <h3>🧠 Kepribadian Singkat</h3>
+      <p>5 pertanyaan ringan untuk ngintip kecenderungan E-I & T-F versi fun.</p>
+      <button class="btn" data-open="panel-psik">Mulai Tes</button>
+    </article>
+
+    <article class="card">
+      <h3>🍜 Wibu Level Check</h3>
+      <p>Cek level per-wibuan kamu dari daftar judul populer. Bercanda doang ya!</p>
+      <button class="btn" data-open="panel-wibu">Mulai Tes</button>
+    </article>
+  </section>
+
+  <!-- PANELS (SPA) -->
+  <!-- JODOH -->
+  <section id="panel-jodoh" class="panel" aria-hidden="true">
+    <h2>💚 Tes Persentase Jodoh</h2>
+    <div class="row">
+      <div><label>Nama Kamu</label><input id="jodoh-a" type="text" placeholder="cth: Febry" /></div>
+      <div><label>Nama Dia</label><input id="jodoh-b" type="text" placeholder="cth: Putri" /></div>
     </div>
+    <div class="control">
+      <button class="btn" id="btn-jodoh">Hitung</button>
+      <button class="btn btn-ghost" data-close>↩ Kembali</button>
+    </div>
+    <div id="out-jodoh" class="result" hidden>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <strong id="jodoh-label">Hasil:</strong>
+        <span id="jodoh-pct" style="font-weight:900;font-size:18px">0%</span>
+      </div>
+      <div class="progress" style="margin-top:8px"><span id="jodoh-bar" style="width:0%"></span></div>
+      <p id="jodoh-msg" style="margin:.6rem 0 0"></p>
+      <small class="muted">Catatan: fun only, bukan ramalan serius.</small>
+    </div>
+  </section>
+
+  <!-- TEMAN -->
+  <section id="panel-teman" class="panel" aria-hidden="true">
+    <h2>🫶 Kecocokan Teman</h2>
+    <div class="row">
+      <div><label>Nama 1</label><input id="f-a" type="text" placeholder="cth: Kevin" /></div>
+      <div><label>Nama 2</label><input id="f-b" type="text" placeholder="cth: Rehan" /></div>
+    </div>
+    <div class="control">
+      <button class="btn" id="btn-friend">Cek</button>
+      <button class="btn btn-ghost" data-close>↩ Kembali</button>
+    </div>
+    <div id="out-friend" class="result" hidden>
+      <strong id="friend-label">Hasil:</strong>
+      <div class="progress" style="margin-top:8px"><span id="friend-bar" style="width:0%"></span></div>
+      <p id="friend-msg" style="margin:.6rem 0 0"></p>
+    </div>
+  </section>
+
+  <!-- PSIKOLOGI FUN -->
+  <section id="panel-psik" class="panel" aria-hidden="true">
+    <h2>🧠 Kepribadian Singkat</h2>
+    <form id="form-psik">
+      <ol style="padding-left:18px;margin:0">
+        <li style="margin:.4rem 0">Aku lebih nyaman di keramaian daripada sendiri.
+          <div class="control">
+            <label><input type="radio" name="q1" value="5" required> Sangat Setuju</label>
+            <label><input type="radio" name="q1" value="4"> Setuju</label>
+            <label><input type="radio" name="q1" value="3"> Netral</label>
+            <label><input type="radio" name="q1" value="2"> Tidak</label>
+            <label><input type="radio" name="q1" value="1"> Sangat Tidak</label>
+          </div>
+        </li>
+        <li style="margin:.4rem 0">Saat ambil keputusan, aku lebih mengandalkan logika.
+          <div class="control">
+            <label><input type="radio" name="q2" value="5" required> Sangat Setuju</label>
+            <label><input type="radio" name="q2" value="4"> Setuju</label>
+            <label><input type="radio" name="q2" value="3"> Netral</label>
+            <label><input type="radio" name="q2" value="2"> Tidak</label>
+            <label><input type="radio" name="q2" value="1"> Sangat Tidak</label>
+          </div>
+        </li>
+        <li style="margin:.4rem 0">Aku suka membuat rencana detail sebelum mulai.
+          <div class="control">
+            <label><input type="radio" name="q3" value="5" required> Sangat Setuju</label>
+            <label><input type="radio" name="q3" value="4"> Setuju</label>
+            <label><input type="radio" name="q3" value="3"> Netral</label>
+            <label><input type="radio" name="q3" value="2"> Tidak</label>
+            <label><input type="radio" name="q3" value="1"> Sangat Tidak</label>
+          </div>
+        </li>
+        <li style="margin:.4rem 0">Aku mudah terbawa perasaan orang lain.
+          <div class="control">
+            <label><input type="radio" name="q4" value="1" required> Sangat Tidak</label>
+            <label><input type="radio" name="q4" value="2"> Tidak</label>
+            <label><input type="radio" name="q4" value="3"> Netral</label>
+            <label><input type="radio" name="q4" value="4"> Setuju</label>
+            <label><input type="radio" name="q4" value="5"> Sangat Setuju</label>
+          </div>
+        </li>
+        <li style="margin:.4rem 0">Aku spontan dan fleksibel.
+          <div class="control">
+            <label><input type="radio" name="q5" value="5" required> Sangat Setuju</label>
+            <label><input type="radio" name="q5" value="4"> Setuju</label>
+            <label><input type="radio" name="q5" value="3"> Netral</label>
+            <label><input type="radio" name="q5" value="2"> Tidak</label>
+            <label><input type="radio" name="q5" value="1"> Sangat Tidak</label>
+          </div>
+        </li>
+      </ol>
+      <div class="control">
+        <button class="btn" type="submit">Lihat Hasil</button>
+        <button class="btn btn-ghost" data-close type="button">↩ Kembali</button>
+      </div>
+    </form>
+    <div id="out-psik" class="result" hidden></div>
+  </section>
+
+  <!-- WIBU -->
+  <section id="panel-wibu" class="panel" aria-hidden="true">
+    <h2>🍜 Wibu Level Check</h2>
+    <p class="hint">Ceklist judul yang kamu tau/ikuti:</p>
+    <div class="control" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+      <label><input type="checkbox" class="wb"> One Piece</label>
+      <label><input type="checkbox" class="wb"> Naruto</label>
+      <label><input type="checkbox" class="wb"> Jujutsu Kaisen</label>
+      <label><input type="checkbox" class="wb"> Demon Slayer</label>
+      <label><input type="checkbox" class="wb"> Attack on Titan</label>
+      <label><input type="checkbox" class="wb"> Spy x Family</label>
+      <label><input type="checkbox" class="wb"> Haikyuu!!</label>
+      <label><input type="checkbox" class="wb"> Tokyo Revengers</label>
+    </div>
+    <div class="control">
+      <button class="btn" id="btn-wibu">Hitung Level</button>
+      <button class="btn btn-ghost" data-close>↩ Kembali</button>
+    </div>
+    <div id="out-wibu" class="result" hidden></div>
+  </section>
+</div>
+
+<!-- Footer Azbry (otomatis, sesuai kebijakan kamu) -->
+<div class="azbry-footer">
+  <a class="azbry-cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+  <div class="azbry-meta">
+    <div class="azbry-license">Lisensi MIT • © <span id="y"></span> Azbry-MD</div>
+    <div class="azbry-owner">Dikelola oleh FebryWesker</div>
   </div>
+  <div class="azbry-empty" aria-hidden="true"></div>
+</div>
 
 <script>
-document.getElementById('y').textContent = (new Date()).getFullYear();
-
-/* util: hash string -> deterministic integer */
-function hashToInt(s, mod){
-  let h = 2166136261 >>> 0;
-  for(let i=0;i<s.length;i++){
-    h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
-  }
-  return (h % mod);
-}
-
-/* LOVE %: gabungkan nama, kasih 0-100 */
-function calcLove(a,b){
-  a = (a||'').trim().toLowerCase();
-  b = (b||'').trim().toLowerCase();
-  if(!a && !b) return null;
-  // gabung dua arah agar hasil simetris
-  const s = a + '::' + b;
-  const v = hashToInt(s, 101); // 0..100
-  return v;
-}
-
-/* personality: pilih trait berdasarkan hash */
-const traits = [
-  "Pemecah masalah cepat", "Hangat & peduli", "Lucu & spontan", "Tenang & bijak",
-  "Ambisius & fokus", "Kreatif & eksentrik", "Introvert pemikir", "Sosial & ceria",
-  "Setia & andal", "Pencari petualangan"
-];
-function personalityFrom(name){
-  const n = (name||'').trim().toLowerCase();
-  if(!n) return null;
-  const idx = hashToInt(n, traits.length);
-  const score = 50 + (hashToInt(n+'!s',51)-25); // -25..+25 offset
-  return { trait: traits[idx], score };
-}
-
-/* fortune pool */
-const fortunes = [
-  "Hari ini peluangmu bertambah: coba kirim pesan ke teman lama.",
-  "Jaga energi — ambil jeda 10 menit untuk me-refresh.",
-  "Sebuah ide kecil bisa jadi proyek besar — catat sekarang.",
-  "Berani bilang 'iya' pada kesempatan baru minggu ini.",
-  "Semua baik-baik saja; perlahan tapi pasti.",
-  "Jaga kesehatan: tidur lebih awal 1 jam malam ini.",
-  "Temanmu butuh bantuan — kamu orang yang tepat.",
-  "Keberuntungan kecil datang saat kamu konsisten."
-];
-
-function fortuneFor(name){
-  if(!(name||'').trim()) return fortunes[hashToInt('anon',fortunes.length)];
-  const s = name.trim().toLowerCase();
-  return fortunes[hashToInt(s,fortunes.length)];
-}
-
-/* UI wiring */
-const loveGo = document.getElementById('love-go');
-const loveRandom = document.getElementById('love-random');
-const loveRes = document.getElementById('love-res');
-loveGo.addEventListener('click', ()=>{
-  const a = document.getElementById('love-name-a').value;
-  const b = document.getElementById('love-name-b').value;
-  const v = calcLove(a,b);
-  if(v===null){ loveRes.textContent = 'Masukkan nama dulu'; return; }
-  // pesan tambahan sesuai rentang
-  let msg = `${v}%`;
-  if(v > 85) msg += " — Sempurna 🔥";
-  else if(v > 70) msg += " — Cocok sekali ✨";
-  else if(v > 45) msg += " — Cukup seru ❤️";
-  else if(v > 20) msg += " — Butuh usaha 🤝";
-  else msg += " — Berbeda, tapi unik 💫";
-  loveRes.textContent = msg;
-});
-loveRandom.addEventListener('click', ()=>{
-  const a = ['Febry','Rian','Indah','Nadia','Aldi','Repianz'][Math.floor(Math.random()*6)];
-  const b = ['Sita','Kevin','Wes','Desta','Said'][Math.floor(Math.random()*5)];
-  document.getElementById('love-name-a').value = a;
-  document.getElementById('love-name-b').value = b;
-  document.getElementById('love-go').click();
-});
-
-/* personality */
-const personGo = document.getElementById('person-go');
-const personClear = document.getElementById('person-clear');
-const personRes = document.getElementById('person-res');
-personGo.addEventListener('click', ()=>{
-  const n = document.getElementById('person-name').value;
-  const out = personalityFrom(n);
-  if(!out){ personRes.textContent = 'Masukkan nama dulu'; return; }
-  personRes.textContent = `${out.trait} — Skor: ${out.score}`;
-});
-personClear.addEventListener('click', ()=>{
-  document.getElementById('person-name').value = '';
-  personRes.textContent = '—';
-});
-
-/* fortune */
-const fortuneGo = document.getElementById('fortune-go');
-const fortuneRandom = document.getElementById('fortune-random');
-const fortuneRes = document.getElementById('fortune-res');
-fortuneGo.addEventListener('click', ()=>{
-  const n = document.getElementById('fortune-name').value;
-  fortuneRes.textContent = fortuneFor(n);
-});
-fortuneRandom.addEventListener('click', ()=>{
-  document.getElementById('fortune-name').value = '';
-  fortuneRes.textContent = fortunes[Math.floor(Math.random()*fortunes.length)];
-});
-
-/* keyboard friendly: Enter triggers primary button in focused card */
-['love-name-a','love-name-b'].forEach(id=>{
-  const el = document.getElementById(id);
-  el.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter'){ document.getElementById('love-go').click(); }
+/* ===== util SPA: buka/tutup panel ===== */
+const panels = document.querySelectorAll('.panel');
+document.querySelectorAll('[data-open]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.getAttribute('data-open');
+    panels.forEach(p=>p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById(id).scrollIntoView({behavior:'smooth', block:'start'});
   });
 });
-document.getElementById('person-name').addEventListener('keydown', e=>{
-  if(e.key === 'Enter') personGo.click();
+document.querySelectorAll('[data-close]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    panels.forEach(p=>p.classList.remove('active'));
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
 });
-document.getElementById('fortune-name').addEventListener('keydown', e=>{
-  if(e.key === 'Enter') fortuneGo.click();
+document.getElementById('y').textContent = new Date().getFullYear();
+
+/* ===== Jodoh: deterministik dari nama ===== */
+function pctFromNames(a,b){
+  const s = (a+b).toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!s) return 0;
+  let h = 0;
+  for(const ch of s){ h = (h*31 + ch.charCodeAt(0)) % 100000; }
+  return h % 101;
+}
+document.getElementById('btn-jodoh').onclick = ()=>{
+  const a = document.getElementById('jodoh-a').value.trim();
+  const b = document.getElementById('jodoh-b').value.trim();
+  const out = document.getElementById('out-jodoh');
+  if(!a || !b){ out.hidden=true; return; }
+  const pct = pctFromNames(a,b);
+  document.getElementById('jodoh-pct').textContent = pct + '%';
+  document.getElementById('jodoh-bar').style.width = pct + '%';
+  let msg = 'Lumayan, bisa dicoba pelan-pelan.';
+  if(pct>=80) msg='Wah cocok parah! Tinggal atur tanggal makan nasduk 🥳';
+  else if(pct>=60) msg='Cocok, tinggal jaga komunikasi.';
+  else if(pct>=40) msg='Butuh usaha & saling pengertian.';
+  else msg='Temenan dulu aja, nikmati proses 🙂';
+  document.getElementById('jodoh-msg').textContent = `${a} ❤️ ${b} → ${msg}`;
+  out.hidden=false;
+};
+
+/* ===== Teman: mirip jodoh tapi dengan bumbu kecil ===== */
+document.getElementById('btn-friend').onclick = ()=>{
+  const a = document.getElementById('f-a').value.trim();
+  const b = document.getElementById('f-b').value.trim();
+  const out = document.getElementById('out-friend');
+  if(!a || !b){ out.hidden=true; return; }
+  let pct = pctFromNames(a,b);
+  // bonus kecil kalau huruf awal sama
+  if(a[0] && b[0] && a[0].toLowerCase()===b[0].toLowerCase()) pct = Math.min(100, pct+7);
+  document.getElementById('friend-bar').style.width = pct + '%';
+  let msg='Teman ngobrol asik saat minum es teh.';
+  if(pct>=80) msg='Duo kompak! Mabar & proyek bareng gas.';
+  else if(pct>=60) msg='Cocok, kadang beda pendapat = warna.';
+  else if(pct>=40) msg='Masih bisa nyambung, asal saling respect.';
+  else msg='Tipikal beda frekuensi, tapi tetap bisa akur.';
+  document.getElementById('friend-msg').textContent = `${a} 🤝 ${b} → ${pct}% • ${msg}`;
+  out.hidden=false;
+};
+
+/* ===== Kepribadian fun (5 item) ===== */
+document.getElementById('form-psik').addEventListener('submit', e=>{
+  e.preventDefault();
+  const v = n => Number((new FormData(e.target)).get(n)||0);
+  const q1=v('q1'), q2=v('q2'), q3=v('q3'), q4=v('q4'), q5=v('q5');
+  const E = q1;                 // sosialis
+  const T = q2;                 // logika
+  const J = q3>=4 ? 'Planner' : (q5>=4 ? 'Spontan' : 'Seimbang');
+
+  const EI = E>=4 ? 'Ekstrovert' : (E<=2 ? 'Introvert' : 'Ambivert');
+  const TF = T>=4 ? 'Thinker' : (T<=2 ? 'Feeler' : 'Balanced');
+
+  const txt = `Kecenderunganmu: ${EI} • ${TF} • ${J}.
+  Tips: ${EI==='Introvert'?'Jaga energi dengan me-time.':EI==='Ekstrovert'?'Optimalkan kolaborasi.':'Pilih mode sesuai situasi.'}
+  ${TF==='Thinker'?'Coba tambah empati saat ambil keputusan.':'Tetap pertimbangkan data & logika juga.'}`;
+  const out = document.getElementById('out-psik');
+  out.textContent = txt;
+  out.hidden = false;
 });
+
+/* ===== Wibu ===== */
+document.getElementById('btn-wibu').onclick = ()=>{
+  const total = document.querySelectorAll('.wb').length;
+  const cek = [...document.querySelectorAll('.wb')].filter(x=>x.checked).length;
+  const ratio = Math.round( (cek/total) * 100 );
+  let level='Casual Viewer';
+  if(ratio>=75) level='Suhu Wibu 🔥';
+  else if(ratio>=50) level='Wibu Menengah';
+  else if(ratio>=25) level='Pemula';
+  const out = document.getElementById('out-wibu');
+  out.innerHTML = `<b>${ratio}%</b> dikenal • Level: <b>${level}</b><br><small class="muted">Judul dicentang: ${cek}/${total}</small>`;
+  out.hidden=false;
+};
 </script>
 </body>
 </html>
