@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Azbry Chess</title>
+<link rel="stylesheet" href="/assets/css/azbry.css">
+
+<style>
+:root{
+  --cell: 64px;
+  --dark: #0e1417;
+  --light:#121a20;
+  --hl: rgba(184,255,154,.28);
+  --move:#b8ff9a;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:22px 16px 140px}
+header{display:flex;justify-content:space-between;align-items:end;gap:12px}
+.brand .k{font:700 12px/1 Inter;color:var(--muted)}
+.brand h1{margin:.2rem 0;font:800 clamp(22px,5vw,32px)/1 Inter;color:var(--accent);text-shadow:0 0 18px var(--ring)}
+
+.board-wrap{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px}
+.board{
+  position:relative; width:calc(var(--cell)*8); height:calc(var(--cell)*8);
+  border-radius:16px; overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06) inset, 0 24px 60px rgba(0,0,0,.5);
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%), var(--panel);
+}
+.grid{position:absolute; inset:0; display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);}
+.square{
+  display:grid; place-items:center; font-size:calc(var(--cell)*.64); cursor:pointer; user-select:none;
+  transition:background .12s ease, outline .12s ease;
+}
+.square.dark{background:var(--dark)} .square.light{background:var(--light)}
+.square.sel{outline:2px solid var(--move); box-shadow: inset 0 0 0 2px var(--ring)}
+.square.move::after{
+  content:""; width:22px; height:22px; border-radius:999px; background:var(--hl);
+  box-shadow:0 0 0 1px var(--ring); 
+}
+.square.cap{box-shadow:inset 0 0 0 2px var(--ring); background:linear-gradient(180deg, rgba(184,255,154,.1), transparent)}
+
+.coord{
+  position:absolute; left:6px; bottom:6px; font-size:11px; font-weight:700; color:rgba(255,255,255,.55)
+}
+.rankfile{position:absolute; inset:0; pointer-events:none}
+.rankfile .rf{position:absolute; font-size:11px; color:rgba(255,255,255,.45)}
+.rankfile .rf.file{bottom:4px} .rankfile .rf.rank{left:4px}
+
+.side{
+  flex:1 1 240px; min-width:240px;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 58%),var(--panel);
+  border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px;
+}
+.row{display:flex;justify-content:space-between;align-items:center}
+.meta{color:var(--muted);font-weight:700}
+.badge{display:inline-flex;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--ring);background:rgba(184,255,154,.08);color:#dfffe0;font-weight:800}
+.info{margin-top:8px;font-weight:800}
+.log{margin-top:10px;max-height:260px;overflow:auto;font-size:.95rem}
+.log b{color:var(--accent)}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;font-weight:800;border:0;cursor:pointer}
+.btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.14);color:var(--text)}
+@media (max-width:620px){ :root{--cell: 44px} }
+@media (max-width:380px){ :root{--cell: 40px} }
+.piece{filter: drop-shadow(0 0 12px rgba(184,255,154,.15))}
+
+/* check indicator */
+.alert{margin-top:8px;color:#ffb4b4;font-weight:800;text-shadow:0 0 10px rgba(255,0,0,.15)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="k">AZBRY-MD • BOARD</div>
+        <h1>Azbry Chess</h1>
+      </div>
+      <span class="badge">vs Human (Local)</span>
+    </header>
+
+    <div class="board-wrap">
+      <div class="board">
+        <div id="grid" class="grid"></div>
+        <div class="rankfile" id="rf"></div>
+      </div>
+
+      <aside class="side">
+        <div class="row">
+          <div class="meta">Giliran</div>
+          <div class="info" id="turn">Putih</div>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <div class="meta">Status</div>
+          <div class="info" id="status">—</div>
+        </div>
+        <div class="alert" id="check" hidden>⚠ Raja sedang di-check!</div>
+
+        <div class="btns">
+          <button class="btn primary" id="reset">Mulai Ulang</button>
+          <button class="btn ghost" id="undo">Undo 1 Langkah</button>
+        </div>
+
+        <div class="log" id="log"></div>
+        <small class="meta">Catatan: Promotion otomatis jadi Queen. (Castling & en passant: belum)</small>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer Azbry (auto policy) -->
+  <div class="azbry-footer">
+    <a class="azbry-cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+    <div class="azbry-meta">
+      <div class="azbry-license">Lisensi MIT • © <span id="y"></span> Azbry-MD</div>
+      <div class="azbry-owner">Dikelola oleh FebryWesker</div>
+    </div>
+    <div class="azbry-empty" aria-hidden="true"></div>
+  </div>
+
+<script>
+document.getElementById('y').textContent = new Date().getFullYear();
+
+/* ===== Model papan =====
+   baris 0 = a8 (hitam), baris 7 = a1 (putih di bawah)
+   putih jalan ke atas (row-1), hitam ke bawah (row+1)
+*/
+const PIECES = {
+  'wP':'♙','wN':'♘','wB':'♗','wR':'♖','wQ':'♕','wK':'♔',
+  'bP':'♟','bN':'♞','bB':'♝','bR':'♜','bQ':'♛','bK':'♚',
+};
+let board, turn, sel=null, moves=[], history=[];
+const grid = document.getElementById('grid');
+const log = document.getElementById('log');
+const status = document.getElementById('status');
+const checkBox = document.getElementById('check');
+const turnEl = document.getElementById('turn');
+
+function startPos(){
+  const empty = Array(8).fill(null);
+  const b = [];
+  b.push(['bR','bN','bB','bQ','bK','bB','bN','bR']);
+  b.push(Array(8).fill('bP'));
+  for(let i=0;i<4;i++) b.push(empty.slice());
+  b.push(Array(8).fill('wP'));
+  b.push(['wR','wN','wB','wQ','wK','wB','wN','wR']);
+  return b;
+}
+
+function reset(){ board=startPos(); turn='w'; sel=null; moves=[]; history=[]; draw(); setInfo('Mulai'); }
+document.getElementById('reset').onclick=reset;
+document.getElementById('undo').onclick=()=>{ if(history.length){ const h=history.pop(); board=h.b; turn=h.t; draw(); setInfo('Undo'); } };
+
+function setInfo(t){ status.textContent=t; turnEl.textContent = (turn==='w'?'Putih':'Hitam'); }
+
+/* ===== Render ===== */
+function draw(){
+  grid.innerHTML='';
+  const rf = document.getElementById('rf'); rf.innerHTML='';
+  for(let r=0;r<8;r++){
+    for(let c=0;c<8;c++){
+      const idx = r*8+c;
+      const sq = document.createElement('div');
+      sq.className='square '+(((r+c)%2)?'dark':'light');
+      sq.dataset.r=r; sq.dataset.c=c;
+
+      const p = board[r][c];
+      if(p){
+        const span=document.createElement('div');
+        span.className='piece';
+        span.textContent=PIECES[p];
+        sq.appendChild(span);
+      }
+      if(sel && moves.some(m=>m.r===r && m.c===c)){
+        sq.classList.add(board[r][c] ? 'cap' : 'move');
+      }
+      if(sel && sel.r===r && sel.c===c) sq.classList.add('sel');
+
+      grid.appendChild(sq);
+    }
+  }
+  // koordinat (a1..h8)
+  for(let i=0;i<8;i++){
+    const f=document.createElement('div'); f.className='rf file'; f.style.left=`calc(${(i+0.5)/8*100}% - 6px)`; f.textContent=String.fromCharCode(97+i);
+    const rk=document.createElement('div'); rk.className='rf rank'; rk.style.top=`calc(${(i+0.5)/8*100}% - 6px)`; rk.textContent=String(8-i);
+    rf.appendChild(f); rf.appendChild(rk);
+  }
+  // check indicator
+  checkBox.hidden = !isInCheck(turn);
+}
+
+/* ===== Logic gerak ===== */
+function enemy(color){ return color==='w'?'b':'w'; }
+function inside(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
+
+function kingPos(b, color){
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    if(b[r][c]===color+'K') return {r,c};
+  }
+  return null;
+}
+
+function cloneBoard(b){ return b.map(row=>row.slice()); }
+
+function isSquareAttacked(b, r, c, by){
+  // pawns
+  const dir = (by==='w')? -1 : 1;
+  const ps = by+'P';
+  for(const dc of [-1,1]){
+    const rr=r+dir, cc=c+dc;
+    if(inside(rr,cc) && b[rr][cc]===ps) return true;
+  }
+  // knights
+  const KN=[[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
+  for(const [dr,dc] of KN){
+    const rr=r+dr, cc=c+dc;
+    if(inside(rr,cc) && b[rr][cc]===by+'N') return true;
+  }
+  // bishops/queens diag
+  for(const [dr,dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let rr=r+dr, cc=c+dc;
+    while(inside(rr,cc)){
+      const q=b[rr][cc]; if(q){ if(q===by+'B'||q===by+'Q') return true; else break; }
+      rr+=dr; cc+=dc;
+    }
+  }
+  // rooks/queens straight
+  for(const [dr,dc] of [[1,0],[-1,0],[0,1],[0,-1]]){
+    let rr=r+dr, cc=c+dc;
+    while(inside(rr,cc)){
+      const q=b[rr][cc]; if(q){ if(q===by+'R'||q===by+'Q') return true; else break; }
+      rr+=dr; cc+=dc;
+    }
+  }
+  // king
+  for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+    if(!dr&&!dc) continue;
+    const rr=r+dr, cc=c+dc;
+    if(inside(rr,cc) && b[rr][cc]===by+'K') return true;
+  }
+  return false;
+}
+
+function isInCheck(color, b=board){
+  const k = kingPos(b, color); if(!k) return false;
+  return isSquareAttacked(b, k.r, k.c, enemy(color));
+}
+
+function genMoves(r,c){
+  const p = board[r][c]; if(!p) return [];
+  const color = p[0];
+  if(color!==turn) return [];
+  const type = p[1];
+  const res=[];
+  const add=(rr,cc,capOK=true)=>{ if(!inside(rr,cc)) return;
+    const q=board[rr][cc];
+    if(q && q[0]===color) return;
+    if(q && q[0]!==color){ res.push({r:rr,c:cc}); return; }
+    if(!q){ res.push({r:rr,c:cc}); }
+  };
+
+  if(type==='P'){
+    const dir = color==='w' ? -1 : 1;
+    // forward
+    const f1r=r+dir;
+    if(inside(f1r,c) && !board[f1r][c]) { res.push({r:f1r,c}); 
+      // double
+      const startRow = color==='w'?6:1;
+      const f2r=r+2*dir; if(r===startRow && !board[f2r][c]) res.push({r:f2r,c});
+    }
+    // captures
+    for(const dc of [-1,1]){
+      const rr=r+dir, cc=c+dc;
+      if(inside(rr,cc) && board[rr][cc] && board[rr][cc][0]!==color) res.push({r:rr,c:cc});
+    }
+  }
+  if(type==='N'){
+    for(const [dr,dc] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]) add(r+dr,c+dc);
+  }
+  if(type==='B'||type==='R'||type==='Q'){
+    const dirs=[];
+    if(type!=='R') dirs.push([1,1],[1,-1],[-1,1],[-1,-1]);
+    if(type!=='B') dirs.push([1,0],[-1,0],[0,1],[0,-1]);
+    for(const [dr,dc] of dirs){
+      let rr=r+dr, cc=c+dc;
+      while(inside(rr,cc)){
+        const q=board[rr][cc];
+        if(!q){ res.push({r:rr,c:cc}); }
+        else { if(q[0]!==color) res.push({r:rr,c:cc}); break; }
+        rr+=dr; cc+=dc;
+      }
+    }
+  }
+  if(type==='K'){
+    for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+      if(!dr&&!dc) continue; add(r+dr,c+dc);
+    }
+  }
+
+  // filter: tidak boleh meninggalkan raja sendiri dalam check
+  return res.filter(m=>{
+    const b=cloneBoard(board);
+    b[m.r][m.c]=b[r][c]; b[r][c]=null;
+    // promotion auto queen
+    if(b[m.r][m.c][1]==='P' && ((color==='w' && m.r===0) || (color==='b' && m.r===7))) b[m.r][m.c]=color+'Q';
+    return !isInCheck(color, b);
+  });
+}
+
+grid.addEventListener('click', e=>{
+  const sq = e.target.closest('.square'); if(!sq) return;
+  const r=+sq.dataset.r, c=+sq.dataset.c;
+  if(sel){
+    // jika klik target termasuk moves -> jalankan
+    if(moves.some(m=>m.r===r && m.c===c)){
+      doMove(sel.r, sel.c, r, c);
+      sel=null; moves=[]; draw();
+      return;
+    }
+  }
+  // pilih baru
+  const p=board[r][c];
+  if(p && p[0]===turn){
+    sel={r,c}; moves=genMoves(r,c); draw();
+  } else { sel=null; moves=[]; draw(); }
+});
+
+function doMove(r1,c1,r2,c2){
+  const piece = board[r1][c1];
+  const target = board[r2][c2];
+  const snap = { b: cloneBoard(board), t: turn };
+  history.push(snap);
+
+  board[r2][c2]=piece; board[r1][c1]=null;
+
+  // promotion
+  if(piece[1]==='P'){
+    if((piece[0]==='w' && r2===0) || (piece[0]==='b' && r2===7)){
+      board[r2][c2]=piece[0]+'Q';
+      logLine(`${piece[0]==='w'?'♙':'♟'}→♕ Promosi`);
+    }
+  }
+
+  // log
+  const from = coord(c1,r1), to=coord(c2,r2);
+  logLine(`${pieceIcon(piece)} ${from} ⟶ ${to}${target?' × '+pieceIcon(target):''}`);
+
+  // ganti giliran
+  turn = enemy(turn);
+  setInfo(target ? 'Makan' : 'Jalan');
+
+  // cek check
+  if(isInCheck(turn)){
+    checkBox.hidden=false;
+    setInfo('CHECK!');
+  } else {
+    checkBox.hidden=true;
+  }
+}
+
+function pieceIcon(p){ return PIECES[p]||'?'; }
+function coord(c,r){ return String.fromCharCode(97+c)+(8-r); }
+function logLine(t){
+  const el=document.createElement('div'); el.innerHTML = t.replace(/(♔|♕|♖|♗|♘|♙|♚|♛|♜|♝|♞|♟)/g,'<b>$1</b>');
+  log.prepend(el);
+}
+
+reset();
+
+/* footer safe-year already set */
+</script>
+</body>
+</html>
