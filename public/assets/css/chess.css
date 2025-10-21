@@ -1,4 +1,4 @@
-/* ===================== Azbry Chess — Papan Neon Fix ===================== */
+/* ===================== Azbry Chess — Visual Clarity+ ===================== */
 
 .board {
   display: grid;
@@ -13,12 +13,12 @@
               inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* 🎨 Warna papan diperbaiki: kontras tapi halus */
+/* 🎨 Warna papan — biar dua bidak keliatan jelas */
 .sq.light {
-  background: linear-gradient(180deg, #b8ff9a33, #dfffe066); /* hijau neon lembut */
+  background: #C6E5B1; /* hijau muda lembut */
 }
 .sq.dark {
-  background: linear-gradient(180deg, #0d1118, #141821); /* biru-gelap Azbry */
+  background: #27323E; /* biru-abu gelap */
 }
 
 .sq {
@@ -31,7 +31,7 @@
   font-size: clamp(42px, 9vw, 76px);
 }
 
-/* ♟ Bidak tetap hitam dan putih */
+/* ♟ Bidak klasik, tapi dikasih shadow biar jelas */
 .piece {
   line-height: 1;
   filter: none;
@@ -40,12 +40,12 @@
 
 .piece.white {
   color: #ffffff;
-  text-shadow: 0 0 4px rgba(0,0,0,.25);
+  text-shadow: 0 0 6px rgba(0,0,0,.3);
 }
 
 .piece.black {
-  color: #0b0f13;
-  text-shadow: 0 0 4px rgba(255,255,255,.2);
+  color: #000000;
+  text-shadow: 0 0 5px rgba(255,255,255,.3);
   transform: rotate(180deg);
 }
 
