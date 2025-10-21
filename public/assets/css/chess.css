@@ -143,6 +143,39 @@ h1{margin:8px 0 0;font-weight:800;color:var(--light);letter-spacing:.2px}
 .board-only .panel, .board-only .footer { display:none; }
 .board-only .board-wrap { margin-bottom: 28px; }
 
+/* ==== HARD FIX BOARD & SQUARES (override) ==== */
+
+#board.board {
+  display: grid !important;
+  grid-template-columns: repeat(8, 1fr) !important;
+  grid-auto-rows: 1fr !important;
+  width: min(92vw, 680px) !important;
+  aspect-ratio: 1 / 1 !important;
+  margin: 0 auto !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+#board.board .square {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  aspect-ratio: 1 / 1 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  line-height: 1 !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#board.board .square.light { background: #dce1e6 !important; }
+#board.board .square.dark  { background: #3a3f46 !important; }
+
+#board.board .square .piece,
+#board.board .square { 
+  font-size: clamp(18px, 4.8vw, 44px) !important;
+}
+
 /* Modal hasil */
 #resultModal{
   position:fixed;left:50%;top:24px;transform:translateX(-50%);
