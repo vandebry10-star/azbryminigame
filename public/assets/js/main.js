@@ -240,3 +240,45 @@
     render, resetGame, setMode
   };
 })();
+
+// --- Safety boot: paksa papan + bidak muncul ---
+window.addEventListener('load', () => {
+  try {
+    // 1) pastikan element papan benar
+    const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+    // 2) kalau grid belum ada, bangun grid 64 kotak
+    if (!boardEl.children.length) {
+      boardEl.classList.add('chess-board');
+      boardEl.innerHTML = '';
+      for (let i = 0; i < 64; i++) {
+        const r = Math.floor(i / 8), c = i % 8;
+        const sq = document.createElement('div');
+        sq.className = 'sq ' + ((r + c) % 2 ? 'dark' : 'light');
+        sq.dataset.r = r; sq.dataset.c = c;
+        boardEl.appendChild(sq);
+      }
+    }
+    // 3) ambil posisi awal dari engine dan gambar bidak
+    const E = window.ChessEngine || window.Engine || {};
+    if (typeof E.initialPosition === 'function') {
+      const pos64 = E.initialPosition ? E.initialPosition() : null;
+      if (pos64 && pos64.length === 64) {
+        const PIECE = {
+          'K':'♔','Q':'♕','R':'♖','B':'♗','N':'♘','P':'♙',
+          'k':'♚','q':'♛','r':'♜','b':'♝','n':'♞','p':'♟'
+        };
+        [...boardEl.children].forEach((sq, i) => {
+          const p = pos64[i];
+          sq.innerHTML = '';
+          if (p) {
+            const span = document.createElement('span');
+            span.className = 'piece ' + (p[0] === 'w' ? 'white' : 'black');
+            span.textContent = PIECE[p[1]] || '';
+            sq.appendChild(span);
+          }
+        });
+      }
+    }
+  } catch (e) { console.warn('boot-fix failed', e); }
+});
