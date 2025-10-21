@@ -1,5 +1,5 @@
 // assets/js/main.js — Controller + Renderer (final + menu & result overlay)
-// Cocok dengan engine v3 (Chess, ChessUI).
+// Cocok dengan engine "Chess" (API mirip chess.js) dan UI "ChessUI(boardEl, onSquareCb)".
 
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnBack    = $('btnBack');
   const moveLog    = $('moveHistory');
 
-  // Overlays
-  const startMenu   = $('startMenu');
+  // Overlays (opsional, kalau ada di HTML)
+  const startMenu     = $('startMenu');
   const btnStartHuman = $('btnStartHuman');
   const btnStartAI    = $('btnStartAI');
 
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultText  = $('resultText');
   const btnRestart  = $('btnRestart');
 
-  // Board fallback if missing
+  // Board fallback jika belum ada (biar gak blank)
   if (!boardEl) {
     boardEl = document.createElement('div');
     boardEl.id = 'board';
@@ -40,38 +40,39 @@ document.addEventListener('DOMContentLoaded', () => {
   let selected = null;
   let lastMove = null;
 
-  // Mode picker (in-page)
+  // Mode picker (di halaman)
   if (modeHuman) modeHuman.addEventListener('click', () => setMode('human'));
   if (modeAI)    modeAI.addEventListener('click',    () => setMode('ai'));
 
   // Controls
-  if (btnReset)  btnReset.addEventListener('click',  () => { hardReset(); });
+  if (btnReset)  btnReset.addEventListener('click',  () => hardReset());
   if (btnUndo)   btnUndo.addEventListener('click',   () => { game.undo(); selected=null; lastMove=null; sync(); });
   if (btnRedo)   btnRedo.addEventListener('click',   () => { game.redo(); selected=null; lastMove=null; sync(); });
-  if (btnFlip)   btnFlip.addEventListener('click',   () => { ui.toggleFlip(); sync(); });
+  if (btnFlip)   btnFlip.addEventListener('click',   () => { if (ui.toggleFlip) ui.toggleFlip(); sync(); });
 
   // Board Only
-  if (btnOnly && btnBack) {
+  if (btnOnly) {
     btnOnly.addEventListener('click', () => {
       document.body.classList.add('board-only');
-      btnOnly.style.display = 'none';
-      btnBack.style.display = 'inline-block';
+      if (btnOnly) btnOnly.style.display = 'none';
+      if (btnBack) btnBack.style.display = 'inline-block';
     });
+  }
+  if (btnBack) {
     btnBack.addEventListener('click', () => {
       document.body.classList.remove('board-only');
-      btnBack.style.display = 'none';
-      btnOnly.style.display = 'inline-block';
+      if (btnBack) btnBack.style.display = 'none';
+      if (btnOnly) btnOnly.style.display = 'inline-block';
     });
   }
 
-  // Start menu
+  // Start menu (opsional)
   if (btnStartHuman) btnStartHuman.addEventListener('click', () => startGame('human'));
   if (btnStartAI)    btnStartAI.addEventListener('click',    () => startGame('ai'));
 
-  // Result popup
+  // Result popup (opsional)
   if (btnRestart) btnRestart.addEventListener('click', () => {
     hideResult();
-    // Balik ke menu awal
     if (startMenu) startMenu.classList.add('show');
     hardReset();
   });
@@ -88,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     selected = null;
     lastMove = null;
     sync();
+    // Kalau AI dan ganti giliran jadi AI (misal flip), langsung jalanin
+    maybeAIMove();
   }
 
   function hardReset() {
@@ -95,32 +98,32 @@ document.addEventListener('DOMContentLoaded', () => {
     selected = null;
     lastMove = null;
     sync();
+    if (mode === 'ai') maybeAIMove();
   }
 
-  // Board click handler
+  // ====== INPUT: Klik kotak papan ======
   function onSquare(squareAlg) {
-    // kalau mode AI: player = putih, AI = hitam
-    if (mode === 'ai' && game.turn() === 'b') return;
+    // Mode AI: manusia = putih; AI = hitam
+    if (mode === 'ai' && game.turn && game.turn() === 'b') return;
 
-    const movesFromSel = selected ? game.moves({ square: selected }) : [];
+    const legalFromSel = selected ? legalTargets(selected) : [];
 
     // klik tujuan legal dari selected
-    if (selected && movesFromSel.some(m => m.to === squareAlg)) {
-      const promo = needsPromotion(selected, squareAlg) ? 'Q' : null;
-      const note = game.move({ from: selected, to: squareAlg, promotion: promo });
+    if (selected && legalFromSel.includes(squareAlg)) {
+      const promo = needsPromotion(selected, squareAlg) ? askPromotionOrDefault() : null;
+      const note = tryMove({ from: selected, to: squareAlg, promotion: promo });
       if (note) {
-        lastMove = { from: selected, to: squareAlg };
+        lastMove = { from: selected, to: squareAlg, san: note.san || '' };
         selected = null;
         sync();
-        if (mode === 'ai') setTimeout(aiMove, 140);
+        // Jika AI: jalankan langkah AI setelah render
+        maybeAIMove();
       }
       return;
     }
 
-    // pilih bidak milik side yg jalan
-    const idx = toIdx(squareAlg);
-    const P = game.board()[idx];
-    if (P && P.color === game.turn()) {
+    // pilih atau batal pilih
+    if (squareHasColorPiece(squareAlg, game.turn ? game.turn() : 'w')) {
       selected = squareAlg;
     } else {
       selected = null;
@@ -128,99 +131,295 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Promotion need?
-  function needsPromotion(fromAlg, toAlg) {
-    const fromR = 8 - parseInt(fromAlg[1], 10);
-    const toR   = 8 - parseInt(toAlg[1], 10);
-    const piece = game.board()[toIdx(fromAlg)];
-    if (!piece || piece.piece !== 'P') return false;
-    return (piece.color === 'w' && toR === 0) || (piece.color === 'b' && toR === 7);
-  }
-
-  // Simple AI (greedy capture > random)
-  function aiMove() {
-    if (mode !== 'ai' || game.turn() !== 'b') return;
-
-    const legal = game.moves();
-    if (!legal.length) { sync(); return; }
-
-    const value = { P:1, N:3, B:3, R:5, Q:9, K:100 };
-    let best = null, bestScore = -1;
-
-    for (const m of legal) {
-      const targetPiece = game.board()[toIdx(m.to)];
-      const s = targetPiece ? value[targetPiece.piece] : 0;
-      if (s > bestScore) { best = m; bestScore = s; }
+  // ====== ENGINE HELPERS ======
+  function tryMove(m) {
+    // Support dua gaya API: san string atau objek verbose
+    try {
+      return game.move ? game.move(m) : null;
+    } catch (e) {
+      // fallback san "e2e4" style kalau engine pakai notasi pendek
+      try {
+        const san = (m.from || '') + (m.to || '') + (m.promotion ? m.promotion.toLowerCase() : '');
+        return game.move(san);
+      } catch {
+        return null;
+      }
     }
-
-    const pick = bestScore > 0 ? best : legal[Math.floor(Math.random() * legal.length)];
-    const promo = needsPromotion(pick.from, pick.to) ? 'Q' : null;
-    const note = game.move({ from: pick.from, to: pick.to, promotion: promo });
-    if (note) { lastMove = { from: pick.from, to: pick.to }; }
-    sync();
   }
 
+  function legalTargets(from) {
+    // coba verbose
+    try {
+      const list = game.moves ? game.moves({ square: from, verbose: true }) : [];
+      if (Array.isArray(list) && list.length && list[0].to) {
+        return list.map(x => x.to);
+      }
+    } catch {}
+    // fallback non-verbose (SAN) — engine mungkin nggak support
+    try {
+      const list = game.moves ? game.moves({ square: from }) : [];
+      if (Array.isArray(list)) {
+        // sulit mapping SAN->to; kosongin aja
+        return [];
+      }
+    } catch {}
+    return [];
+  }
+
+  function needsPromotion(from, to) {
+    // kalau pion mencapai rank terakhir
+    try {
+      const piece = game.get ? game.get(from) : null;
+      if (!piece || piece.type !== 'p') return false;
+      const rank = parseInt(to[1], 10);
+      if (piece.color === 'w' && rank === 8) return true;
+      if (piece.color === 'b' && rank === 1) return true;
+      return false;
+    } catch { return false; }
+  }
+
+  function askPromotionOrDefault() {
+    // sementara default Queen, nanti bisa dihubungkan dengan modal pilihan UI
+    return 'Q';
+  }
+
+  function squareHasColorPiece(sq, color) {
+    try {
+      const p = game.get ? game.get(sq) : null;
+      return !!(p && p.color === color);
+    } catch { return false; }
+  }
+
+  // ====== AI (Azbry-MD) ======
+  function maybeAIMove() {
+    if (mode !== 'ai') return;
+    if (game.game_over && game.game_over()) return;
+    if (game.turn && game.turn() === 'b') {
+      // sedikit delay biar kelihatan "berpikir"
+      setTimeout(() => {
+        const move = chooseAIMove(game, 2); // depth 2 cukup cepat
+        if (move) {
+          tryMove(move);
+          lastMove = { from: move.from, to: move.to, san: move.san || '' };
+          sync();
+        } else {
+          // fallback random legal
+          const mv = randomLegal(game);
+          if (mv) {
+            tryMove(mv);
+            lastMove = { from: mv.from, to: mv.to, san: mv.san || '' };
+            sync();
+          }
+        }
+      }, 200);
+    }
+  }
+
+  function chooseAIMove(chess, depth = 2) {
+    // minimax sederhana (material only)
+    const maximizingColor = 'b';
+    let best = null, bestScore = -Infinity;
+
+    const moves = safeMoves(chess, { verbose: true });
+    for (const m of moves) {
+      chess.move(m);
+      const score = -negamax(chess, depth - 1, -Infinity, Infinity, flipColor(maximizingColor));
+      chess.undo();
+      if (score > bestScore) {
+        bestScore = score;
+        best = m;
+      }
+    }
+    return best;
+  }
+
+  function negamax(chess, depth, alpha, beta, colorToMax) {
+    if (depth === 0 || (chess.game_over && chess.game_over())) {
+      return evaluate(chess, colorToMax);
+    }
+    let value = -Infinity;
+    const moves = safeMoves(chess, { verbose: true });
+    for (const m of moves) {
+      chess.move(m);
+      const score = -negamax(chess, depth - 1, -beta, -alpha, flipColor(colorToMax));
+      chess.undo();
+      value = Math.max(value, score);
+      alpha = Math.max(alpha, score);
+      if (alpha >= beta) break;
+    }
+    return value;
+  }
+
+  function evaluate(chess, povColor) {
+    // material simple
+    const pieceValues = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+    let score = 0;
+    try {
+      const board = chess.board ? chess.board() : []; // chess.js style
+      for (let r = 0; r < board.length; r++) {
+        for (let c = 0; c < board[r].length; c++) {
+          const p = board[r][c];
+          if (!p) continue;
+          const v = pieceValues[p.type] || 0;
+          score += (p.color === povColor) ? v : -v;
+        }
+      }
+    } catch {
+      // FEN parse fallback
+      try {
+        const fen = chess.fen ? chess.fen() : '';
+        const part = fen.split(' ')[0] || '';
+        for (const ch of part) {
+          const t = ch.toLowerCase();
+          const isUpper = ch !== t;
+          if ('prnbqk'.includes(t)) {
+            const v = pieceValues[t] || 0;
+            score += isUpper ? v : -v;
+          }
+        }
+      } catch {}
+    }
+    return score / 1000; // scale kecil
+  }
+
+  function flipColor(c) { return c === 'w' ? 'b' : 'w'; }
+
+  function safeMoves(chess, opts) {
+    try {
+      return chess.moves ? chess.moves(opts) : [];
+    } catch { return []; }
+  }
+
+  function randomLegal(chess) {
+    const list = safeMoves(chess, { verbose: true });
+    if (list.length) return list[Math.floor(Math.random()*list.length)];
+    // fallback non-verbose impossible to apply safely
+    return null;
+  }
+
+  // ====== RENDER & STATUS ======
   function sync() {
-    // highlight langkah legal dari selected
-    const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
-    ui.render(game.board(), { lastMove, legal: legalTargets });
+    // Build opsi render untuk UI (kalau ChessUI mendukung)
+    let opts = {};
+    if (selected) {
+      opts.legal = legalTargets(selected);
+      opts.selected = selected;
+    }
+    if (lastMove) opts.lastMove = lastMove;
 
-    if (moveLog) {
-      const h = game.history();
-      moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
+    // highlight check (opsional)
+    let inCheck = false;
+    try { inCheck = game.in_check && game.in_check(); } catch {}
+    opts.inCheck = !!inCheck;
+
+    // Render papan & bidak
+    try {
+      if (ui.render) ui.render(game, opts);
+      // Optional hooks
+      if (ui.setHints && opts.legal) ui.setHints(opts.legal, lastMove);
+      if (ui.highlightCheck && inCheck) {
+        const kingSq = findKingSquare(game, game.turn ? game.turn() : 'w');
+        if (kingSq) ui.highlightCheck(kingSq);
+      }
+    } catch (e) {
+      console.warn('UI render warn:', e);
     }
 
-    // Status akhir game
-    const status = game.gameStatus(); // 'ok'|'check'|'checkmate'|'stalemate'
-    if (status === 'checkmate') {
-      const winner = (game.turn() === 'w') ? 'Hitam Menang!' : 'Putih Menang!'; // side yg tak bergerak = skakmat
-      showResult(`Checkmate — ${winner}`);
-    } else if (status === 'stalemate') {
-      showResult('Seri 🤝');
+    // Riwayat langkah
+    updateMoveLog();
+
+    // Periksa akhir game
+    checkEndGame();
+  }
+
+  function updateMoveLog() {
+    if (!moveLog) return;
+    let hist = [];
+    try { hist = game.history ? game.history({ verbose: true }) : []; } catch {}
+    if (!hist || !hist.length) {
+      moveLog.textContent = '—';
+      return;
+    }
+    // Format 1. e4 e5 2. Nf3 ...
+    let out = '';
+    let moveNum = 1;
+    for (let i = 0; i < hist.length; i += 2) {
+      const w = hist[i];
+      const b = hist[i+1];
+      out += `${moveNum}. ${w ? (w.san || toAlgPair(w)) : ''} ${b ? (b.san || toAlgPair(b)) : ''}\n`;
+      moveNum++;
+    }
+    moveLog.textContent = out.trim();
+  }
+
+  function toAlgPair(m) {
+    if (!m) return '';
+    if (m.from && m.to) return `${m.from}-${m.to}`;
+    return m.san || '';
+  }
+
+  function checkEndGame() {
+    let over = false, msg = '';
+    try {
+      if (game.in_checkmate && game.in_checkmate()) {
+        over = true;
+        const winner = (game.turn && game.turn() === 'w') ? 'Hitam' : 'Putih';
+        // kalau mode AI: b = AI
+        if (mode === 'ai') {
+          if (winner === 'Hitam') {
+            msg = `Azbry-MD menang!\n“Terima kasih sudah menjadi sparring.”`;
+          } else {
+            msg = `Kamu menang!\n“Untung aja aku lagi ngantuk.” — Azbry-MD`;
+          }
+        } else {
+          msg = `${winner} menang (Checkmate)`;
+        }
+      } else if (game.in_stalemate && game.in_stalemate()) {
+        over = true; msg = 'Seri (Stalemate)';
+      } else if (game.in_draw && game.in_draw()) {
+        over = true; msg = 'Seri';
+      } else if (game.in_threefold_repetition && game.in_threefold_repetition()) {
+        over = true; msg = 'Seri (Tiga kali pengulangan)';
+      } else if (game.insufficient_material && game.insufficient_material()) {
+        over = true; msg = 'Seri (Material tidak cukup)';
+      }
+    } catch {}
+
+    if (over) {
+      showResult(msg || 'Game Selesai');
+    } else {
+      hideResult();
     }
   }
 
   function showResult(text) {
-    if (!resultPopup || !resultText) return;
-    resultText.textContent = text;
-    resultPopup.classList.add('show');
+    if (resultPopup && resultText) {
+      resultText.textContent = text;
+      resultPopup.classList.add('show');
+    }
   }
   function hideResult() {
-    if (!resultPopup) return;
-    resultPopup.classList.remove('show');
+    if (resultPopup) resultPopup.classList.remove('show');
   }
 
-  // ⬇️ PANGGIL UI HOOK SETELAH MOVE DIAPLIKASIKAN
-if (window.AzbryUI) {
-  window.AzbryUI.afterMove({
-    from: lastMove.from,      // 'e2'
-    to: lastMove.to,          // 'e4'
-    piece: lastMove.piece,    // 'P' / 'p' / 'N' ...
-    color: lastMove.color,    // 'w' | 'b'
-    captured: lastMove.captured || null, // 'p' dst jika ada
-    isCheck: engine.inCheck ? engine.inCheck(engine.turn) : !!lastMove.isCheck,
-    kingSq: engine.getKingSquare ? engine.getKingSquare(engine.turn === 'w' ? 'b' : 'w') : lastMove.kingSq,
-    attackerSq: lastMove.attackerSq || lastMove.to,
-
-    // ==== PROMOSI ====
-    needsPromotion: !!lastMove.needsPromotion,
-    commitPromotion: function(type){ // type: 'q','r','b','n'
-      // panggil fungsi promosi di engine-mu,
-      // contoh generik (sesuaikan dgn engine kamu):
-      if (engine.promote) {
-        engine.promote({ to: lastMove.to, type });
-      } else if (applyPromotion) {
-        applyPromotion(lastMove.to, type);
+  function findKingSquare(chess, color) {
+    try {
+      const board = chess.board ? chess.board() : null;
+      if (board) {
+        const files = ['a','b','c','d','e','f','g','h'];
+        for (let r = 0; r < 8; r++) {
+          for (let c = 0; c < 8; c++) {
+            const p = board[r][c];
+            if (p && p.type === 'k' && p.color === color) {
+              return files[c] + (8 - r);
+            }
+          }
+        }
       }
-    }
-  });
-}
+    } catch {}
+    return null;
+  }
 
-
-  // utils
-  function toIdx(a) { return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]); }
-
-  // boot: tampilkan menu
-  if (startMenu) startMenu.classList.add('show');
-  setMode('human'); // default, akan ke-replace saat pilih di menu
+  // ===== INIT =====
+  hardReset(); // render awal
 });
