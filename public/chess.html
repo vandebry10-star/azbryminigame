@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Azbry Chess — Fresh</title>
+<style>
+  :root{
+    --bg:#0b0d10;--panel:#141820;--text:#e6f0ff;--muted:#9fb0c2;
+    --accent:#b8ff9a;--accent2:#8ee887;--ring:#b8ff9a33;
+    --light:#eef2f6;--dark:#2a3037;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);
+    background:
+      radial-gradient(1200px 800px at 15% -10%, rgba(184,255,154,.06), transparent 40%),
+      radial-gradient(900px 600px at 110% 20%, rgba(184,255,154,.05), transparent 35%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+  .wrap{max-width:1100px;margin:20px auto;padding:0 16px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .tag{font:800 11px/1 Inter,system-ui;color:#cfe8d2;background:rgba(184,255,154,.1);
+       border:1px solid var(--ring);padding:6px 10px;border-radius:999px;letter-spacing:.18em}
+  h1{margin:0;font-size:26px;color:var(--accent)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{appearance:none;border:1px solid #243043;background:#10161d;color:var(--text);
+       padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn.accent{background:linear-gradient(180deg,var(--accent),var(--accent2));color:#0b0d10;border-color:#8ee887}
+  .btn:hover{transform:translateY(-1px)}
+  .grid{display:grid;grid-template-columns:1fr 320px;gap:16px}
+  @media (max-width:920px){.grid{grid-template-columns:1fr}}
+  .board-shell{
+    background:linear-gradient(180deg,#111822,#0a1016 40%,#070c12);
+    border:1px solid #223043; border-radius:24px; padding:16px;
+    box-shadow:0 16px 40px rgba(0,0,0,.55), inset 0 0 0 1px rgba(184,255,154,.08);
+  }
+  /* Papan */
+  #board{
+    width:100%; aspect-ratio:1/1; display:grid;
+    grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);
+    border-radius:16px; overflow:hidden; border:1px solid #1e2834; background:#0f141a;
+  }
+  .square{
+    display:flex;align-items:center;justify-content:center; user-select:none; position:relative;
+    font-size:clamp(30px,7.8vw,74px); line-height:1;
+  }
+  .light{background:var(--light)}
+  .dark{ background:var(--dark)}
+  /* Bidak jelas (outline) */
+  .piece.white{color:#ffffff; text-shadow:
+      0 0 0 #000, -1px -1px 0 #000, 1px -1px 0 #000,
+      -1px 1px 0 #000, 1px 1px 0 #000}
+  .piece.black{color:#0b0f12; text-shadow:
+      0 0 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff,
+      -1px 1px 0 #fff, 1px 1px 0 #fff}
+  /* Highlight */
+  .square.sel{box-shadow:inset 0 0 0 4px rgba(184,255,154,.5)}
+  .square.move::after{
+    content:""; position:absolute; inset:0; margin:auto; width:34%; height:34%;
+    border-radius:50%; background:rgba(184,255,154,.45); box-shadow:0 0 0 6px rgba(184,255,154,.18);
+  }
+  /* Panel kanan */
+  .panel{background:var(--panel); border:1px solid #223043; border-radius:16px; padding:14px}
+  .row{display:flex; gap:10px; flex-wrap:wrap}
+  pre{margin:10px 0 0; background:#0f141c; border:1px solid #1b2532; border-radius:12px; padding:10px; min-height:52px}
+  .muted{color:var(--muted); font-size:13px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess</h1>
+      </div>
+      <div class="controls">
+        <button id="btnReset" class="btn accent">Muat Ulang</button>
+        <button id="btnFlip"  class="btn">Flip Board</button>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="board-shell">
+        <div id="board" aria-label="Papan Catur"></div>
+      </div>
+      <aside class="panel">
+        <div class="muted">Riwayat Langkah</div>
+        <pre id="log">–</pre>
+      </aside>
+    </section>
+  </div>
+
+<script>
+/* ===== Minimal engine: legal moves dasar (tanpa cek/checkmate) ===== */
+const PIECE = {K:"\u2654",Q:"\u2655",R:"\u2656",B:"\u2657",N:"\u2658",P:"\u2659",
+               k:"\u265A",q:"\u265B",r:"\u265C",b:"\u265D",n:"\u265E",p:"\u265F"};
+const START = [
+  "rnbqkbnr",
+  "pppppppp",
+  "........",
+  "........",
+  "........",
+  "........",
+  "PPPPPPPP",
+  "RNBQKBNR"
+];
+
+const state = {
+  board: [],          // 8x8 char | null
+  whiteTurn: true,
+  sel: null,          // {r,c}
+  legal: new Set(),   // "r,c"
+  flipped: false,
+  log: []
+};
+
+function inB(r,c){ return r>=0 && r<8 && c>=0 && c<8; }
+function isW(ch){ return ch && ch === ch.toUpperCase(); }
+function isB(ch){ return ch && ch === ch.toLowerCase(); }
+
+function loadStart(){
+  state.board = Array.from({length:8}, (_,r)=>
+    Array.from({length:8},(_,c)=> {
+      const ch = START[r][c];
+      return ch==="."? null : ch;
+    }));
+  state.whiteTurn = true;
+  state.sel = null;
+  state.legal.clear?.(); state.legal = new Set();
+  state.log = [];
+  render();
+  writeLog("–");
+}
+
+function writeLog(msg){
+  const el = document.getElementById('log');
+  if (msg==="–") el.textContent = "–";
+  else el.textContent += (el.textContent==="–"?"":"\n") + msg;
+}
+
+function genMoves(r,c){
+  const b = state.board, p = b[r][c]; if(!p) return [];
+  const W = isW(p), out=[];
+  const push=(rr,cc)=>{
+    if(!inB(rr,cc)) return false;
+    const t=b[rr][cc];
+    if(!t){ out.push([rr,cc]); return true; }
+    if( W ? isB(t) : isW(t) ){ out.push([rr,cc]); }
+    return false;
+  };
+  const ray=(dr,dc)=>{ let rr=r+dr, cc=c+dc; while(inB(rr,cc)){ const t=b[rr][cc];
+      if(!t){ out.push([rr,cc]); } else { if(W?isB(t):isW(t)) out.push([rr,cc]); break; }
+      rr+=dr; cc+=dc;
+    }};
+  switch(p.toLowerCase()){
+    case 'p':{
+      const dir = W? -1 : 1;
+      const sr  = W? 6 : 1;
+      if(!b[r+dir]?.[c]){ out.push([r+dir,c]); if(r===sr && !b[r+2*dir]?.[c]) out.push([r+2*dir,c]); }
+      for(const dc of [-1,1]){
+        const rr=r+dir, cc=c+dc; if(inB(rr,cc)){ const t=b[rr][cc]; if(W?isB(t):isW(t)) out.push([rr,cc]); }
+      }
+    } break;
+    case 'n': [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      const rr=r+dr, cc=c+dc; if(!inB(rr,cc))return; const t=state.board[rr][cc];
+      if(!t || (W?isB(t):isW(t))) out.push([rr,cc]);
+    }); break;
+    case 'b': ray(-1,-1); ray(-1,1); ray(1,-1); ray(1,1); break;
+    case 'r': ray(-1,0); ray(1,0); ray(0,-1); ray(0,1); break;
+    case 'q': ray(-1,-1); ray(-1,1); ray(1,-1); ray(1,1); ray(-1,0); ray(1,0); ray(0,-1); ray(0,1); break;
+    case 'k':
+      for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+        if(!dr&&!dc)continue; const rr=r+dr, cc=c+dc; if(!inB(rr,cc))continue;
+        const t=state.board[rr][cc]; if(!t || (W?isB(t):isW(t))) out.push([rr,cc]);
+      }
+      break;
+  }
+  return out;
+}
+
+function algebra(r,c){ return "abcdefgh"[c] + (8-r); }
+
+function clickSquare(idx){
+  const r0 = Math.floor(idx/8), c0 = idx%8;
+  const r = state.flipped? 7-r0 : r0;
+  const c = state.flipped? 7-c0 : c0;
+  const p = state.board[r][c];
+
+  // pilih
+  if(!state.sel){
+    if(!p) return;
+    if(state.whiteTurn !== isW(p)) return;
+    state.sel = {r,c};
+    state.legal = new Set(genMoves(r,c).map(([rr,cc])=> rr+","+cc));
+    render();
+    return;
+  }
+
+  const key = r+","+c;
+  if(!state.legal.has(key)){
+    // ganti pilihan kalau pilih bidak sendiri
+    if(p && (state.whiteTurn === isW(p))){
+      state.sel = {r,c};
+      state.legal = new Set(genMoves(r,c).map(([rr,cc])=> rr+","+cc));
+      render();
+      return;
+    }
+    // batal
+    state.sel = null; state.legal.clear();
+    render(); return;
+  }
+
+  // jalankan langkah
+  const {r:sr, c:sc} = state.sel;
+  const piece = state.board[sr][sc];
+  state.board[r][c] = piece;
+  state.board[sr][sc] = null;
+  // promosi pion sederhana
+  if(piece==='P' && r===0) state.board[r][c]='Q';
+  if(piece==='p' && r===7) state.board[r][c]='q';
+
+  writeLog((state.whiteTurn?"♙":"♟")+"  "+algebra(sr,sc)+" → "+algebra(r,c));
+  state.whiteTurn = !state.whiteTurn;
+  state.sel = null; state.legal.clear();
+  render();
+}
+
+function render(){
+  const boardEl = document.getElementById('board');
+  boardEl.innerHTML = "";
+  for(let i=0;i<64;i++){
+    const r0=Math.floor(i/8), c0=i%8;
+    const r = state.flipped? 7-r0 : r0;
+    const c = state.flipped? 7-c0 : c0;
+    const sq = document.createElement('div');
+    sq.className = "square "+(((r0+c0)&1)?"dark":"light"); // warna tetap stabil tampilan
+    // highlight seleksi & legal
+    if(state.sel && state.sel.r===r && state.sel.c===c) sq.classList.add('sel');
+    if(state.legal.has(r+","+c)) sq.classList.add('move');
+    // isi bidak
+    const ch = state.board[r][c];
+    if(ch){
+      const span = document.createElement('span');
+      span.className = "piece "+(isW(ch)?"white":"black");
+      span.textContent = PIECE[ch] || "";
+      sq.appendChild(span);
+    }
+    // handler
+    sq.addEventListener('click', ()=> clickSquare(i));
+    boardEl.appendChild(sq);
+  }
+}
+
+/* ===== UI buttons ===== */
+document.getElementById('btnReset').addEventListener('click', loadStart);
+document.getElementById('btnFlip').addEventListener('click', ()=>{
+  state.flipped = !state.flipped; render();
+});
+
+/* Boot */
+loadStart();
+</script>
+</body>
+</html>
