@@ -5,67 +5,52 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Azbry Chess.com</title>
 
-  <!-- Tema Azbry -->
+  <!-- gaya -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
-
-  <!-- Deskripsi -->
-  <meta name="description" content="Azbry Chess.com — Mainkan catur melawan pemain lain atau AI Azbry-MD dengan tampilan neon gelap khas Azbry.">
 </head>
 <body>
-  <main class="chess-wrapper">
-    <!-- HEADER -->
-    <header class="chess-header">
-      <span class="badge">AZBRY-MD • BOARD</span>
+
+  <main class="container">
+    <div class="title">
+      <div class="tag">AZBRY-MD • BOARD</div>
       <h1>Azbry Chess.com</h1>
-    </header>
+    </div>
 
-    <!-- BOARD -->
-    <section class="board-container">
+    <div class="board-wrap">
       <div id="board" class="board"></div>
-    </section>
+    </div>
 
-    <!-- CONTROLS -->
-    <section class="controls">
-      <div class="mode-select">
-        <button id="modeHuman" class="active">VS Player</button>
-        <button id="modeAI">VS Azbry-MD</button>
-        <button id="btnReset">Muat Ulang</button>
+    <div class="panel">
+      <div class="mode-picker">
+        <button id="modeHuman" class="seg active">VS Player</button>
+        <button id="modeAI" class="seg">VS Azbry-MD</button>
+        <button id="btnReset" class="seg">Muat Ulang</button>
       </div>
 
-      <div class="move-controls">
-        <button id="btnUndo">Undo</button>
-        <button id="btnRedo">Redo</button>
-        <button id="btnFlip">Flip Board</button>
-        <button id="btnBoardOnly">Board Only</button>
-        <button id="btnBack" style="display:none">Kembali</button>
+      <div class="controls">
+        <button id="btnUndo" class="btn dark">Undo</button>
+        <button id="btnRedo" class="btn dark">Redo</button>
+        <button id="btnFlip" class="btn dark">Flip Board</button>
+        <button id="btnBoardOnly" class="btn accent">Board Only</button>
+        <button id="btnBack" class="btn" style="display:none">Kembali</button>
       </div>
-    </section>
 
-    <!-- MOVE HISTORY -->
-    <section class="history">
-      <h3>Riwayat Langkah</h3>
-      <pre id="moveHistory">_</pre>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="license">
-      <div>
-        Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker
+      <div class="move-log">
+        <h4>Riwayat Langkah</h4>
+        <pre id="moveHistory">—</pre>
       </div>
-      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">
-        ↗ Portofolio
-      </a>
-    </footer>
+    </div>
   </main>
 
-  <!-- ENGINE (harus duluan biar FEN bisa dibaca) -->
+  <!-- ==== URUTAN WAJIB (engine dulu, baru main) ==== -->
+
+  <!-- Engine (pilih salah satu baris di bawah) -->
   <script src="assets/js/chess-engine.js"></script>
+  <!-- atau pakai CDN: -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script> -->
 
-  <!-- UI (rendering papan dan bidak) -->
-  <script src="assets/js/chess-ui.js"></script>
-
-  <!-- CONTROLLER -->
+  <!-- Controller/renderer -->
   <script src="assets/js/main.js"></script>
 </body>
 </html>
