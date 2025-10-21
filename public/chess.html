@@ -1,64 +1,60 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Azbry Chess.com</title>
-
-  <!-- gaya -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
 </head>
 <body>
+  <header>
+    <div class="badge">AZBRY-MD • BOARD</div>
+    <h1>Azbry Chess.com</h1>
+  </header>
 
-  <main class="container">
-    <div class="title">
-      <div class="tag">AZBRY-MD • BOARD</div>
-      <h1>Azbry Chess.com</h1>
-    </div>
+  <main class="game-container">
+    <!-- papan -->
+    <div id="board" class="board"></div>
 
-    <div class="board-wrap">
-      <div id="board" class="board"></div>
-    </div>
-
-    <div class="panel">
-      <div class="mode-picker">
-        <button id="modeHuman" class="seg active">VS Player</button>
-        <button id="modeAI" class="seg">VS Azbry-MD</button>
-        <button id="btnReset" class="seg">Muat Ulang</button>
+    <!-- kontrol -->
+    <section class="controls">
+      <div class="mode-buttons">
+        <button id="modeHuman" class="active">VS Player</button>
+        <button id="modeAI">VS Azbry-MD</button>
+        <button id="btnReset">Muat Ulang</button>
       </div>
 
-      <div class="controls">
-        <button id="btnUndo" class="btn dark">Undo</button>
-        <button id="btnRedo" class="btn dark">Redo</button>
-        <button id="btnFlip" class="btn dark">Flip Board</button>
-        <button id="btnBoardOnly" class="btn accent">Board Only</button>
-        <button id="btnBack" class="btn" style="display:none">Kembali</button>
+      <div class="action-buttons">
+        <button id="btnUndo">Undo</button>
+        <button id="btnRedo">Redo</button>
+        <button id="btnFlip">Flip Board</button>
+        <button id="btnBoardOnly">Board Only</button>
+        <button id="btnBack" style="display:none;">Kembali</button>
       </div>
+    </section>
 
-      <div class="move-log">
-        <h4>Riwayat Langkah</h4>
-        <pre id="moveHistory">—</pre>
-      </div>
-    </div>
+    <!-- riwayat -->
+    <section class="move-log">
+      <h2>Riwayat Langkah</h2>
+      <pre id="moveHistory">—</pre>
+    </section>
   </main>
 
-  <!-- ==== URUTAN WAJIB (engine dulu, baru main) ==== -->
+  <footer class="license">
+    <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
+    <a class="cta" href="https://azbry-portofolio.vercel.app" target="_blank">↗ Portofolio</a>
+  </footer>
 
-  <!-- Engine (pilih salah satu baris di bawah) -->
-  <script src="assets/js/chess-engine.js"></script>
-  <!-- atau pakai CDN: -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script> -->
+  <!-- ========================== -->
+  <!-- Script urutan WAJIB BENAR -->
+  <!-- ========================== -->
 
-  <!-- Controller/renderer -->
+  <!-- 1) ENGINE (gunakan CDN biar pasti kebaca) -->
+  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
+
+  <!-- 2) UI dan 3) Controller -->
+  <script src="assets/js/chess-ui.js"></script>
   <script src="assets/js/main.js"></script>
-  <!-- 1) ENGINE (pakai CDN biar pasti ada) -->
-<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess-engine.js"></script>
-
-<!-- 2) UI (punyamu) -->
-<script src="assets/js/chess-ui.js"></script>
-
-<!-- 3) CONTROLLER (punyamu) -->
-<script src="assets/js/main.js"></script>
 </body>
 </html>
