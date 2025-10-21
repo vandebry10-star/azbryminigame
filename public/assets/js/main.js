@@ -190,6 +190,33 @@ document.addEventListener('DOMContentLoaded', () => {
     resultPopup.classList.remove('show');
   }
 
+  // ⬇️ PANGGIL UI HOOK SETELAH MOVE DIAPLIKASIKAN
+if (window.AzbryUI) {
+  window.AzbryUI.afterMove({
+    from: lastMove.from,      // 'e2'
+    to: lastMove.to,          // 'e4'
+    piece: lastMove.piece,    // 'P' / 'p' / 'N' ...
+    color: lastMove.color,    // 'w' | 'b'
+    captured: lastMove.captured || null, // 'p' dst jika ada
+    isCheck: engine.inCheck ? engine.inCheck(engine.turn) : !!lastMove.isCheck,
+    kingSq: engine.getKingSquare ? engine.getKingSquare(engine.turn === 'w' ? 'b' : 'w') : lastMove.kingSq,
+    attackerSq: lastMove.attackerSq || lastMove.to,
+
+    // ==== PROMOSI ====
+    needsPromotion: !!lastMove.needsPromotion,
+    commitPromotion: function(type){ // type: 'q','r','b','n'
+      // panggil fungsi promosi di engine-mu,
+      // contoh generik (sesuaikan dgn engine kamu):
+      if (engine.promote) {
+        engine.promote({ to: lastMove.to, type });
+      } else if (applyPromotion) {
+        applyPromotion(lastMove.to, type);
+      }
+    }
+  });
+}
+
+
   // utils
   function toIdx(a) { return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]); }
 
