@@ -1,435 +1,113 @@
-/* Azbry Chess Engine – compact, full rules (check, mate, stalemate,
-   castling, en passant, promotion=Q), undo/redo.
-   Board indexing: 0..63 (0=a8 ... 63=h1)
-*/
+/* Azbry Chess Engine – full rules, compact */
 (function (global) {
-  const EMPTY = null;
-  const WHITE = 'w', BLACK = 'b';
-  const PAWN='P', KNIGHT='N', BISHOP='B', ROOK='R', QUEEN='Q', KING='K';
+  const EMPTY=null, WHITE='w', BLACK='b';
+  const P='P',N='N',B='B',R='R',Q='Q',K='K';
+  const startFEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
 
-  const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+  const file=i=>i%8, rank=i=>Math.floor(i/8), inB=i=>i>=0&&i<64;
+  const alg=i=>"abcdefgh"[file(i)]+(8-rank(i));
+  const idx=a=>(8-+a[1])*8+"abcdefgh".indexOf(a[0]);
+  const clone=x=>JSON.parse(JSON.stringify(x));
 
-  function clone(x){ return JSON.parse(JSON.stringify(x)); }
-  function file(i){ return i % 8; }
-  function rank(i){ return Math.floor(i/8); }
-  function inBoard(i){ return i>=0 && i<64; }
-  function algebraic(i){ return "abcdefgh"[file(i)] + (8-rank(i)); }
-  function idxFromAlg(a){
-    const f="abcdefgh".indexOf(a[0]);
-    const r=8-parseInt(a[1],10);
-    return r*8+f;
-  }
-
-  class Chess {
-    constructor(fen=startFEN){ this.load(fen); }
-
-    load(fen){
-      // parse minimal FEN (pieces/side/castling/enpassant)
-      const [pieces, side, cast, ep] = fen.split(' ');
-      this.boardArr = new Array(64).fill(EMPTY);
-      let i=0;
-      for(const ch of pieces.replace(/\//g,'')){
-        if(/\d/.test(ch)) i+=parseInt(ch,10);
-        else{
-          const color = ch===ch.toUpperCase()?WHITE:BLACK;
-          const piece = ch.toUpperCase();
-          this.boardArr[i++] = {color, piece};
-        }
+  class Chess{
+    constructor(f=startFEN){this.load(f)}
+    load(f){
+      const [pp,side,cast,ep]=f.split(' ');
+      this.b=new Array(64).fill(null);
+      let i=0; for(const ch of pp.replaceAll('/','')){
+        if(/\d/.test(ch)) i+=+ch; else this.b[i++]={color:ch===ch.toUpperCase()?WHITE:BLACK,piece:ch.toUpperCase()};
       }
-      this.side = side==='w'?WHITE:BLACK;
-      this.castling = {wK:cast.includes('K'), wQ:cast.includes('Q'), bK:cast.includes('k'), bQ:cast.includes('q')};
-      this.enPassant = ep==='-'? null : idxFromAlg(ep);
-      this.halfmove=0;
-      this.historyStack=[];
-      this.redoStack=[];
+      this.side=side==='w'?WHITE:BLACK;
+      this.cast={wK:cast.includes('K'),wQ:cast.includes('Q'),bK:cast.includes('k'),bQ:cast.includes('q')};
+      this.ep=ep==='-'?null:idx(ep);
+      this.h=0; this.hist=[]; this.redo=[];
     }
-
-    reset(){ this.load(startFEN); }
-
-    board(){ return this.boardArr; }
-    turn(){ return this.side; }
-    history(){ return this.historyStack.map(m => m.notation); }
-
-    _isOwn(c){ return c===this.side; }
-    _enemy(){ return this.side===WHITE?BLACK:WHITE; }
-
-    get(i){ return this.boardArr[i]; }
-    set(i,v){ this.boardArr[i]=v; }
-
-    _kingIndex(color){
-      for(let i=0;i<64;i++){ const p=this.get(i); if(p && p.piece===KING && p.color===color) return i; }
-      return -1;
-    }
-
-    _attacksFrom(i, color){
-      // returns set of squares attacked by piece at i (for check detection)
-      const P=this.get(i); if(!P) return [];
-      const res=[]; const c=P.color, t=P.piece;
-      const push=(d,ray=false)=>{
-        let s=i+d;
-        while(inBoard(s) && Math.abs(file(s)-file(s-d))<=2){
-          const q=this.get(s);
-          res.push(s);
-          if(q) { break; }
-          if(!ray) break;
-          s+=d;
-        }
-      };
-      if(t===PAWN){
-        const dir = (c===WHITE?-8:8);
-        const caps = [dir-1, dir+1];
-        for(const d of caps){
-          const s=i+d; if(!inBoard(s)) continue;
-          if(Math.abs(file(s)-file(i))===1) res.push(s);
-        }
-      }
-      if(t===KNIGHT){
-        [15,17,-15,-17,10,-10,6,-6].forEach(d=>{
-          const s=i+d;
-          if(!inBoard(s)) return;
-          if(Math.max(Math.abs(file(s)-file(i)),Math.abs(rank(s)-rank(i)))<=2) res.push(s);
-        });
-      }
-      if(t===BISHOP || t===QUEEN){ [9,7,-9,-7].forEach(d=>push(d,true)); }
-      if(t===ROOK   || t===QUEEN){ [8,-8,1,-1].forEach(d=>push(d,true)); }
-      if(t===KING){ [-1,1,-8,8,-9,-7,9,7].forEach(d=>{
-        const s=i+d; if(!inBoard(s)) return;
-        if(Math.abs(file(s)-file(i))<=1 && Math.abs(rank(s)-rank(i))<=1) res.push(s);
-      });}
+    reset(){this.load(startFEN)}
+    board(){return this.b} turn(){return this.side}
+    get(i){return this.b[i]} set(i,v){this.b[i]=v}
+    enemy(){return this.side===WHITE?BLACK:WHITE}
+    _king(c){for(let i=0;i<64;i++){const p=this.get(i);if(p&&p.piece===K&&p.color===c)return i}return-1}
+    _att(i){
+      const p=this.get(i); if(!p) return [];
+      const c=p.color,t=p.piece,res=[]; const push=(d,ray=false)=>{let s=i+d; while(inB(s)&&Math.abs(file(s)-file(s-d))<=1){res.push(s); if(this.get(s))break; if(!ray)break; s+=d;}}
+      if(t===P){const dir=c===WHITE?-8:8;[-1,1].forEach(df=>{const s=i+dir+df;if(inB(s)&&Math.abs(file(s)-file(i))===1)res.push(s)})}
+      if(t===N){[15,17,-15,-17,10,-10,6,-6].forEach(d=>{const s=i+d;if(!inB(s))return;if(Math.max(Math.abs(file(s)-file(i)),Math.abs(rank(s)-rank(i)))<=2)res.push(s)})}
+      if(t===B||t===Q){[9,7,-9,-7].forEach(d=>push(d,true))} if(t===R||t===Q){[8,-8,1,-1].forEach(d=>push(d,true))}
+      if(t===K){[-1,1,-8,8,-9,-7,9,7].forEach(d=>{const s=i+d;if(inB(s)&&Math.abs(file(s)-file(i))<=1&&Math.abs(rank(s)-rank(i))<=1)res.push(s)})}
       return res;
     }
-
-    _squareAttackedBy(i, colorAttacker){
-      for(let s=0;s<64;s++){
-        const p=this.get(s);
-        if(p && p.color===colorAttacker){
-          const atks=this._attacksFrom(s, colorAttacker);
-          if(atks.includes(i)){
-            // handle pawn forward-not-attack glitch: already handled since _attacksFrom for pawn adds only diagonals
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    inCheck(color=this.side){
-      const k=this._kingIndex(color);
-      return this._squareAttackedBy(k, color===WHITE?BLACK:WHITE);
-    }
-
-    _pushMove(list, from, to, flags={}){
-      const fromP=this.get(from), toP=this.get(to);
-      // prevent wrap horizontally for rook/bishop/queen rays is handled by generator before calling here
-      // will filter legality later
-      const promo = flags.promotion || null;
-      list.push({from, to, piece:fromP, capture:toP||null, promotion:promo,
-                 castle:flags.castle||null, enPassant:flags.enPassant||false});
-    }
-
-    _genMovesColor(color){
-      const moves=[];
-      for(let i=0;i<64;i++){
-        const p=this.get(i);
-        if(!p || p.color!==color) continue;
-        const f=file(i), r=rank(i);
-        if(p.piece===PAWN){
-          const dir = (color===WHITE?-8:8);
-          const one = i+dir;
-          const startRank = (color===WHITE?6:1);
-          const lastRank = (color===WHITE?0:7);
-
-          // forward
-          if(inBoard(one) && !this.get(one)){
-            if(rank(one)===lastRank) this._pushMove(moves,i,one,{promotion:QUEEN});
-            else this._pushMove(moves,i,one);
-            // double
-            const two = i+dir*2;
-            if(r===startRank && !this.get(two)) this._pushMove(moves,i,two,{double:true});
-          }
-          // captures
-          for(const df of [-1,1]){
-            const t=i+dir+df;
-            if(!inBoard(t) || Math.abs(file(t)-f)!==1) continue;
-            if(this.get(t)?.color===(color===WHITE?BLACK:WHITE)){
-              if(rank(t)===lastRank) this._pushMove(moves,i,t,{promotion:QUEEN});
-              else this._pushMove(moves,i,t);
-            }
-          }
-          // en passant
-          if(this.enPassant!==null){
-            const ep=this.enPassant;
-            if(Math.abs(file(ep)-f)===1 && rank(ep)===r+(color===WHITE?-1:1)){
-              this._pushMove(moves,i,ep,{enPassant:true});
-            }
-          }
-        } else if(p.piece===KNIGHT){
-          [15,17,-15,-17,10,-10,6,-6].forEach(d=>{
-            const t=i+d; if(!inBoard(t)) return;
-            if(Math.max(Math.abs(file(t)-f),Math.abs(rank(t)-r))>2) return;
-            const q=this.get(t);
-            if(!q || q.color!==color) this._pushMove(moves,i,t);
-          });
-        } else if(p.piece===BISHOP || p.piece===ROOK || p.piece===QUEEN){
-          const dirs = [];
-          if(p.piece!==ROOK)  dirs.push(9,7,-9,-7);
-          if(p.piece!==BISHOP)dirs.push(8,-8,1,-1);
-          for(const d of dirs){
-            let t=i+d;
-            while(inBoard(t) && Math.abs(file(t)-file(t-d))<=1){
-              const q=this.get(t);
-              if(!q){ this._pushMove(moves,i,t); }
-              else { if(q.color!==color) this._pushMove(moves,i,t); break; }
-              t+=d;
-            }
-          }
-        } else if(p.piece===KING){
-          [-1,1,-8,8,-9,-7,9,7].forEach(d=>{
-            const t=i+d; if(!inBoard(t)) return;
-            if(Math.abs(file(t)-f)<=1 && Math.abs(rank(t)-r)<=1){
-              const q=this.get(t); if(!q || q.color!==color) this._pushMove(moves,i,t);
-            }
-          });
-          // castling
-          if(color===WHITE){
-            if(this.castling.wK && !this.get(61) && !this.get(62) &&
-               !this._squareAttackedBy(60,BLACK) && !this._squareAttackedBy(61,BLACK) && !this._squareAttackedBy(62,BLACK)){
-              this._pushMove(moves,60,62,{castle:'K'});
-            }
-            if(this.castling.wQ && !this.get(57) && !this.get(58) && !this.get(59) &&
-               !this._squareAttackedBy(60,BLACK) && !this._squareAttackedBy(59,BLACK) && !this._squareAttackedBy(58,BLACK)){
-              this._pushMove(moves,60,58,{castle:'Q'});
-            }
+    _attacked(i,by){for(let s=0;s<64;s++){const p=this.get(s);if(p&&p.color===by){if(this._att(s).includes(i))return true}}return false}
+    inCheck(c=this.side){return this._attacked(this._king(c),c===WHITE?BLACK:WHITE)}
+    _push(list,from,to,flags={}){const p=this.get(from);list.push({from,to,piece:p,capture:this.get(to)||null,promotion:flags.promotion||null,castle:flags.castle||null,enPassant:!!flags.enPassant})}
+    _gen(c){
+      const m=[]; for(let i=0;i<64;i++){const p=this.get(i); if(!p||p.color!==c)continue;
+        const f=file(i),r=rank(i);
+        if(p.piece===P){
+          const dir=c===WHITE?-8:8, one=i+dir, start=c===WHITE?6:1, last=c===WHITE?0:7;
+          if(inB(one)&&!this.get(one)){ if(rank(one)===last)this._push(m,i,one,{promotion:Q}); else this._push(m,i,one); const two=i+dir*2; if(r===start && !this.get(two)) this._push(m,i,two,{double:true}); }
+          for(const df of[-1,1]){const t=i+dir+df; if(inB(t)&&Math.abs(file(t)-f)===1){const q=this.get(t); if(q&&q.color!==c){ if(rank(t)===last)this._push(m,i,t,{promotion:Q}); else this._push(m,i,t); }}}
+          if(this.ep!==null){const ep=this.ep; if(Math.abs(file(ep)-f)===1 && rank(ep)===r+(c===WHITE?-1:1)) this._push(m,i,ep,{enPassant:true})}
+        } else if(p.piece===N){
+          [15,17,-15,-17,10,-10,6,-6].forEach(d=>{const t=i+d;if(!inB(t))return;if(Math.max(Math.abs(file(t)-f),Math.abs(rank(t)-r))>2)return;const q=this.get(t);if(!q||q.color!==c)this._push(m,i,t)})
+        } else if(p.piece===B||p.piece===R||p.piece===Q){
+          const dirs=[]; if(p.piece!==R)dirs.push(9,7,-9,-7); if(p.piece!==B)dirs.push(8,-8,1,-1);
+          for(const d of dirs){let t=i+d; while(inB(t)&&Math.abs(file(t)-file(t-d))<=1){const q=this.get(t); if(!q)this._push(m,i,t); else{if(q.color!==c)this._push(m,i,t); break} t+=d;}}
+        } else if(p.piece===K){
+          [-1,1,-8,8,-9,-7,9,7].forEach(d=>{const t=i+d;if(inB(t)&&Math.abs(file(t)-f)<=1&&Math.abs(rank(t)-r)<=1){const q=this.get(t);if(!q||q.color!==c)this._push(m,i,t)}})
+          if(c===WHITE){
+            if(this.cast.wK&&!this.get(61)&&!this.get(62)&&!this._attacked(60,BLACK)&&!this._attacked(61,BLACK)&&!this._attacked(62,BLACK)) this._push(m,60,62,{castle:'K'});
+            if(this.cast.wQ&&!this.get(57)&&!this.get(58)&&!this.get(59)&&!this._attacked(60,BLACK)&&!this._attacked(59,BLACK)&&!this._attacked(58,BLACK)) this._push(m,60,58,{castle:'Q'});
           } else {
-            if(this.castling.bK && !this.get(5) && !this.get(6) &&
-               !this._squareAttackedBy(4,WHITE) && !this._squareAttackedBy(5,WHITE) && !this._squareAttackedBy(6,WHITE)){
-              this._pushMove(moves,4,6,{castle:'k'});
-            }
-            if(this.castling.bQ && !this.get(1) && !this.get(2) && !this.get(3) &&
-               !this._squareAttackedBy(4,WHITE) && !this._squareAttackedBy(3,WHITE) && !this._squareAttackedBy(2,WHITE)){
-              this._pushMove(moves,4,2,{castle:'q'});
-            }
+            if(this.cast.bK&&!this.get(5)&&!this.get(6)&&!this._attacked(4,WHITE)&&!this._attacked(5,WHITE)&&!this._attacked(6,WHITE)) this._push(m,4,6,{castle:'k'});
+            if(this.cast.bQ&&!this.get(1)&&!this.get(2)&&!this.get(3)&&!this._attacked(4,WHITE)&&!this._attacked(3,WHITE)&&!this._attacked(2,WHITE)) this._push(m,4,2,{castle:'q'});
           }
         }
-      }
-      return moves;
+      } return m;
     }
-
-    _make(move){
-      const st = {
-        move: clone(move),
-        castling: clone(this.castling),
-        enPassant: this.enPassant,
-        halfmove: this.halfmove
-      };
-
-      const {from,to,piece, promotion, enPassant, castle} = move;
-      const target = this.get(to);
-
-      // en passant capture removal
-      let captured = target;
-      if(enPassant){
-        const dir = (piece.color===WHITE?1:-1);
-        const capSq = to + (8*dir); // behind the moved pawn
-        captured = this.get(capSq);
-        this.set(capSq, EMPTY);
-      }
-
-      // move piece
-      this.set(from, EMPTY);
-      this.set(to, {color:piece.color, piece: promotion?promotion:piece.piece});
-
-      // castling rook move
-      if(castle==='K') { this.set(63,EMPTY); this.set(61,{color:WHITE,piece:ROOK}); }
-      if(castle==='Q') { this.set(56,EMPTY); this.set(59,{color:WHITE,piece:ROOK}); }
-      if(castle==='k') { this.set(7, EMPTY); this.set(5, {color:BLACK,piece:ROOK}); }
-      if(castle==='q') { this.set(0, EMPTY); this.set(3, {color:BLACK,piece:ROOK}); }
-
-      // update castling rights
-      if(piece.piece===KING){
-        if(piece.color===WHITE){ this.castling.wK=false; this.castling.wQ=false; }
-        else{ this.castling.bK=false; this.castling.bQ=false; }
-      }
-      if(piece.piece===ROOK){
-        if(from===63) this.castling.wK=false;
-        if(from===56) this.castling.wQ=false;
-        if(from===7)  this.castling.bK=false;
-        if(from===0)  this.castling.bQ=false;
-      }
-      if(captured && captured.piece===ROOK){
-        if(to===63) this.castling.wK=false;
-        if(to===56) this.castling.wQ=false;
-        if(to===7)  this.castling.bK=false;
-        if(to===0)  this.castling.bQ=false;
-      }
-
-      // set enPassant square
-      this.enPassant = null;
-      if(piece.piece===PAWN && Math.abs(from-to)===16){
-        this.enPassant = (from+to)/2;
-      }
-
-      // halfmove
-      this.halfmove = (piece.piece===PAWN || captured)?0:this.halfmove+1;
-
-      // save extra info
-      st.captured = captured || null;
-
-      return st; // for unmake
+    _make(m){
+      const st={move:clone(m),cast:clone(this.cast),ep:this.ep,half:this.h};
+      const {from,to,piece,enPassant,castle,promotion}=m;
+      let cap=this.get(to);
+      if(enPassant){const dir=piece.color===WHITE?1:-1;const capSq=to+8*dir;cap=this.get(capSq);this.set(capSq,EMPTY)}
+      this.set(from,EMPTY); this.set(to,{color:piece.color,piece:promotion||piece.piece});
+      if(cast==='K'){this.set(63,EMPTY);this.set(61,{color:WHITE,piece:R})}
+      if(cast==='Q'){this.set(56,EMPTY);this.set(59,{color:WHITE,piece:R})}
+      if(cast==='k'){this.set(7,EMPTY); this.set(5,{color:BLACK,piece:R})}
+      if(cast==='q'){this.set(0,EMPTY); this.set(3,{color:BLACK,piece:R})}
+      if(piece.piece===K){if(piece.color===WHITE){this.cast.wK=false;this.cast.wQ=false}else{this.cast.bK=false;this.cast.bQ=false}}
+      if(piece.piece===R){if(from===63)this.cast.wK=false;if(from===56)this.cast.wQ=false;if(from===7)this.cast.bK=false;if(from===0)this.cast.bQ=false}
+      if(cap&&cap.piece===R){if(to===63)this.cast.wK=false;if(to===56)this.cast.wQ=false;if(to===7)this.cast.bK=false;if(to===0)this.cast.bQ=false}
+      this.ep=null; if(piece.piece===P&&Math.abs(from-to)===16)this.ep=(from+to)/2;
+      this.h=(piece.piece===P||cap)?0:this.h+1; st.cap=cap||null; return st;
     }
-
-    _unmake(state){
-      const {move, castling, enPassant, halfmove, captured} = state;
-      const {from,to,piece, promotion, enPassant:ep, castle} = move;
-
-      // undo castling rook
-      if(castle==='K') { this.set(63,{color:WHITE,piece:ROOK}); this.set(61,EMPTY); }
-      if(castle==='Q') { this.set(56,{color:WHITE,piece:ROOK}); this.set(59,EMPTY); }
-      if(castle==='k') { this.set(7,{color:BLACK,piece:ROOK}); this.set(5,EMPTY); }
-      if(castle==='q') { this.set(0,{color:BLACK,piece:ROOK}); this.set(3,EMPTY); }
-
-      // move back
-      this.set(from, {color:piece.color, piece:piece.piece});
-      this.set(to, EMPTY);
-
-      // restore captured
-      if(ep){
-        const dir = (piece.color===WHITE?1:-1);
-        const capSq = to + (8*dir);
-        this.set(capSq, captured);
-      }else if(captured){
-        this.set(to, captured);
-      }
-
-      this.castling = castling;
-      this.enPassant = enPassant;
-      this.halfmove = halfmove;
+    _unmake(st){
+      const {move,cast,ep,half,cap}=st; const {from,to,piece,enPassant,castle}=move;
+      if(cast==='K'){this.set(63,{color:WHITE,piece:R});this.set(61,EMPTY)}
+      if(cast==='Q'){this.set(56,{color:WHITE,piece:R});this.set(59,EMPTY)}
+      if(cast==='k'){this.set(7,{color:BLACK,piece:R}); this.set(5,EMPTY)}
+      if(cast==='q'){this.set(0,{color:BLACK,piece:R}); this.set(3,EMPTY)}
+      this.set(from,{color:piece.color,piece:piece.piece}); this.set(to,EMPTY);
+      if(enPassant){const dir=piece.color===WHITE?1:-1;this.set(to+8*dir,cap)} else if(cap){this.set(to,cap)}
+      this.cast=cast; this.ep=ep; this.h=half;
     }
-
-    _legalMoves(){
-      const pseudo = this._genMovesColor(this.side);
-      const legal=[];
-      for(const m of pseudo){
-        const st=this._make(m);
-        const illegal = this.inCheck(this.side);
-        this._unmake(st);
-        if(!illegal) legal.push(m);
-      }
-      return legal;
-    }
-
-    moves(opt={}){
-      if(opt.square){
-        const idx = typeof opt.square==='number'?opt.square:idxFromAlg(opt.square);
-        return this._legalMoves().filter(m => m.from===idx).map(m => ({
-          from: algebraic(m.from), to: algebraic(m.to), promotion: m.promotion||null
-        }));
-      }
-      return this._legalMoves().map(m=>({from:algebraic(m.from),to:algebraic(m.to),promotion:m.promotion||null}));
-    }
-
-    move(m){
-      // m: {from:'e2', to:'e4', promotion?}
-      const from = typeof m.from==='number'? m.from : idxFromAlg(m.from);
-      const to   = typeof m.to  ==='number'? m.to   : idxFromAlg(m.to);
-      const legal = this._legalMoves().find(x => x.from===from && x.to===to && (x.promotion||null)===(m.promotion||x.promotion||null));
-      if(!legal) return null;
-
-      const st = this._make(legal);
-      const notation = `${algebraic(legal.from)} → ${algebraic(legal.to)}` + (legal.promotion?`=${legal.promotion}`:'');
-      this.historyStack.push({ ...legal, notation, snapshot:st });
-      this.redoStack.length=0; // clear redo
-      this.side = this._enemy();
-      return notation;
-    }
-
-    undo(){
-      const last = this.historyStack.pop();
-      if(!last) return null;
-      this._unmake(last.snapshot);
-      this.side = this._enemy();
-      this.redoStack.push(last);
-      return last.notation;
-    }
-
-    redo(){
-      const m = this.redoStack.pop();
-      if(!m) return null;
-      const st = this._make(m);
-      this.historyStack.push({ ...m, notation:m.notation, snapshot:st });
-      this.side = this._enemy();
-      return m.notation;
-    }
-
-    gameStatus(){
-      const legal = this._legalMoves();
-      const inC = this.inCheck(this.side);
-      if(legal.length===0){
-        return inC ? 'checkmate' : 'stalemate';
-      }
-      return inC ? 'check' : 'ok';
-    }
+    _legal(){const ps=this._gen(this.side),L=[];for(const m of ps){const st=this._make(m);const bad=this.inCheck(this.side);this._unmake(st);if(!bad)L.push(m)}return L}
+    moves(o={}){ if(o.square){const ix=typeof o.square==='number'?o.square:idx(o.square);return this._legal().filter(m=>m.from===ix).map(m=>({from:alg(m.from),to:alg(m.to),promotion:m.promotion||null})) }
+      return this._legal().map(m=>({from:alg(m.from),to:alg(m.to),promotion:m.promotion||null}))}
+    move(m){const f=typeof m.from==='number'?m.from:idx(m.from),t=typeof m.to==='number'?m.to:idx(m.to);const ok=this._legal().find(x=>x.from===f&&x.to===t&&((x.promotion||null)===(m.promotion||x.promotion||null)));if(!ok)return null;const st=this._make(ok);const note=`${alg(ok.from)} → ${alg(ok.to)}`+(ok.promotion?`=${ok.promotion}`:'');this.hist.push({...ok,notation:note,snap:st});this.redo.length=0;this.side=this.side===WHITE?BLACK:WHITE;return note}
+    undo(){const m=this.hist.pop();if(!m)return null;this._unmake(m.snap);this.side=this.side===WHITE?BLACK:WHITE;this.redo.push(m);return m.notation}
+    redo(){const m=this.redo.pop();if(!m)return null;const st=this._make(m);this.hist.push({...m,snap:st});this.side=this.side===WHITE?BLACK:WHITE;return m.notation}
+    history(){return this.hist.map(m=>m.notation)}
+    gameStatus(){const L=this._legal();const chk=this.inCheck(this.side);if(L.length===0)return chk?'checkmate':'stalemate';return chk?'check':'ok'}
   }
 
-  // UI helper class (grid + render)
-  class ChessUI {
-    constructor(boardEl, onSquareClick){
-      this.el = boardEl;
-      this.onSquareClick = onSquareClick || (()=>{});
-      this.flipped=false;
-      this.squares=[];
-      this._build();
-    }
-    _build(){
-      this.el.innerHTML='';
-      this.squares = new Array(64);
-      for(let i=0;i<64;i++){
-        const d = document.createElement('div');
-        d.className = `sq ${(i + Math.floor(i/8))%2 ? 'dark':'light'}`;
-        d.dataset.idx=i;
-        d.addEventListener('click',()=>this.onSquareClick(this._toAlg(i)));
-        this.el.appendChild(d);
-        this.squares[i]=d;
-      }
-    }
-    _toAlg(i){ return "abcdefgh"[i%8] + (8-Math.floor(i/8)); }
-    _fromAlg(a){ return (8-parseInt(a[1]))*8 + "abcdefgh".indexOf(a[0]); }
-    toggleFlip(){ this.flipped=!this.flipped; }
-    render(board, opts={}){
-      const {lastMove=null, legal=[]} = opts;
-      const legalIdx = new Set(legal.map(a=>typeof a==='string'? this._fromAlg(a):a));
-      const lastFrom = lastMove? (typeof lastMove.from==='string'? this._fromAlg(lastMove.from):lastMove.from) : null;
-      const lastTo   = lastMove? (typeof lastMove.to  ==='string'? this._fromAlg(lastMove.to):lastMove.to) : null;
-
-      for(let i=0;i<64;i++){
-        const idx = this.flipped? (63-i) : i;
-        const sq = this.squares[i];
-        const P = board[idx];
-
-        sq.innerHTML='';
-        sq.classList.remove('src','last');
-
-        if(P){
-          const span=document.createElement('span');
-          span.className = `piece ${P.color===WHITE?'white':'black'}`;
-          span.textContent = this._glyph(P);
-          sq.appendChild(span);
-        }
-        if(lastFrom===idx) sq.classList.add('src');
-        if(lastTo===idx) sq.classList.add('last');
-        if(legalIdx.has(idx)){
-          const dot=document.createElement('div'); dot.className='dot'; sq.appendChild(dot);
-        }
-      }
-    }
-    _glyph(p){
-      // crisp, bold-like unicode; will look great bigger
-      const mapW = {P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔'};
-      const mapB = {P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚'};
-      return p.color===WHITE ? mapW[p.piece] : mapB[p.piece];
-    }
+  class ChessUI{
+    constructor(el, onClick){this.el=el;this.cb=onClick||(()=>{});this.flip=false;this.sq=[];this._build()}
+    _build(){this.el.innerHTML='';this.sq=new Array(64);for(let i=0;i<64;i++){const d=document.createElement('div');d.className=`sq ${(i+Math.floor(i/8))%2?'dark':'light'}`;d.dataset.i=i;d.addEventListener('click',()=>this.cb(this._alg(i)));this.el.appendChild(d);this.sq[i]=d}}
+    _alg(i){return "abcdefgh"[i%8]+(8-Math.floor(i/8))}
+    _idx(a){return (8-+a[1])*8+"abcdefgh".indexOf(a[0])}
+    toggleFlip(){this.flip=!this.flip}
+    render(board,{lastMove=null,legal=[]}={}){const L=new Set(legal.map(a=>typeof a==='string'?this._idx(a):a));const lf=lastMove? (typeof lastMove.from==='string'?this._idx(lastMove.from):lastMove.from):null;const lt=lastMove? (typeof lastMove.to==='string'?this._idx(lastMove.to):lastMove.to):null;for(let i=0;i<64;i++){const idx=this.flip?(63-i):i;const cell=this.sq[i];const p=board[idx];cell.innerHTML='';cell.classList.remove('src','last');if(p){const sp=document.createElement('span');sp.className=`piece ${p.color==='w'?'white':'black'}`;sp.textContent=(p.color==='w'?{P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔'}:{P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚'})[p.piece];cell.appendChild(sp)}if(lf===idx)cell.classList.add('src');if(lt===idx)cell.classList.add('last');if(L.has(idx)){const dot=document.createElement('div');dot.className='dot';cell.appendChild(dot)}}}
   }
 
-  global.Chess = Chess;
-  global.ChessUI = ChessUI;
+  global.Chess=Chess; global.ChessUI=ChessUI;
 })(window);
