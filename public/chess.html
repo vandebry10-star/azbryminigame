@@ -4,26 +4,35 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Azbry Chess.com</title>
+
+  <!-- Tema Azbry -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
+
+  <!-- Deskripsi -->
+  <meta name="description" content="Azbry Chess.com — Mainkan catur melawan pemain lain atau AI Azbry-MD dengan tampilan neon gelap khas Azbry.">
 </head>
 <body>
   <main class="chess-wrapper">
+    <!-- HEADER -->
     <header class="chess-header">
       <span class="badge">AZBRY-MD • BOARD</span>
       <h1>Azbry Chess.com</h1>
     </header>
 
+    <!-- BOARD -->
     <section class="board-container">
       <div id="board" class="board"></div>
     </section>
 
+    <!-- CONTROLS -->
     <section class="controls">
       <div class="mode-select">
         <button id="modeHuman" class="active">VS Player</button>
         <button id="modeAI">VS Azbry-MD</button>
         <button id="btnReset">Muat Ulang</button>
       </div>
+
       <div class="move-controls">
         <button id="btnUndo">Undo</button>
         <button id="btnRedo">Redo</button>
@@ -33,24 +42,30 @@
       </div>
     </section>
 
+    <!-- MOVE HISTORY -->
     <section class="history">
       <h3>Riwayat Langkah</h3>
       <pre id="moveHistory">_</pre>
     </section>
 
+    <!-- FOOTER -->
     <footer class="license">
-      <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
-      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank">↗ Portofolio</a>
+      <div>
+        Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker
+      </div>
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">
+        ↗ Portofolio
+      </a>
     </footer>
   </main>
 
-  <!-- Engine -->
+  <!-- ENGINE (harus duluan biar FEN bisa dibaca) -->
   <script src="assets/js/chess-engine.js"></script>
 
-  <!-- UI -->
+  <!-- UI (rendering papan dan bidak) -->
   <script src="assets/js/chess-ui.js"></script>
 
-  <!-- Controller -->
+  <!-- CONTROLLER -->
   <script src="assets/js/main.js"></script>
 </body>
 </html>
