@@ -73,3 +73,50 @@
   background: var(--azAccent, #9BE27A);
   color: #111;
 }
+
+/* --- Board sizing & piece centering --- */
+#board {
+  --sq: min(12vw, 68px);           /* ukuran kotak dasar (responsif) */
+  display: grid;
+  grid-template-columns: repeat(8, var(--sq));
+  grid-template-rows:    repeat(8, var(--sq));
+  gap: 0;
+}
+
+.square {
+  position: relative;
+  width: var(--sq);
+  height: var(--sq);               /* jaga 1:1 */
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.piece {
+  font-size: calc(var(--sq) * 0.72);  /* besaran bidak */
+  line-height: 1;
+  display: block;
+  pointer-events: none;               /* biar klik ke kotak */
+}
+
+/* highlight legal moves (kalau belum ada) */
+.square.legal::after {
+  content: "";
+  position: absolute;
+  width: calc(var(--sq) * 0.28);
+  height: calc(var(--sq) * 0.28);
+  border-radius: 999px;
+  background: rgba(155, 226, 122, .35);
+  box-shadow: 0 0 0 2px rgba(155,226,122,.6) inset;
+}
+
+/* Board Only toggle */
+.panel.hidden { display: none; }
+
+/* mode button aktif */
+.mode-picker .seg.active {
+  background: var(--azAccent, #9BE27A);
+  color: #111;
+}
