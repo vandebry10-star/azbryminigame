@@ -1,188 +1,113 @@
-/* =====================================================
-   Azbry Chess UI Controller
-   Menghubungkan HTML dengan ChessEngine.
-   ===================================================== */
+/* ==== AZBRY CHESS UI FIXED ==== */
 
-window.ChessUI = (function () {
-  const board = document.getElementById("board");
-  const moveHistory = document.getElementById("moveHistory");
-  const btnReset = document.getElementById("btnReset");
-  const btnUndo = document.getElementById("btnUndo");
-  const btnRedo = document.getElementById("btnRedo");
-  const btnFlip = document.getElementById("btnFlip");
-  const btnBoardOnly = document.getElementById("btnBoardOnly");
-  const btnBack = document.getElementById("btnBack");
-  const modeHuman = document.getElementById("modeHuman");
-  const modeAI = document.getElementById("modeAI");
+// Elemen papan
+const boardEl = document.getElementById("board");
+const moveHistoryEl = document.getElementById("moveHistory");
 
-  let flipped = false;
-  let selected = null;
+let selectedSquare = null;
+let currentPlayer = "white";
+let movesHistory = [];
 
-  // simbol catur (unicode)
-  const PIECES = {
-    w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" },
-    b: { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟︎" },
-  };
+// Warna highlight langkah
+const HIGHLIGHT_COLOR = "rgba(0,255,140,0.25)";
 
-  // generate papan 8x8
-  function drawBoard() {
-    board.innerHTML = "";
-    for (let i = 0; i < 64; i++) {
+// Fungsi buat render papan dari state
+function renderBoard(boardState) {
+  boardEl.innerHTML = "";
+
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
       const square = document.createElement("div");
-      square.className = "square";
-      square.dataset.index = i;
-      const x = i % 8;
-      const y = Math.floor(i / 8);
-      square.classList.add((x + y) % 2 === 0 ? "light" : "dark");
-      square.addEventListener("click", onSquareClick);
-      board.appendChild(square);
-    }
-    render();
-  }
+      square.classList.add("square");
 
-  // render isi papan
-  function render() {
-    const state = ChessEngine.getState();
-    const cells = board.querySelectorAll(".square");
-    const grid = state.board;
+      // warna kotak
+      if ((x + y) % 2 === 0) square.classList.add("light");
+      else square.classList.add("dark");
 
-    grid.forEach((piece, i) => {
-      const sq = cells[flipped ? 63 - i : i];
-      sq.innerHTML = "";
-      sq.classList.remove("selected");
+      const piece = boardState[y][x];
       if (piece) {
-        const c = piece[0];
-        const t = piece[1];
-        sq.textContent = PIECES[c][t];
-        sq.classList.add(c === "w" ? "white-piece" : "black-piece");
+        square.textContent = piece.symbol;
+        square.dataset.color = piece.color;
+        square.dataset.type = piece.type;
       }
-    });
 
-    // update move log
-    if (moveHistory) {
-      moveHistory.textContent =
-        state.history.length > 0
-          ? state.history
-              .map(
-                (m, idx) =>
-                  `${idx + 1}. ${indexToSquare(m.from)} - ${indexToSquare(m.to)}`
-              )
-              .join("\n")
-          : "—";
+      square.dataset.x = x;
+      square.dataset.y = y;
+      boardEl.appendChild(square);
     }
   }
+}
 
-  // event klik petak
-  function onSquareClick(e) {
-    const idx = parseInt(e.currentTarget.dataset.index);
-    const realIdx = flipped ? 63 - idx : idx;
+// Fungsi buat highlight kotak
+function highlightSquare(square) {
+  square.style.boxShadow = `inset 0 0 12px ${HIGHLIGHT_COLOR}`;
+}
 
-    if (selected === null) {
-      const moves = ChessEngine.movesFrom(realIdx);
-      if (moves.length > 0) {
-        selected = realIdx;
-        highlightMoves(moves);
-      }
-    } else {
-      const moved = ChessEngine.move(selected, realIdx);
-      clearHighlights();
-      selected = null;
-      if (moved) {
-        render();
-        // cek status
-        if (ChessEngine.isCheckmate()) showResult("Checkmate!");
-        else if (ChessEngine.isStalemate()) showResult("Stalemate!");
-        else if (ChessEngine.getMode() === "ai") {
-          setTimeout(() => {
-            ChessEngine.aiMoveIfNeeded();
-            render();
-            if (ChessEngine.isCheckmate()) showResult("Kalah! Checkmate!");
-          }, 600);
-        }
-      }
-    }
+function clearHighlights() {
+  document.querySelectorAll(".square").forEach((sq) => {
+    sq.style.boxShadow = "";
+  });
+}
+
+// Mendapatkan langkah valid dari engine
+function getValidMoves(x, y) {
+  if (typeof getLegalMoves === "function") {
+    return getLegalMoves(x, y); // dari chess-engine.js
   }
+  return [];
+}
 
-  // highlight langkah
-  function highlightMoves(list) {
+// Event klik di papan
+boardEl.addEventListener("click", (e) => {
+  const square = e.target.closest(".square");
+  if (!square) return;
+
+  const x = parseInt(square.dataset.x);
+  const y = parseInt(square.dataset.y);
+
+  const pieceColor = square.dataset.color;
+
+  // Klik pertama: pilih bidak
+  if (!selectedSquare && pieceColor === currentPlayer) {
+    selectedSquare = square;
     clearHighlights();
-    const cells = board.querySelectorAll(".square");
-    list.forEach((i) => {
-      const sq = cells[flipped ? 63 - i : i];
-      sq.classList.add("highlight");
+    highlightSquare(square);
+
+    // tampilkan langkah valid
+    const moves = getValidMoves(x, y);
+    moves.forEach(([mx, my]) => {
+      const moveSq = document.querySelector(
+        `.square[data-x="${mx}"][data-y="${my}"]`
+      );
+      if (moveSq) moveSq.classList.add("highlight");
     });
   }
-  function clearHighlights() {
-    board.querySelectorAll(".highlight").forEach((sq) => sq.classList.remove("highlight"));
+  // Klik kedua: pindahkan
+  else if (selectedSquare && square !== selectedSquare) {
+    const from = [parseInt(selectedSquare.dataset.x), parseInt(selectedSquare.dataset.y)];
+    const to = [x, y];
+
+    if (typeof makeMove === "function" && makeMove(from, to, currentPlayer)) {
+      movesHistory.push(`${selectedSquare.textContent} ${String.fromCharCode(97 + from[0])}${8 - from[1]} → ${String.fromCharCode(97 + to[0])}${8 - to[1]}`);
+      updateHistory();
+      currentPlayer = currentPlayer === "white" ? "black" : "white";
+      renderBoard(boardState);
+    }
+    clearHighlights();
+    selectedSquare = null;
+  } else {
+    clearHighlights();
+    selectedSquare = null;
   }
-
-  // ubah index ke koordinat (mis. 0 -> a8)
-  function indexToSquare(i) {
-    const files = "abcdefgh";
-    const rank = 8 - Math.floor(i / 8);
-    const file = files[i % 8];
-    return `${file}${rank}`;
-  }
-
-  // tombol event
-  btnReset.addEventListener("click", () => {
-    ChessEngine.reset();
-    render();
-  });
-  btnUndo.addEventListener("click", () => {
-    ChessEngine.undo();
-    render();
-  });
-  btnRedo.addEventListener("click", () => {
-    ChessEngine.redo();
-    render();
-  });
-  btnFlip.addEventListener("click", () => {
-    flipped = !flipped;
-    render();
-  });
-  btnBoardOnly.addEventListener("click", () => {
-    document.body.classList.toggle("board-only");
-  });
-  btnBack.addEventListener("click", () => {
-    document.body.classList.remove("board-only");
-  });
-
-  // mode pilihan
-  modeHuman.addEventListener("click", () => {
-    ChessEngine.setMode("human");
-    modeHuman.classList.add("active");
-    modeAI.classList.remove("active");
-    ChessEngine.reset();
-    render();
-  });
-  modeAI.addEventListener("click", () => {
-    ChessEngine.setMode("ai");
-    modeAI.classList.add("active");
-    modeHuman.classList.remove("active");
-    ChessEngine.reset();
-    render();
-  });
-
-  // tampilkan hasil checkmate / stalemate
-  function showResult(msg) {
-    const modal = document.getElementById("resultModal");
-    if (!modal) return;
-    modal.textContent = msg;
-    modal.classList.add("show");
-    setTimeout(() => modal.classList.remove("show"), 2500);
-  }
-
-  // public init
-  function init() {
-    drawBoard();
-    render();
-  }
-
-  return { init, render };
-})();
-
-// auto init setelah DOM siap
-window.addEventListener("DOMContentLoaded", () => {
-  if (window.ChessUI) ChessUI.init();
 });
+
+// Update riwayat langkah
+function updateHistory() {
+  moveHistoryEl.textContent = movesHistory.join("\n");
+}
+
+// Inisialisasi awal
+if (typeof initBoard === "function") {
+  initBoard();
+  renderBoard(boardState);
+}
