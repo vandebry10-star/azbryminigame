@@ -1,11 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess.com</title>
+
+  <!-- (opsional) tema kamu -->
   <link rel="stylesheet" href="assets/css/azbry.css">
   <link rel="stylesheet" href="assets/css/chess.css">
+
+  <!-- Fallback CSS supaya papan SELALU muncul walau file di atas gagal -->
+  <style>
+    :root{
+      --bg:#0b0d10; --ink:#e8f1e6;
+      --sq-light:#dff6c8; --sq-dark:#232a2b;
+      --accent:#b8ff9a; --ring:rgba(184,255,154,.22);
+    }
+    html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    header{max-width:1100px;margin:16px auto 6px;padding:0 14px}
+    header .badge{display:inline-block;font-weight:800;font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(184,255,154,.08);border:1px solid var(--ring);opacity:.9}
+    header h1{margin:10px 0 0;font-size:clamp(22px,4.5vw,36px);color:var(--accent);text-shadow:0 0 16px var(--ring)}
+    .game-container{max-width:1100px;margin:12px auto;padding:0 14px}
+    /* --- Board fallback --- */
+    .board{width:100%;max-width:820px;aspect-ratio:1/1;margin:10px auto;border-radius:18px;overflow:hidden;
+      box-shadow:0 12px 32px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06);
+      position:relative;background:#121617;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr)}
+    .square{position:relative}
+    .square.light{background:var(--sq-light)}
+    .square.dark{background:var(--sq-dark)}
+    .piece{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:clamp(26px,6.2vw,60px);line-height:1;user-select:none;pointer-events:none;
+      text-shadow:0 2px 10px rgba(0,0,0,.6)}
+    .piece.white{color:#f7fbf4}
+    .piece.black{color:#1c2122;filter:drop-shadow(0 0 3px rgba(0,0,0,.5)) brightness(2)}
+    /* last move / select / check */
+    .src::after,.dst::after,.sel::after,.check::after{
+      content:"";position:absolute;inset:6px;border-radius:10px;border:2px solid transparent;pointer-events:none}
+    .src::after{border-color:#88ffa6aa}
+    .dst::after{border-color:#88ffa6aa}
+    .sel::after{border-color:#88ffa6aa}
+    .check::after{border-color:#ff5b5baa; box-shadow:0 0 0 4px rgba(255,91,91,.15) inset}
+    /* letters / numbers (fallback) */
+    .board .file,.board .rank{
+      position:absolute;color:#a8b3ad;font-size:12px;font-weight:800;opacity:.7;pointer-events:none}
+    .board .file{bottom:6px;transform:translateX(-50%)}
+    .board .rank{left:6px;top:6px}
+    .controls{max-width:820px;margin:16px auto;display:grid;gap:10px}
+    .mode-buttons,.action-buttons{display:flex;flex-wrap:wrap;gap:10px}
+    button{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);
+      color:var(--ink);font-weight:800;cursor:pointer}
+    button.active, .accent{background:linear-gradient(180deg,#b8ff9a,#8ee887);color:#0b0d10;border:0}
+    .move-log{max-width:820px;margin:10px auto;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.03)}
+    .move-log h2{margin:0 0 8px}
+    #moveHistory{margin:0;white-space:pre-wrap}
+    .license{max-width:820px;margin:22px auto;text-align:center;opacity:.8}
+    .license .cta{display:inline-block;margin-top:8px;padding:10px 14px;border-radius:12px;text-decoration:none;
+      background:linear-gradient(180deg,#b8ff9a,#8ee887);color:#0b0d10;font-weight:800}
+    /* board-only */
+    body.board-only .controls, body.board-only .move-log, body.board-only .license{display:none}
+    body.board-only .board{max-width:min(96vw,1100px)}
+  </style>
 </head>
 <body>
   <header>
@@ -22,9 +76,8 @@
       <div class="mode-buttons">
         <button id="modeHuman" class="active">VS Player</button>
         <button id="modeAI">VS Azbry-MD</button>
-        <button id="btnReset">Muat Ulang</button>
+        <button id="btnReset" class="accent">Muat Ulang</button>
       </div>
-
       <div class="action-buttons">
         <button id="btnUndo">Undo</button>
         <button id="btnRedo">Redo</button>
@@ -43,18 +96,43 @@
 
   <footer class="license">
     <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
-    <a class="cta" href="https://azbry-portofolio.vercel.app" target="_blank">↗ Portofolio</a>
+    <a class="cta" href="https://azbry-portofolio.vercel.app" target="_blank" rel="noopener">↗ Portofolio</a>
   </footer>
 
   <!-- ========================== -->
   <!-- Script urutan WAJIB BENAR -->
   <!-- ========================== -->
 
-  <!-- 1) ENGINE (gunakan CDN biar pasti kebaca) -->
+  <!-- 1) ENGINE: chess.js via CDN → pastiin objek `Chess` ada -->
   <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
 
-  <!-- 2) UI dan 3) Controller -->
+  <!-- 2) UI + 3) Controller (punya kamu) -->
   <script src="assets/js/chess-ui.js"></script>
   <script src="assets/js/main.js"></script>
+
+  <!-- Tambahan kecil: kalau board/file/rank belum di-render oleh CSS luar, buat labelnya biar pasti muncul -->
+  <script>
+    (function ensureLabels(){
+      const board = document.getElementById('board');
+      if (!board) return;
+      // kalau grid-nya belum dibuat oleh main.js dalam 1s, kasih grid kosong supaya papan tetap kelihatan
+      setTimeout(()=>{
+        if (!board.children.length){
+          const files=['a','b','c','d','e','f','g','h'];
+          for(let r=8;r>=1;r--){
+            for(let f=0;f<8;f++){
+              const d=document.createElement('div');
+              d.className='square '+(((r+f)%2===0)?'light':'dark');
+              d.dataset.square=files[f]+r;
+              // file/rank label minimal (pojok bawah & kiri)
+              if(r===1){ const lab=document.createElement('span'); lab.className='file'; lab.style.left='50%'; lab.textContent=files[f]; d.appendChild(lab); }
+              if(f===0){ const lab=document.createElement('span'); lab.className='rank'; lab.textContent=r; d.appendChild(lab); }
+              board.appendChild(d);
+            }
+          }
+        }
+      }, 1000);
+    })();
+  </script>
 </body>
 </html>
