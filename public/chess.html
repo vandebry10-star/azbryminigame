@@ -68,5 +68,17 @@
 
   <!-- 3) Controller/renderer -->
   <script src="assets/js/main.js"></script>
+  <!-- Engine dari CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
+
+<!-- Wrapper kecil biar bisa dipanggil pakai new Chess() -->
+<script>
+  if (typeof window.Chess === "undefined" && window.chess && typeof window.chess.Chess === "function") {
+    window.Chess = window.chess.Chess;
+  }
+</script>
+
+<!-- Main logic -->
+<script src="assets/js/main.js"></script>
 </body>
 </html>
