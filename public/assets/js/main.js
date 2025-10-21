@@ -1,124 +1,129 @@
-/* Glue: hubungkan UI <-> Engine, tombol, history, flip */
+/* Azbry Chess Main (final) */
+(() => {
+  const $ = sel => document.querySelector(sel);
+  const boardEl   = $("#board");
+  const btnReset  = $("#btnReset");
+  const btnUndo   = $("#btnUndo");
+  const btnRedo   = $("#btnRedo");
+  const btnFlip   = $("#btnFlip");
+  const modeHuman = $("#modeHuman");
+  const modeAI    = $("#modeAI");
+  const logEl     = $("#moveHistory");
 
-(function(){
-  const elBoard   = document.getElementById('board');
-  const elReset   = document.getElementById('btnReset');
-  const elUndo    = document.getElementById('btnUndo');
-  const elRedo    = document.getElementById('btnRedo');
-  const elFlip    = document.getElementById('btnFlip');
-  const elHist    = document.getElementById('moveHistory');
-  const btnModeH  = document.getElementById('modeHuman');
-  const btnModeAI = document.getElementById('modeAI');
+  const eng = new AZ_Engine();
+  const ui  = new AZ_UI(boardEl, onSquare);
+  let mode = "human";           // "human" | "ai"
+  let srcIdx = null;            // asal klik
+  let redoStack = [];
 
-  // engine wajib sudah ada
-  const engine = new ChessEngine();
-  const ui = new ChessUI(elBoard, onSquareClick);
+  function sync(){
+    const legal = srcIdx!=null ? eng.legalMoves().filter(m=>m.from===srcIdx) : [];
+    ui.render(eng.squares, eng.lastMove, legal, srcIdx);
+    logEl.textContent = movesSAN().join("  ") || "–";
+  }
+  function movesSAN(){
+    // stack -> simple “e2-e4”
+    return eng.stack.map(m=>{
+      const a = idx2algebra(m.from), b=idx2algebra(m.to);
+      return `${a} → ${b}`;
+    });
+  }
+  function idx2algebra(i){
+    const file = "abcdefgh"[i%8];
+    const rank = 8 - Math.floor(i/8);
+    return file+rank;
+  }
 
-  // state klik
-  let selected = null;
-  let legalCache = [];
+  function onSquare(idx){
+    // kalau lagi nunggu AI, jangan ganggu
+    if(mode==="ai" && eng.getTurn()==='b') return;
 
-  // mode
-  let mode = 'human'; // 'human' | 'ai'
-
-  // ----- init -----
-  refreshAll();
-
-  // ----- handlers tombol -----
-  elReset?.addEventListener('click', ()=>{
-    engine.reset();
-    selected = null; legalCache = [];
-    refreshAll(true);
-  });
-
-  elUndo?.addEventListener('click', ()=>{
-    if(engine.undo) {
-      engine.undo();
-      selected = null; legalCache = [];
-      refreshAll();
-    }
-  });
-
-  elRedo?.addEventListener('click', ()=>{
-    if(engine.redo) {
-      engine.redo();
-      selected = null; legalCache = [];
-      refreshAll();
-    }
-  });
-
-  elFlip?.addEventListener('click', ()=>{
-    ui.setFlip(!ui.flipped);
-  });
-
-  btnModeH?.addEventListener('click', () => { mode='human'; btnModeH.classList.add('active'); btnModeAI?.classList.remove('active'); });
-  btnModeAI?.addEventListener('click', () => { mode='ai';    btnModeAI.classList.add('active'); btnModeH?.classList.remove('active'); });
-
-  // ----- klik papan -----
-  function onSquareClick(idx){
-    // kalau ada legal list dan idx ada di dalam -> eksekusi move
-    if(selected!=null && legalCache.includes(idx)){
-      const res = engine.move(selected, idx);
-      selected=null; legalCache=[];
-      refreshAll();
-
-      // langkah AI (sederhana): langsung minta engine pilih
-      if(mode==='ai' && engine.bestMove){
-        const ai = engine.bestMove(); // {from,to}
-        if(ai){
-          engine.move(ai.from, ai.to, {ai:true});
-          refreshAll();
-        }
+    // pilih / gerak
+    if(srcIdx==null){
+      const p = eng.at(idx);
+      if(p==='.' ) return;
+      // hanya boleh pilih piece warna turn
+      if(eng.getTurn()==='w' && !/[A-Z]/.test(p)) return;
+      if(eng.getTurn()==='b' && !/[a-z]/.test(p)) return;
+      srcIdx = idx;
+    }else{
+      const legal = eng.legalMoves().filter(m=>m.from===srcIdx && m.to===idx);
+      if(legal.length){
+        redoStack.length=0;
+        eng.makeMove(srcIdx, idx);
+        srcIdx=null;
+        afterMove();
+      }else{
+        // ganti sumber
+        const p = eng.at(idx);
+        if(p!=='.'){
+          if(eng.getTurn()==='w' && /[A-Z]/.test(p)) { srcIdx=idx; }
+          else if(eng.getTurn()==='b' && /[a-z]/.test(p)) { srcIdx=idx; }
+          else srcIdx=null;
+        }else srcIdx=null;
       }
-      return;
     }
-
-    // pilih kotak sebagai sumber
-    // cek apakah bidak milik side yang jalan
-    const bd = engine.board();
-    const piece = bd[idx];
-    if(!piece) { selected=null; legalCache=[]; ui.clearMarks(); return; }
-    const turn = engine.turn && engine.turn() || 'w';
-    const isWhite = piece && piece[0]==='w';
-    if((turn==='w' && !isWhite) || (turn==='b' && isWhite)) return;
-
-    selected = idx;
-    ui.clearMarks();
-    ui.markSource(idx);
-
-    // dapatkan langkah legal
-    legalCache = (engine.legalMovesFrom ? engine.legalMovesFrom(idx) : []) || [];
-    ui.markMoves(legalCache);
+    sync();
   }
 
-  // ----- render ulang -----
-  function refreshAll(resetHistory=false){
-    ui.render(engine.board());
-
-    ui.clearMarks();
-    const last = (engine.lastMove && engine.lastMove()) || null;
-    if(last) ui.markLast(last.from, last.to);
-
-    // status akhir
-    if(engine.isCheckmate && engine.isCheckmate()){
-      pushHistory("Checkmate! " + (engine.turn()==='w' ? "Hitam menang" : "Putih menang"));
-      return;
+  function afterMove(){
+    const res = eng.result();
+    if(res){
+      toast(res);
+      sync(); return;
     }
-    if(engine.isStalemate && engine.isStalemate()){
-      pushHistory("Seri (Stalemate)");
-      return;
+    if(mode==="ai" && eng.getTurn()==='b'){
+      setTimeout(()=>{
+        const mv = eng.aiMove(2);  // depth ringan
+        if(mv){ eng.makeMove(mv.from,mv.to); }
+        const r2=eng.result(); if(r2) toast(r2);
+        sync();
+      }, 220);
     }
-
-    if(resetHistory) { elHist && (elHist.textContent = "—"); }
   }
 
-  // ----- sejarah langkah -----
-  function pushHistory(text){
-    if(!elHist) return;
-    if(elHist.textContent === "—") elHist.textContent = "";
-    elHist.textContent += (elHist.textContent ? "\n" : "") + text;
+  function toast(msg){
+    // tampilkan hasil ke riwayat paling akhir
+    const arr = movesSAN();
+    arr.push(`[${msg}]`);
+    logEl.textContent = arr.join("  ");
   }
 
-  // Expose kecil untuk debug di console
-  window.__az = {engine, ui};
+  // buttons
+  btnReset.addEventListener("click", ()=>{
+    eng.loadFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    srcIdx=null; redoStack.length=0; sync();
+  });
+  btnUndo.addEventListener("click", ()=>{
+    if(!eng.stack.length) return;
+    redoStack.push(eng.stack[eng.stack.length-1]);
+    eng.undo(); srcIdx=null; sync();
+  });
+  btnRedo.addEventListener("click", ()=>{
+    const last = redoStack.pop(); if(!last) return;
+    eng.makeMove(last.from,last.to); srcIdx=null; sync();
+  });
+  btnFlip.addEventListener("click", ()=>{ ui.flip(); sync(); });
+
+  modeHuman.addEventListener("click", ()=>{
+    mode="human";
+    modeHuman.classList.add("active");
+    modeAI.classList.remove("active");
+    srcIdx=null; sync();
+  });
+  modeAI.addEventListener("click", ()=>{
+    mode="ai";
+    modeAI.classList.add("active");
+    modeHuman.classList.remove("active");
+    srcIdx=null; sync();
+    // kalau AI kebagian jalan dulu (hitam), biar manusia putih
+    if(eng.getTurn()==='b'){
+      const mv = eng.aiMove(2);
+      if(mv){ eng.makeMove(mv.from,mv.to); }
+      sync();
+    }
+  });
+
+  // init
+  sync();
 })();
