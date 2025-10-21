@@ -1,42 +1,70 @@
-// =====================================================
-// Azbry Chess Main — wiring tombol & mode
-// =====================================================
-import { initUI, newGame, setModeAI, undoOne, redoOne } from './chess-ui.js';
+/* ===========================
+   Azbry Chess — main.js (FIX)
+   =========================== */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initUI();
+// Pastikan semua modul sudah terload
+window.addEventListener("DOMContentLoaded", () => {
+  console.log("[Azbry Chess] Initializing main.js");
 
-  // Mode
-  const btnHuman = document.getElementById('modeHuman');
-  const btnAI    = document.getElementById('modeAI');
+  // Pastikan engine tersedia
+  if (!window.ChessEngine) {
+    console.error("[Azbry Chess] ChessEngine tidak ditemukan!");
+  } else {
+    console.log("[Azbry Chess] ChessEngine ready ✅");
+  }
 
-  btnHuman?.addEventListener('click', () => {
-    btnHuman.classList.add('active');
-    btnAI?.classList.remove('active');
-    setModeAI(false);
+  // Tombol global
+  const app = document.querySelector("#chess-app");
+  const btnFlip = document.querySelector("#btnFlip");
+  const btnBoardOnly = document.querySelector("#btnBoardOnly");
+  const btnBack = document.querySelector("#btnBack");
+
+  // ===== Flip Board =====
+  if (btnFlip) {
+    btnFlip.addEventListener("click", () => {
+      const board = document.querySelector("#board");
+      if (board) {
+        board.classList.toggle("flip");
+        console.log("[Azbry Chess] Flip board toggled");
+      }
+    });
+  }
+
+  // ===== Board Only Mode =====
+  if (btnBoardOnly) {
+    btnBoardOnly.addEventListener("click", () => {
+      app.classList.toggle("board-only");
+      console.log("[Azbry Chess] Board only mode:", app.classList.contains("board-only"));
+    });
+  }
+
+  // ===== Tombol Kembali =====
+  if (btnBack) {
+    btnBack.addEventListener("click", () => {
+      // kalau diembed di minigame hub, balik ke index.html
+      if (window.location.pathname.includes("chess")) {
+        window.location.href = "../index.html";
+      } else {
+        history.back();
+      }
+    });
+  }
+
+  // ===== Keyboard shortcut (optional) =====
+  document.addEventListener("keydown", (e) => {
+    if (e.key.toLowerCase() === "r") {
+      const btnReset = document.querySelector("#btnReset");
+      btnReset && btnReset.click();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "z") {
+      const btnUndo = document.querySelector("#btnUndo");
+      btnUndo && btnUndo.click();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "y") {
+      const btnRedo = document.querySelector("#btnRedo");
+      btnRedo && btnRedo.click();
+    }
   });
 
-  btnAI?.addEventListener('click', () => {
-    btnAI.classList.add('active');
-    btnHuman?.classList.remove('active');
-    setModeAI(true);
-  });
-
-  // Kontrol
-  document.getElementById('btnReset')?.addEventListener('click', newGame);
-  document.getElementById('btnUndo') ?.addEventListener('click', undoOne);
-  document.getElementById('btnRedo') ?.addEventListener('click', redoOne);
-  document.getElementById('btnFlip') ?.addEventListener('click', () => {
-    document.getElementById('board')?.classList.toggle('flip');
-  });
-
-  // Tampilan (board only / kembali)
-  document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
-    document.body.classList.toggle('board-only');
-  });
-
-  document.getElementById('btnBack')?.addEventListener('click', () => {
-    if (history.length > 1) history.back();
-    else location.href = 'index.html';
-  });
+  console.log("[Azbry Chess] Main initialized 🚀");
 });
