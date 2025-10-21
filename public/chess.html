@@ -1,84 +1,99 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Azbry Chess • AZBRY-MD • BOARD</title>
+  <title>Azbry Chess</title>
 
-  <!-- Tema global Azbry -->
-  <link rel="stylesheet" href="/assets/css/azbry.css?v=3" />
+  <!-- Tema Azbry kamu -->
+  <link rel="stylesheet" href="/assets/css/azbry.css?v=4" />
 
   <style>
-    /* Sentuhan kecil layout halaman ini saja (tema utama dari azbry.css) */
-    .container{max-width:980px;margin:0 auto;padding:16px;}
-    .top-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px}
-    .tag{font-size:.8rem;font-weight:800;color:var(--muted);letter-spacing:.12em;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:6px 10px;border-radius:999px}
-    .top-header h1{margin:0;font-size:2.2rem;line-height:1.1;color:var(--accent);text-shadow:0 0 14px var(--ring)}
-    .mode-picker{display:flex;gap:10px;margin:10px 0 18px}
-    .seg{appearance:none;border:0;border-radius:14px;padding:10px 14px;font-weight:800;
-         color:var(--text);background:var(--panel);box-shadow:0 1px 0 1px rgba(255,255,255,.03) inset,0 8px 24px rgba(0,0,0,.25)}
-    .seg.active{background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--bg)}
-    .board-wrap{background:var(--panel);border-radius:22px;padding:18px;
-      box-shadow:0 0 0 1px rgba(255,255,255,.05) inset, 0 26px 60px rgba(0,0,0,.35)}
-    .board{aspect-ratio:1/1;user-select:none;touch-action:manipulation}
-    .panel{margin-top:18px;background:var(--panel);border-radius:18px;padding:16px;
-      box-shadow:0 0 0 1px rgba(255,255,255,.05) inset}
-    .controls{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{appearance:none;border:0;border-radius:12px;padding:10px 14px;font-weight:800;background:var(--panel-2);color:var(--text)}
-    .btn.accent{background:linear-gradient(180deg,var(--accent),var(--accent2));color:var(--bg)}
-    .btn.dark{background:#0f1216;border:1px solid rgba(255,255,255,.06)}
-    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
-    .move-log{margin-top:14px}
-    .move-log h4{margin:0 0 8px 0;color:var(--muted)}
-    pre#moveHistory{margin:0;white-space:pre-wrap;word-break:break-word;color:var(--text)}
-    /* Toast minimal */
-    .az-toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#0f1216;border:1px solid rgba(255,255,255,.08);color:var(--text);padding:10px 14px;border-radius:12px;z-index:10000}
+    /* Tambahan kecil agar bidak jelas & tidak “nyatu” dengan kotak */
+    .board-wrap{max-width:980px;margin-inline:auto}
+    .chess-board{
+      width:min(92vw, 720px);
+      aspect-ratio:1/1;
+      display:grid;
+      grid-template-columns:repeat(8,1fr);
+      border-radius:18px;
+      box-shadow:0 10px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+      overflow:hidden;
+      background:var(--panel);
+      margin:8px auto 18px;
+      touch-action:none;
+      position:relative;
+    }
+    .square{display:flex;align-items:center;justify-content:center;position:relative}
+    .square.dark{background:#2d3136}
+    .square.light{background:#e9edf2}
+    .square .piece{
+      font-size:clamp(26px, 6.4vw, 64px);
+      line-height:1;
+      text-shadow: 0 1px 0 rgba(0,0,0,.2), 0 0 8px rgba(0,0,0,.15);
+      user-select:none; pointer-events:none;
+    }
+    .square.dark .piece.w{filter:drop-shadow(0 0 1px rgba(0,0,0,.35));}
+    .square.light .piece.b{filter:drop-shadow(0 0 1px rgba(0,0,0,.25));}
+    .square.src{outline:3px solid #73ff76; outline-offset:-3px}
+    .square.last{box-shadow:inset 0 0 0 3px rgba(166,229,121,.9)}
+    .square .hint{
+      position:absolute; width:22%; height:22%;
+      border-radius:50%; background:#9dff93cc;
+      box-shadow:0 0 12px #9dff93aa;
+    }
+    .panel{gap:12px}
+    .btn{min-width:112px}
+    pre#moveHistory{white-space:pre-wrap;min-height:44px}
   </style>
 </head>
 <body>
-  <main id="chess-app" class="container">
-    <!-- HEADER -->
-    <header class="top-header">
+<main id="chess-app" class="container">
+
+  <!-- HEADER -->
+  <header class="top-header">
+    <div class="title">
       <span class="tag">AZBRY-MD • BOARD</span>
       <h1>Azbry Chess</h1>
-    </header>
+    </div>
+  </header>
 
-    <!-- MODE PICKER -->
-    <div class="mode-picker" aria-label="Pilih Mode">
-      <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-      <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
+  <!-- MODE -->
+  <div class="mode-picker" aria-label="Pilih Mode">
+    <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
+    <button id="modeAI" class="seg" type="button" aria-label="Mode vs Azbry-MD">vs Azbry-MD</button>
+  </div>
+
+  <!-- BOARD -->
+  <section class="board-wrap" aria-label="Papan Catur">
+    <div id="board" class="chess-board" aria-label="Board"></div>
+  </section>
+
+  <!-- PANEL -->
+  <section class="panel" aria-label="Kontrol">
+    <div class="controls">
+      <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+      <button id="btnUndo"  class="btn" type="button">Undo</button>
+      <button id="btnRedo"  class="btn" type="button">Redo</button>
+      <button id="btnFlip"  class="btn dark" type="button">Flip Board</button>
     </div>
 
-    <!-- BOARD -->
-    <section class="board-wrap" aria-label="Papan Catur">
-      <div id="board" class="board"></div>
-    </section>
+    <div class="move-log">
+      <h4>Riwayat Langkah</h4>
+      <pre id="moveHistory">–</pre>
+    </div>
+  </section>
 
-    <!-- CONTROL PANEL -->
-    <section class="panel" aria-label="Kontrol Permainan">
-      <div class="controls">
-        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-        <button id="btnUndo" class="btn" type="button">Undo</button>
-        <button id="btnRedo" class="btn" type="button">Redo</button>
-        <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
-      </div>
+  <!-- LICENSE -->
+  <footer class="license">
+    <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
+    <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
+  </footer>
+</main>
 
-      <div class="move-log">
-        <h4>Riwayat Langkah</h4>
-        <pre id="moveHistory">—</pre>
-      </div>
-    </section>
-
-    <!-- FOOTER RINGKAS -->
-    <footer class="footer">
-      <small class="tag">Lisensi MIT • © 2025 Azbry-MD</small>
-      <small class="tag">Dikelola oleh <b>FebryWesker</b></small>
-    </footer>
-  </main>
-
-  <!-- URUTAN SCRIPT (wajib) -->
-  <script src="/assets/js/chess-engine.js"></script>
-  <script src="/assets/js/chess-ui.js"></script>
-  <script src="/assets/js/main.js"></script>
+<!-- Urutan wajib -->
+<script src="/assets/js/chess-engine.js?v=5"></script>
+<script src="/assets/js/chess-ui.js?v=5"></script>
+<script src="/assets/js/main.js?v=5"></script>
 </body>
 </html>
