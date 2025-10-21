@@ -1,162 +1,28 @@
-/* ===========================
-   Azbry Chess — chess.css
-   =========================== */
+/* ==== PERBAIKAN TAMPILAN PAPAN CATUR AZBRY CHESS ==== */
 
-:root{
-  --azbry-accent: #b8ff9a;
-  --ink: #e7ebf2;
-  --muted: #9aa3af;
-  --bg: #0c0f12;
-  --panel: #12161b;
-  --panel-2: #0f1317;
-  --ring: rgba(184,255,154,.16);
-  --dark: #1e232b;
-  --light: #e7ebf2;
-  --square-light: #e5e9ef;
-  --square-dark: #3d434c;
-  --highlight: #b8ff9a33;
-  --select: #b8ff9a66;
-}
-
-/* Layout umum */
-.container{
-  width: min(1200px, 94vw);
-  margin: 24px auto 80px;
-}
-
-.top-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:16px;
-}
-.tag{
-  display:inline-flex;align-items:center;gap:8px;
-  font-size:.85rem;color:var(--muted);
-  background:linear-gradient(180deg,#171b20,#111519);
-  padding:6px 10px;border-radius:999px;border:1px solid #1d232a;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
-}
-h1{margin:8px 0 0;font-weight:800;color:var(--light);letter-spacing:.2px}
-
-/* Mode picker */
-.mode-picker{
-  display:flex;gap:10px;margin:12px 0 14px;
-}
-.mode-picker .seg{
-  appearance:none;border:0;cursor:pointer;
-  padding:10px 14px;border-radius:12px;
-  background:linear-gradient(180deg,#1a2027,#14191f);
-  color:var(--ink);font-weight:700;letter-spacing:.2px;
-  border:1px solid #232a33;
-  box-shadow:0 10px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.03);
-}
-.mode-picker .seg.active{
-  background:linear-gradient(180deg,var(--azbry-accent),#8ee887);
-  color:#0a0c0e;border-color:#7dde70;
-}
-
-/* Board wrapper */
-.board-wrap{
-  background:linear-gradient(180deg,#141a20,#0f1317);
-  padding:18px;border-radius:22px;border:1px solid #1e252d;
-  box-shadow: 0 14px 40px rgba(0,0,0,.40), 0 0 0 4px var(--ring);
-}
-
-/* Grid papan */
-.board {
-  width: 100%;
-  max-width: min(92vw, 700px);
-  margin: auto;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  background: #0d1116;
-  border-radius: 16px;
-  overflow: hidden;
-  aspect-ratio: 1 / 1;
-  user-select: none;
-  touch-action: manipulation;
-}
-
-/* Satu kotak */
-.square {
-  width: 100%;
-  height: 100%;
+#chess-board-wrap {
   display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: clamp(20px, 4.5vw, 44px);
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.1s ease, box-shadow 0.1s ease;
-}
-.square.light{ background: var(--square-light); color:#111; }
-.square.dark{  background: var(--square-dark);  color:#fff; }
-.square.white-piece, .square.black-piece{ /* hanya untuk font anti geser */ }
-
-.square.highlight{
-  box-shadow: inset 0 0 0 4px var(--highlight);
-}
-.square.selected{
-  box-shadow: inset 0 0 0 4px var(--select);
 }
 
-/* Panel kontrol */
-.panel{
-  background:linear-gradient(180deg,#141a20,#0f1317);
-  border:1px solid #1d232a;border-radius:20px;
-  box-shadow:0 14px 40px rgba(0,0,0,.35);
-  margin-top:18px;padding:16px;
-}
-.controls{
-  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
-}
-.btn{
-  appearance:none;border:0;border-radius:12px;cursor:pointer;
-  padding:10px 14px;font-weight:800;letter-spacing:.2px;
-  background:linear-gradient(180deg,#1a2027,#14191f);
-  color:var(--ink);border:1px solid #232a33;
-  box-shadow:0 10px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.03);
-}
-.btn.accent{
-  background:linear-gradient(180deg,var(--azbry-accent),#8ee887);
-  color:#0a0c0e;border-color:#7dde70;
-}
-.btn.dark{background:linear-gradient(180deg,#151a20,#0f1317)}
-
-/* Log langkah */
-.move-log{margin-top:14px}
-.move-log h4{margin:0 0 6px;color:var(--muted);font-weight:800}
-#moveHistory{
-  min-height:80px;white-space:pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-size:.95rem;color:var(--ink);
-  background:var(--panel-2);border-radius:12px;padding:12px;border:1px solid #1d232a;
-}
-
-/* Footer tombol */
-.footer{
-  display:flex;justify-content:space-between;gap:12px;margin-top:14px;
-}
-.left-btn,.mid-btn,.right-btn{display:flex;gap:10px}
-
-/* Board-only mode (sembunyikan panel bawah) */
-.board-only .panel, .board-only .footer { display:none; }
-.board-only .board-wrap { margin-bottom: 28px; }
-
-/* ==== HARD FIX BOARD & SQUARES (override) ==== */
-
-#board.board {
+/* Bentuk papan 8x8 sempurna */
+#board.chess-board {
   display: grid !important;
   grid-template-columns: repeat(8, 1fr) !important;
   grid-auto-rows: 1fr !important;
+
   width: min(92vw, 680px) !important;
   aspect-ratio: 1 / 1 !important;
+
   margin: 0 auto !important;
   border-radius: 16px;
   overflow: hidden;
+  box-shadow: 0 0 25px rgba(0, 255, 100, 0.1);
 }
 
-#board.board .square {
+/* Kotak catur */
+#board.chess-board > div,
+#board.chess-board .square {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -166,36 +32,35 @@ h1{margin:8px 0 0;font-weight:800;color:var(--light);letter-spacing:.2px}
   line-height: 1 !important;
   user-select: none;
   -webkit-user-select: none;
+  transition: background 0.15s ease-in-out;
 }
 
-#board.board .square.light { background: #dce1e6 !important; }
-#board.board .square.dark  { background: #3a3f46 !important; }
-
-#board.board .square .piece,
-#board.board .square { 
-  font-size: clamp(18px, 4.8vw, 44px) !important;
+/* Warna kotak terang dan gelap */
+#board.chess-board .light,
+#board.chess-board > div.light {
+  background: #dce1e6 !important;
 }
 
-/* Modal hasil */
-#resultModal{
-  position:fixed;left:50%;top:24px;transform:translateX(-50%);
-  background:linear-gradient(180deg,#151a20,#0f1317);
-  color:var(--ink);padding:12px 16px;border-radius:12px;
-  border:1px solid #26303a;box-shadow:0 16px 40px rgba(0,0,0,.5);
-  opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;
-  z-index:10000;
-}
-#resultModal.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
-
-/* Responsif */
-@media (min-width: 900px){
-  .board{ max-width: 760px; }
-}
-@media (max-width: 520px){
-  .controls{ gap:8px }
-  .btn{ padding:9px 12px }
-  .board-wrap{ padding:12px }
+#board.chess-board .dark,
+#board.chess-board > div.dark {
+  background: #2a2d33 !important;
 }
 
-/* Pastikan papan terlihat (kalau ada CSS global lain) */
-#board{ display:grid !important; visibility:visible !important; }
+/* Bidak catur */
+#board.chess-board .piece,
+#board.chess-board > div {
+  font-size: clamp(20px, 4.5vw, 46px) !important;
+  color: #fff;
+}
+
+/* Highlight saat dipilih */
+#board.chess-board .highlight {
+  background: rgba(0, 255, 140, 0.25) !important;
+}
+
+/* Responsif biar pas di HP */
+@media (max-width: 480px) {
+  #board.chess-board {
+    width: 94vw !important;
+  }
+}
