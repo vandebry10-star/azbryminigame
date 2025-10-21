@@ -1,4 +1,4 @@
-/* ===================== Chess board (Azbry Theme - CLEAN FIX) ===================== */
+/* ===================== Azbry Chess — Visual Clarity FIX ===================== */
 
 .board {
   display: grid;
@@ -13,9 +13,9 @@
               inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* Warna petak (kontras tinggi tapi halus) */
-.sq.light { background: #E9EEF7; }
-.sq.dark  { background: #181C27; }
+/* --- Warna papan --- */
+.sq.light { background: #E8EEF6; }  /* terang kebiruan */
+.sq.dark  { background: #12161F; }  /* gelap kebiruan, biar kontras tapi gak silau */
 
 .sq {
   position: relative;
@@ -27,24 +27,23 @@
   font-size: clamp(42px, 9vw, 76px);
 }
 
-/* Bidak dua sisi saling berhadapan */
+/* --- Bidak terlihat jelas di semua warna --- */
 .piece {
   line-height: 1;
-  text-shadow: none;
   filter: none;
   -webkit-text-stroke: 0;
 }
 
-/* Putih bersih */
+/* Putih bersih tapi gak silau */
 .piece.white {
   color: #ffffff;
-  text-shadow: 0 0 3px rgba(0,0,0,.15);
+  text-shadow: 0 0 4px rgba(0,0,0,.25), 0 0 8px rgba(184,255,154,.2);
 }
 
-/* Hitam hadap bawah */
+/* Hitam dibuat terang — warna hijau-biru neon */
 .piece.black {
-  color: #0b0f13;
-  text-shadow: 0 0 3px rgba(255,255,255,.15);
+  color: #9dffcf; /* terang tapi masih beda dari putih */
+  text-shadow: 0 0 6px rgba(57,255,20,.4), 0 0 10px rgba(0,255,150,.3);
   transform: rotate(180deg);
 }
 
@@ -52,13 +51,13 @@
 .sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
 .sq.last { box-shadow: inset 0 0 0 4px rgba(184,255,154,.3); }
 
-/* Indikasi langkah legal */
+/* Titik langkah legal */
 .dot {
   position: absolute;
   width: 36%;
   height: 36%;
   border-radius: 50%;
-  background: rgba(184,255,154,.4);
+  background: rgba(184,255,154,.45);
   outline: 3px solid rgba(184,255,154,.2);
 }
 
