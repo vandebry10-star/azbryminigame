@@ -1,113 +1,61 @@
 <!doctype html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Azbry Chess</title>
-  <style>
-    :root{
-      --bg:#0e1115;--panel:#141820;--ring:#21303e;
-      --text:#e8f0f7;--muted:#a8b3c5;--accent:#b2f29b;--accent2:#7fe0a0;
-      --dark:#242a34;--light:#f4f6fa;--hl:#aef39c33;--hl2:#aef39c55;
-    }
-    body{margin:0;background:#0b0f14;color:var(--text);font-family:Inter,system-ui,sans-serif}
-    .container{max-width:1100px;margin:24px auto;padding:0 16px}
-    .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-    .tag{font-size:12px;letter-spacing:.14em;color:var(--muted);background:#10161e;border:1px solid #1b2430;border-radius:999px;padding:6px 10px}
-    h1{margin:0;font-size:28px;color:var(--accent)}
-
-    /* SHELL BOARD */
-    .board-shell{
-      background:linear-gradient(180deg,#111822,#0a1016 40%,#070c12);
-      border:2px solid #2e3b4b;border-radius:28px;padding:22px;
-      box-shadow:0 10px 40px rgba(0,0,0,.65), inset 0 0 0 2px rgba(150,255,150,.07);
-    }
-
-    /* Papan WAJIB class ini: .chess-board  */
-    .chess-board{
-      width:100%;aspect-ratio:1/1;display:grid;
-      grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
-      border-radius:20px;overflow:hidden;border:1px solid #1e2834;background:#0f141a;
-    }
-    .sq{display:flex;align-items:center;justify-content:center;
-        font-size:clamp(34px,7.5vw,72px); /* bidak lebih BESAR */
-        user-select:none;cursor:pointer}
-    .light{background:var(--light)}
-    .dark{background:var(--dark)}
-
-    /* Bidak */
-    .piece{filter:drop-shadow(0 1px 1px #0006) drop-shadow(0 2px 4px #0006)}
-    .piece.white{color:#fff;text-shadow:0 0 6px #aef39c77,0 0 14px #aef39c55}
-    .piece.black{color:#0f1216}
-
-    /* Highlight langkah */
-    .sq.sel{box-shadow:inset 0 0 0 4px var(--hl2)}
-    .sq.move{box-shadow:inset 0 0 0 4px var(--hl)}
-    .sq.dot::after{content:"";width:26%;height:26%;border-radius:50%;background:var(--hl2)}
-
-    /* Panel & tombol */
-    .panel{background:#141820;border:1px solid #1b2532;padding:14px;border-radius:18px}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
-    .grid2{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-    .btn{border:1px solid #253242;border-radius:12px;padding:10px 14px;cursor:pointer;transition:.15s}
-    .btn.accent{background:var(--accent);color:#0d130d;border-color:#93f07f}
-    .btn.dark{background:#0f141c;color:var(--text)}
-    .btn:hover{transform:translateY(-1px)}
-    .log{margin:10px 0 0;background:#0f141c;border:1px solid #1b2532;border-radius:12px;padding:12px;min-height:56px}
-
-    /* Board Only */
-    .board-only .panel, .board-only .segrow{display:none}
-    .bo-exit{position:fixed;left:12px;bottom:12px;z-index:10000;display:none;
-      padding:10px 14px;border-radius:999px;background:linear-gradient(180deg,var(--accent),var(--accent2));
-      color:#0d130d;border:none;font-weight:800;box-shadow:0 10px 30px #0008}
-    .board-only .bo-exit{display:inline-flex}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chess Test</title>
+<style>
+body{background:#0b0d10;color:#e6f0ff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+#board{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  width:90vmin;
+  aspect-ratio:1/1;
+  border:3px solid #39ff14;
+  border-radius:12px;
+  overflow:hidden;
+}
+.sq{
+  display:flex;align-items:center;justify-content:center;font-size:6vmin;user-select:none
+}
+.light{background:#f4f6fa}
+.dark{background:#2a3037}
+.white{color:#fff;text-shadow:0 0 8px #aef39c99,0 0 16px #aef39c66}
+.black{color:#111}
+</style>
 </head>
 <body>
-  <main class="container">
-    <div class="top">
-      <span class="tag">AZBRY-MD • BOARD</span>
-      <h1>Azbry Chess</h1>
-    </div>
-
-    <!-- Mode picker -->
-    <div class="segrow" role="tablist" aria-label="Pilih Mode" style="display:flex;gap:10px;margin-bottom:12px">
-      <button id="modeHuman" class="btn accent" type="button">vs Human (Local)</button>
-      <button id="modeAI" class="btn dark" type="button">vs Azbry-MD</button>
-    </div>
-
-    <!-- BOARD -->
-    <section class="board-shell" id="chess-board-wrap" aria-label="Papan Catur">
-      <!-- Wajib id & class ini: -->
-      <div id="board" class="chess-board"></div>
-    </section>
-
-    <!-- Panel kontrol -->
-    <section class="panel" aria-label="Kontrol Permainan">
-      <div class="row">
-        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-        <button id="btnUndo"  class="btn dark"   type="button">Undo</button>
-        <button id="btnRedo"  class="btn dark"   type="button">Redo</button>
-        <button id="btnFlip"  class="btn dark"   type="button">Flip Board</button>
-      </div>
-
-      <div class="grid2">
-        <div style="color:#9eb3c7">Riwayat Langkah</div>
-        <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
-      </div>
-      <pre id="moveLog" class="log">–</pre>
-
-      <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button id="btnBack" class="btn dark" type="button">Kembali</button>
-      </div>
-    </section>
-  </main>
-
-  <button id="btnExitBO" class="bo-exit" type="button">Kembali</button>
-
-  <!-- URUTAN SCRIPT (WAJIB) -->
-  <script src="assets/js/chess-engine.js"></script>
-  <script src="assets/js/chess-ui.js"></script>
-  <script src="assets/js/main.js"></script>
+<div id="board"></div>
+<script>
+const board=document.getElementById("board");
+const PIECE={
+  K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",
+  k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"
+};
+const layout=[
+  "rnbqkbnr",
+  "pppppppp",
+  "........",
+  "........",
+  "........",
+  "........",
+  "PPPPPPPP",
+  "RNBQKBNR"
+];
+for(let r=0;r<8;r++){
+  for(let c=0;c<8;c++){
+    const sq=document.createElement("div");
+    sq.className="sq "+((r+c)%2?"dark":"light");
+    const ch=layout[r][c];
+    if(ch!=="."){
+      const span=document.createElement("span");
+      span.textContent=PIECE[ch];
+      span.className="piece "+(ch===ch.toUpperCase()?"white":"black");
+      sq.appendChild(span);
+    }
+    board.appendChild(sq);
+  }
+}
+</script>
 </body>
 </html>
