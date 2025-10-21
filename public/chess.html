@@ -5,50 +5,58 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess</title>
 
-  <!-- Tema umum (opsional) -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=final1" />
+  <!-- Styles (tema umum + styling papan) -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=fix3">
+  <link rel="stylesheet" href="assets/css/chess.css?v=fix3">
 
-  <!-- Chess CSS -->
-  <link rel="stylesheet" href="assets/css/chess.css?v=final1" />
+  <!-- Hardening kecil biar gak ada overlay tak sengaja -->
+  <style>
+    /* pastikan tidak ada strip/header menutupi board */
+    .top-strip, .debug-strip { display:none !important; }
+    /* container dasar */
+    body { overscroll-behavior: none; }
+    #board { touch-action: none; } /* drag di mobile tidak scroll halaman */
+  </style>
 </head>
 <body>
 <main id="chess-app" class="container">
 
   <!-- HEADER -->
-  <header class="top-header">
+  <header class="top-header" aria-label="Judul Halaman">
     <div class="title">
       <span class="tag">AZBRY-MD • BOARD</span>
       <h1>Azbry Chess</h1>
     </div>
   </header>
 
-  <!-- MODE -->
+  <!-- MODE PICKER -->
   <div class="mode-picker" aria-label="Pilih Mode">
     <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-    <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
+    <button id="modeAI" class="seg" type="button" title="Mode vs Azbry-MD">vs Azbry-MD</button>
   </div>
 
   <!-- BOARD -->
   <section class="board-wrap" aria-label="Papan Catur">
-    <div id="board" class="board" aria-label="Board"></div>
+    <!-- Penting: id="board" + class="board" -->
+    <div id="board" class="board" role="grid" aria-label="Board"></div>
   </section>
 
-  <!-- PANEL -->
+  <!-- CONTROL PANEL -->
   <section class="panel" aria-label="Kontrol Permainan">
     <div class="controls">
       <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-      <button id="btnUndo" class="btn" type="button">Undo</button>
-      <button id="btnRedo" class="btn" type="button">Redo</button>
-      <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
+      <button id="btnUndo"  class="btn" type="button">Undo</button>
+      <button id="btnRedo"  class="btn" type="button">Redo</button>
+      <button id="btnFlip"  class="btn dark" type="button">Flip Board</button>
     </div>
 
     <div class="move-log">
       <h3>Riwayat Langkah</h3>
-      <pre id="moveHistory">–</pre>
+      <pre id="moveHistory">_</pre>
     </div>
   </section>
 
-  <!-- FOOTER -->
+  <!-- FOOTER NAV -->
   <footer class="footer">
     <div class="left-btn">
       <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
@@ -58,14 +66,27 @@
     </div>
   </footer>
 
-  <!-- Toast hasil (checkmate / seri) -->
-  <div id="resultToast" class="az-toast" aria-live="polite"></div>
+  <!-- MODAL HASIL (checkmate/seri) -->
+  <div id="resultModal" class="az-toast" aria-live="polite" hidden></div>
+
 </main>
 
-<!-- JS (urut WAJIB): engine -> ui -> main -->
-<script src="assets/js/chess-engine.js?v=final1"></script>
-<script src="assets/js/chess-ui.js?v=final1"></script>
-<script src="assets/js/main.js?v=final1"></script>
-<script>console.log("AZBRY CHESS build final1");</script>
+<!-- ====== URUTAN SCRIPT WAJIB: engine -> ui -> main ====== -->
+<script src="assets/js/chess-engine.js?v=fix3"></script>
+<script src="assets/js/chess-ui.js?v=fix3"></script>
+<script src="assets/js/main.js?v=fix3"></script>
+
+<!-- Guard ringan (tidak bentrok dengan main.js). Boleh dibiarkan. -->
+<script>
+  // Kalau main.js sudah binding, ini tidak akan mengganggu.
+  (function () {
+    const flipBtn = document.getElementById('btnFlip');
+    const boardEl = document.getElementById('board');
+    if (flipBtn && boardEl && !flipBtn.dataset.bound) {
+      flipBtn.addEventListener('click', () => boardEl.classList.toggle('flip'));
+      flipBtn.dataset.bound = '1';
+    }
+  })();
+</script>
 </body>
 </html>
