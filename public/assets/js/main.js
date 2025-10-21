@@ -1,4 +1,4 @@
-// assets/js/main.js — QUICK-BOOT: papan & bidak pasti muncul + CLICK FIX
+// QUICK-BOOT + CLICK FIX — stabil sebelum fitur lanjutan
 document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
   const boardEl   = $('board');
@@ -12,13 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnOnly   = $('btnBoardOnly');
   const btnBack   = $('btnBack');
 
-  // >>> CLICK SAFETY NET (tambahan fix) <<<
-  // memastikan klik/touch/pointer pada .square selalu memanggil onSquareClick
+  // safety net: klik/touch/pointer pasti nembak ke onSquareClick
   ['click','touchend','pointerup'].forEach(evt => {
     boardEl.addEventListener(evt, (e) => {
       const sqEl = e.target.closest?.('.square');
       if (!sqEl) return;
-      e.preventDefault(); // penting di mobile (hindari long-press menu)
+      e.preventDefault();
       const sq = sqEl.dataset.square;
       if (sq) onSquareClick(sq);
     }, { passive:false });
@@ -30,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const PIECE = { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟', K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙' };
   let flipped = false;
 
-  // --- BUILD BOARD GRID (64 kotak .square) ---
+  // build 64 petak
   function buildGrid(){
     boardEl.innerHTML = '';
     for (let r=8; r>=1; r--){
@@ -39,23 +38,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const d = document.createElement('div');
         d.className = `square ${((r+f)%2===0)?'light':'dark'}`;
         d.dataset.square = sq;
-        // tetap pasang handler langsung di square
+        // handler langsung per-square juga dipasang
         d.addEventListener('click', () => onSquareClick(sq), { passive:true });
         boardEl.appendChild(d);
       }
     }
   }
 
-  // --- RENDER PIECES FROM FEN (selalu jalan) ---
+  // render dari FEN (tanpa engine pun tampil)
   function renderFromFEN(fen){
-    // bersihkan bidak/mark
     boardEl.querySelectorAll('.piece').forEach(n => n.remove());
     boardEl.querySelectorAll('.highlight, .check, .sel, .move, .src, .dst').forEach(n=>{
       n.classList.remove('highlight','check','sel','move','src','dst');
     });
 
-    const part = fen.split(' ')[0];
-    const rows = part.split('/');
+    const rows = fen.split(' ')[0].split('/');
     for (let r=0; r<8; r++){
       let file = 0;
       for (const ch of rows[r]){
@@ -72,23 +69,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }
+  function findCell(sq){ return boardEl.querySelector(`[data-square="${sq}"]`); }
 
-  function findCell(sq){
-    return boardEl.querySelector(`[data-square="${sq}"]`);
-  }
-
-  // --- CLICK HANDLER ---
+  // click handler
   let sel = null;
   function onSquareClick(sq){
     if (!engine) {
-      // fallback: highlight pilihannya saja
+      // fallback: hanya select visual
       boardEl.querySelectorAll('.sel').forEach(n=>n.classList.remove('sel'));
       const el = findCell(sq);
       if (sel === sq) { sel = null; return; }
       if (el) { el.classList.add('sel'); sel = sq; }
       return;
     }
-    // pakai engine
+    // engine mode
     if (mode==='ai' && engine.turn()==='b') return;
     const legals = engine.moves({ square: sel||sq, verbose:true }).map(m=>m.to);
     if (sel && legals.includes(sq)){
@@ -102,42 +96,38 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
-    // pilih kotak baru
     const hasMine = hasColorPiece(sq, engine.turn());
     sel = hasMine ? sq : null;
     sync();
   }
 
-  // --- ENGINE (opsional) ---
+  // engine
   let engine = (typeof window.Chess === 'function') ? new window.Chess() : null;
   let mode = 'human';
   let last = null;
 
   function needsPromotion(from, to){
+    if (!engine?.get) return false;
     const p = engine.get(from);
     if (!p || p.type !== 'p') return false;
     const rank = parseInt(to[1],10);
     return (p.color==='w' && rank===8) || (p.color==='b' && rank===1);
   }
   function hasColorPiece(sq, color){
-    const p = engine.get(sq);
+    const p = engine?.get ? engine.get(sq) : null;
     return p && p.color === color;
   }
 
   function renderEngine(){
     renderFromFEN(engine.fen());
-    // highlight last move
     if (last){
       findCell(last.from)?.classList.add('src');
       findCell(last.to)?.classList.add('dst');
     }
-    // check outline merah
     if (engine.in_check && engine.in_check()){
-      const turn = engine.turn();
-      const kingSq = findKingSq(turn);
+      const kingSq = findKingSq(engine.turn());
       if (kingSq) findCell(kingSq)?.classList.add('check');
     }
-    // simple move log
     if (moveLog){
       const h = engine.history({ verbose:true });
       if (!h.length){ moveLog.textContent = '—'; return; }
@@ -149,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
       moveLog.textContent = out.trim();
     }
   }
-
   function findKingSq(color){
     const fen = engine.fen().split(' ')[0];
     const rows = fen.split('/');
@@ -175,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
     last = {from: mv.from, to: mv.to};
     sync();
   }
-
   function checkEnd(){
     if (!engine) return;
     if (engine.in_checkmate && engine.in_checkmate()){
@@ -188,16 +176,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function sync(){
+    if (typeof window.Chess === 'function' && !engine) engine = new window.Chess();
     if (engine) renderEngine();
     else renderFromFEN(START_FEN);
   }
 
-  // --- Kontrol ---
-  btnHuman && (btnHuman.onclick = ()=>{ mode='human'; sel=null; last=null; if (btnHuman.classList) {btnHuman.classList.add('active'); btnAI?.classList.remove('active');} sync(); });
-  btnAI    && (btnAI.onclick    = ()=>{ mode='ai'; sel=null; last=null; if (btnAI.classList)    {btnAI.classList.add('active'); btnHuman?.classList.remove('active');} sync(); if (engine && engine.turn()==='b') setTimeout(aiMove, 300); });
+  // controls
+  btnHuman && (btnHuman.onclick = ()=>{ mode='human'; sel=null; last=null; btnHuman.classList.add('active'); btnAI?.classList.remove('active'); sync(); });
+  btnAI    && (btnAI.onclick    = ()=>{ mode='ai';    sel=null; last=null; btnAI.classList.add('active');    btnHuman?.classList.remove('active'); sync(); if (engine && engine.turn()==='b') setTimeout(aiMove, 300); });
   btnReset && (btnReset.onclick = ()=>{ if(engine){ engine.reset(); } sel=null; last=null; sync(); });
-  btnUndo  && (btnUndo.onclick  = ()=>{ if(engine && engine.undo){ engine.undo(); sel=null; last=null; sync(); } });
-  btnRedo  && (btnRedo.onclick  = ()=>{ if(engine && engine.redo){ engine.redo(); sync(); } });
+  btnUndo  && (btnUndo.onclick  = ()=>{ if(engine?.undo){ engine.undo(); sel=null; last=null; sync(); } });
+  btnRedo  && (btnRedo.onclick  = ()=>{ if(engine?.redo){ engine.redo(); sync(); } });
   btnFlip  && (btnFlip.onclick  = ()=>{ flipped=!flipped; boardEl.classList.toggle('flipped', flipped); });
 
   if (btnOnly && btnBack){
@@ -205,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnBack.onclick = ()=>{ document.body.classList.remove('board-only'); btnBack.style.display='none'; btnOnly.style.display='inline-block'; };
   }
 
-  // --- INIT ---
+  // init
   buildGrid();
   sync();
 });
