@@ -1,4 +1,4 @@
-/* ===================== Azbry Chess — Visual Clarity FIX ===================== */
+/* ===================== Azbry Chess — Papan Neon Fix ===================== */
 
 .board {
   display: grid;
@@ -13,9 +13,13 @@
               inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* --- Warna papan --- */
-.sq.light { background: #E8EEF6; }  /* terang kebiruan */
-.sq.dark  { background: #12161F; }  /* gelap kebiruan, biar kontras tapi gak silau */
+/* 🎨 Warna papan diperbaiki: kontras tapi halus */
+.sq.light {
+  background: linear-gradient(180deg, #b8ff9a33, #dfffe066); /* hijau neon lembut */
+}
+.sq.dark {
+  background: linear-gradient(180deg, #0d1118, #141821); /* biru-gelap Azbry */
+}
 
 .sq {
   position: relative;
@@ -27,27 +31,25 @@
   font-size: clamp(42px, 9vw, 76px);
 }
 
-/* --- Bidak terlihat jelas di semua warna --- */
+/* ♟ Bidak tetap hitam dan putih */
 .piece {
   line-height: 1;
   filter: none;
   -webkit-text-stroke: 0;
 }
 
-/* Putih bersih tapi gak silau */
 .piece.white {
   color: #ffffff;
-  text-shadow: 0 0 4px rgba(0,0,0,.25), 0 0 8px rgba(184,255,154,.2);
+  text-shadow: 0 0 4px rgba(0,0,0,.25);
 }
 
-/* Hitam dibuat terang — warna hijau-biru neon */
 .piece.black {
-  color: #9dffcf; /* terang tapi masih beda dari putih */
-  text-shadow: 0 0 6px rgba(57,255,20,.4), 0 0 10px rgba(0,255,150,.3);
+  color: #0b0f13;
+  text-shadow: 0 0 4px rgba(255,255,255,.2);
   transform: rotate(180deg);
 }
 
-/* Highlight langkah terakhir */
+/* ✨ Highlight langkah terakhir */
 .sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
 .sq.last { box-shadow: inset 0 0 0 4px rgba(184,255,154,.3); }
 
