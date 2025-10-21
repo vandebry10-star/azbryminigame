@@ -262,3 +262,68 @@ html, body {
   border-radius:16px;
   overflow:hidden;
 }
+
+/* === Board & Pieces – Fix === */
+#board.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  aspect-ratio: 1/1;
+  width: min(92vmin, 560px);      /* papan responsif, agak diperbesar */
+  margin: 1rem auto;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Kotak papan: HARUS .square (bukan .sq) */
+#board .square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  /* Bidak lebih besar dan selalu proporsional */
+  font-size: clamp(28px, 9.2vmin, 72px);
+  line-height: 1;
+}
+
+/* Warna kotak */
+#board .light { background: #eef2f6; }
+#board .dark  { background: #2a3037; }
+
+/* Warna bidak + outline kontras.
+   UI kamu kadang menaruh class warna di kotak/elemen bidak.
+   Kita cover keduanya. */
+#board .square.white,
+#board .piece.white {
+  color: #ffffff;
+  text-shadow:
+    0 0 0 #000,
+    -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000,  1px 1px 0 #000;
+}
+
+#board .square.black,
+#board .piece.black {
+  color: #0e1317;
+  text-shadow:
+    0 0 0 #fff,
+    -1px -1px 0 #fff, 1px -1px 0 #fff,
+    -1px 1px 0 #fff,  1px 1px 0 #fff;
+}
+
+/* Highlight legal moves (kalau UI-mu menambahkan .hint/.move dst, opsional) */
+#board .hint::after {
+  content: "";
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background: rgba(57,255,20,.35);
+  display: block;
+}
+
+/* Flip board (opsional – sudah ada tombolnya) */
+#board.flip {
+  transform: rotate(180deg);
+}
+#board.flip .square {
+  transform: rotate(180deg);
+}
