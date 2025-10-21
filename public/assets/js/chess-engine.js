@@ -1,297 +1,234 @@
-// =====================================================
-//  Azbry Chess Engine — legal move + check/checkmate
-//  (tanpa castling & en-passant dulu, biar stabil)
-//  API kompatibel dengan UI kamu sekarang.
-// =====================================================
+/* =====================================================
+   Azbry Chess — Chess Engine
+   Mengatur logika catur, giliran, langkah, undo/redo,
+   check & checkmate dasar.
+   ===================================================== */
 
-export class ChessEngine {
-  constructor() { this.reset(); }
+window.ChessEngine = (function () {
+  let board = [];
+  let history = [];
+  let future = [];
+  let currentTurn = "w";
+  let mode = "human";
+  let gameOver = false;
 
-  reset() {
-    // Notasi: baris 0 = rank 1 (bawah), baris 7 = rank 8 (atas)
-    this.board = [
-      ["r","n","b","q","k","b","n","r"], // y=7 (rank 8) — hitam
-      ["p","p","p","p","p","p","p","p"], // y=6
-      ["","","","","","","",""],         // y=5
-      ["","","","","","","",""],         // y=4
-      ["","","","","","","",""],         // y=3
-      ["","","","","","","",""],         // y=2
-      ["P","P","P","P","P","P","P","P"], // y=1
-      ["R","N","B","Q","K","B","N","R"]  // y=0 (rank 1) — putih
-    ];
-    this.turn = "white";
-    this.history = [];  // {board, turn}
-    this.future  = [];
+  // posisi awal
+  const START_FEN =
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+
+  function reset() {
+    board = parseFEN(START_FEN);
+    history = [];
+    future = [];
+    currentTurn = "w";
+    gameOver = false;
   }
 
-  // ===== Util dasar =====
-  inBounds(x,y){ return x>=0 && x<8 && y>=0 && y<8; }
-  get(x,y){ return this.board[y][x]; }
-  set(x,y,v){ this.board[y][x] = v; }
-  cloneBoard(){ return this.board.map(r=>r.slice()); }
-  isWhite(p){ return p && p === p.toUpperCase(); }
-  isBlack(p){ return p && p === p.toLowerCase(); }
-  colorOf(p){ return !p ? null : (this.isWhite(p) ? 'white' : 'black'); }
-  opp(color){ return color === 'white' ? 'black' : 'white'; }
-
-  // ===== API publik dipakai UI =====
-  move(fromX,fromY,toX,toY){
-    const legal = this.getAllMoves(this.turn).some(m=>m.fromX===fromX && m.fromY===fromY && m.toX===toX && m.toY===toY);
-    if(!legal) return false;
-
-    const piece = this.get(fromX,fromY);
-    const target = this.get(toX,toY);
-
-    this.history.push({ board:this.cloneBoard(), turn:this.turn });
-    this.future.length = 0;
-
-    // promosi sederhana: pion putih ke y=7, pion hitam ke y=0 -> jadi Queen
-    const low = piece.toLowerCase();
-    const isPawn = (low === 'p');
-    const willPromote = isPawn && ((piece==='P' && toY===7) || (piece==='p' && toY===0));
-
-    this.set(toX,toY, willPromote ? (this.isWhite(piece) ? 'Q':'q') : piece);
-    this.set(fromX,fromY,"");
-
-    this.turn = this.opp(this.turn);
-    return { piece, target };
+  function parseFEN(fen) {
+    const rows = fen.split("/");
+    const arr = [];
+    for (const row of rows) {
+      for (const c of row) {
+        if (!isNaN(c)) {
+          for (let i = 0; i < parseInt(c); i++) arr.push(null);
+        } else {
+          const color = c === c.toUpperCase() ? "w" : "b";
+          arr.push(color + c.toLowerCase());
+        }
+      }
+    }
+    return arr;
   }
 
-  undo(){
-    if(!this.history.length) return false;
-    const prev = this.history.pop();
-    this.future.push({ board:this.cloneBoard(), turn:this.turn });
-    this.board = prev.board;
-    this.turn = prev.turn;
+  function getState() {
+    return {
+      board: [...board],
+      history: [...history],
+      turn: currentTurn,
+      mode,
+      gameOver,
+    };
+  }
+
+  function setMode(m) {
+    mode = m;
+  }
+
+  // fungsi legal move basic
+  function movesFrom(index) {
+    if (gameOver) return [];
+    const piece = board[index];
+    if (!piece || piece[0] !== currentTurn) return [];
+    const type = piece[1];
+    const moves = [];
+
+    const dirs = {
+      p: currentTurn === "w" ? -8 : 8,
+      n: [-17, -15, -10, -6, 6, 10, 15, 17],
+      b: [-9, -7, 7, 9],
+      r: [-8, -1, 1, 8],
+      q: [-9, -8, -7, -1, 1, 7, 8, 9],
+      k: [-9, -8, -7, -1, 1, 7, 8, 9],
+    };
+
+    const isInside = (i) => i >= 0 && i < 64;
+
+    const file = index % 8;
+    const rank = Math.floor(index / 8);
+
+    const pushIfValid = (target) => {
+      if (!isInside(target)) return;
+      const diffFile = Math.abs((target % 8) - file);
+      const diffRank = Math.abs(Math.floor(target / 8) - rank);
+      if (diffFile > 2 || diffRank > 2) return;
+      const t = board[target];
+      if (!t || t[0] !== currentTurn) moves.push(target);
+    };
+
+    if (type === "p") {
+      const dir = dirs.p;
+      const oneStep = index + dir;
+      if (isInside(oneStep) && !board[oneStep]) moves.push(oneStep);
+      const startRank = currentTurn === "w" ? 6 : 1;
+      const twoStep = index + dir * 2;
+      if (rank === startRank && !board[oneStep] && !board[twoStep])
+        moves.push(twoStep);
+      const attacks = [dir - 1, dir + 1];
+      for (const atk of attacks) {
+        const target = index + atk;
+        if (isInside(target) && board[target] && board[target][0] !== currentTurn)
+          moves.push(target);
+      }
+    } else if (type === "n") {
+      for (const d of dirs.n) {
+        const t = index + d;
+        if (isInside(t)) {
+          const p = board[t];
+          if (!p || p[0] !== currentTurn) moves.push(t);
+        }
+      }
+    } else if (type === "b" || type === "r" || type === "q") {
+      const checkDirs =
+        type === "b" ? dirs.b : type === "r" ? dirs.r : dirs.q;
+      for (const d of checkDirs) {
+        let t = index + d;
+        while (isInside(t)) {
+          const diffF = Math.abs((t % 8) - file);
+          if (diffF > 7) break;
+          const p = board[t];
+          if (!p) moves.push(t);
+          else {
+            if (p[0] !== currentTurn) moves.push(t);
+            break;
+          }
+          if (Math.abs(d) === 1 && Math.floor(t / 8) !== rank)
+            break; // horizontal batas
+          t += d;
+        }
+      }
+    } else if (type === "k") {
+      for (const d of dirs.k) {
+        const t = index + d;
+        if (isInside(t)) {
+          const p = board[t];
+          if (!p || p[0] !== currentTurn) moves.push(t);
+        }
+      }
+    }
+
+    return moves;
+  }
+
+  function move(from, to) {
+    if (gameOver) return false;
+    const moves = movesFrom(from);
+    if (!moves.includes(to)) return false;
+
+    history.push({ from, to, piece: board[from], capture: board[to] });
+    future = [];
+
+    board[to] = board[from];
+    board[from] = null;
+
+    // ganti giliran
+    currentTurn = currentTurn === "w" ? "b" : "w";
+
+    checkEndGame();
     return true;
   }
 
-  redo(){
-    if(!this.future.length) return false;
-    const next = this.future.pop();
-    this.history.push({ board:this.cloneBoard(), turn:this.turn });
-    this.board = next.board;
-    this.turn = next.turn;
-    return true;
+  function undo() {
+    const last = history.pop();
+    if (!last) return;
+    board[last.from] = last.piece;
+    board[last.to] = last.capture || null;
+    future.push(last);
+    currentTurn = last.piece[0];
+    gameOver = false;
   }
 
-  // Dipakai UI untuk highlight & AI
-  getAllMoves(color){
-    // Pseudo → filter yang bikin raja sendiri diserang
-    const pseudo = this._genAllPseudo(color);
-    const legal = [];
-    for(const m of pseudo){
-      if(this._isLegalMove(color, m)) legal.push(m);
-    }
-    return legal;
+  function redo() {
+    const next = future.pop();
+    if (!next) return;
+    board[next.to] = next.piece;
+    board[next.from] = null;
+    history.push(next);
+    currentTurn = next.piece[0] === "w" ? "b" : "w";
   }
 
-  // AI sederhana (tetap acak legal biar ringan)
-  aiMove(){
-    const moves = this.getAllMoves('black');
-    if(!moves.length) return false;
-    const m = moves[Math.floor(Math.random()*moves.length)];
-    return this.move(m.fromX, m.fromY, m.toX, m.toY);
-  }
-
-  // ===== Check / Mate =====
-  isCheck(color=this.turn){
-    const k = this._kingPos(color);
-    if(!k) return false;
-    return this._squareAttackedBy(k.x, k.y, this.opp(color));
-  }
-
-  isCheckmate(color=this.turn){
-    if(!this.isCheck(color)) return false;
-    return this.getAllMoves(color).length === 0;
-  }
-
-  isStalemate(color=this.turn){
-    if(this.isCheck(color)) return false;
-    return this.getAllMoves(color).length === 0;
-  }
-
-  // ===== Internal: generate pseudo moves =====
-  _genAllPseudo(color){
-    const out = [];
-    for(let y=0;y<8;y++){
-      for(let x=0;x<8;x++){
-        const p = this.get(x,y);
-        if(!p) continue;
-        const pc = this.colorOf(p);
-        if(pc !== color) continue;
-        this._genPiecePseudo(p, x, y, out);
+  function aiMoveIfNeeded() {
+    if (mode !== "ai" || currentTurn !== "b" || gameOver) return;
+    // langkah random AI sederhana
+    const allMoves = [];
+    for (let i = 0; i < 64; i++) {
+      const piece = board[i];
+      if (piece && piece[0] === "b") {
+        const mv = movesFrom(i);
+        mv.forEach((m) => allMoves.push({ from: i, to: m }));
       }
     }
-    return out;
+    if (allMoves.length === 0) {
+      checkEndGame();
+      return;
+    }
+    const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
+    move(randomMove.from, randomMove.to);
   }
 
-  _genPiecePseudo(p, x, y, out){
-    const low = p.toLowerCase();
-    if(low==='p') return this._genPawn(p, x, y, out);
-    if(low==='n') return this._genKnight(p, x, y, out);
-    if(low==='b') return this._genBishop(p, x, y, out);
-    if(low==='r') return this._genRook(p, x, y, out);
-    if(low==='q') { this._genBishop(p,x,y,out); this._genRook(p,x,y,out); return; }
-    if(low==='k') return this._genKing(p, x, y, out);
-  }
-
-  _pushMove(out, fromX,fromY,toX,toY){
-    out.push({ fromX, fromY, toX, toY });
-  }
-
-  _genPawn(p,x,y,out){
-    const white = this.isWhite(p);
-    const dir = white ? 1 : -1;          // putih naik ke y besar (0 -> 7)
-    const oneY = y + dir;
-
-    // maju 1
-    if(this.inBounds(x,oneY) && !this.get(x,oneY)){
-      this._pushMove(out,x,y,x,oneY);
-      // maju 2 dari rank awal
-      const startRank = white ? 1 : 6;
-      const twoY = y + dir*2;
-      if(y===startRank && this.inBounds(x,twoY) && !this.get(x,twoY)){
-        this._pushMove(out,x,y,x,twoY);
+  function checkEndGame() {
+    // checkmate basic
+    const movesAvailable = [];
+    for (let i = 0; i < 64; i++) {
+      const p = board[i];
+      if (p && p[0] === currentTurn) {
+        if (movesFrom(i).length > 0) movesAvailable.push(true);
       }
     }
-    // makan kiri/kanan
-    for(const dx of [-1,1]){
-      const nx = x + dx, ny = y + dir;
-      if(!this.inBounds(nx,ny)) continue;
-      const t = this.get(nx,ny);
-      if(t && this.colorOf(t)!==this.colorOf(p)){
-        this._pushMove(out,x,y,nx,ny);
-      }
-    }
-    // (en-passant belum diaktifkan pada versi ini)
+    if (movesAvailable.length === 0) gameOver = true;
   }
 
-  _genKnight(p,x,y,out){
-    const deltas = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
-    for(const [dx,dy] of deltas){
-      const nx=x+dx, ny=y+dy;
-      if(!this.inBounds(nx,ny)) continue;
-      const t=this.get(nx,ny);
-      if(!t || this.colorOf(t)!==this.colorOf(p)){
-        this._pushMove(out,x,y,nx,ny);
-      }
-    }
+  function isCheckmate() {
+    return gameOver;
   }
 
-  _slideDir(p,x,y,dx,dy,out){
-    let nx=x+dx, ny=y+dy;
-    while(this.inBounds(nx,ny)){
-      const t=this.get(nx,ny);
-      if(!t){
-        this._pushMove(out,x,y,nx,ny);
-      } else {
-        if(this.colorOf(t)!==this.colorOf(p)) this._pushMove(out,x,y,nx,ny);
-        break;
-      }
-      nx+=dx; ny+=dy;
-    }
-  }
-
-  _genBishop(p,x,y,out){
-    this._slideDir(p,x,y, 1, 1,out);
-    this._slideDir(p,x,y, 1,-1,out);
-    this._slideDir(p,x,y,-1, 1,out);
-    this._slideDir(p,x,y,-1,-1,out);
-  }
-
-  _genRook(p,x,y,out){
-    this._slideDir(p,x,y, 1, 0,out);
-    this._slideDir(p,x,y,-1, 0,out);
-    this._slideDir(p,x,y, 0, 1,out);
-    this._slideDir(p,x,y, 0,-1,out);
-  }
-
-  _genKing(p,x,y,out){
-    for(let dx=-1; dx<=1; dx++){
-      for(let dy=-1; dy<=1; dy++){
-        if(dx===0 && dy===0) continue;
-        const nx=x+dx, ny=y+dy;
-        if(!this.inBounds(nx,ny)) continue;
-        const t=this.get(nx,ny);
-        if(!t || this.colorOf(t)!==this.colorOf(p)){
-          this._pushMove(out,x,y,nx,ny);
-        }
-      }
-    }
-    // (castling belum diaktifkan pada versi ini)
-  }
-
-  // ===== Filter legal (raja sendiri tidak boleh terserang) =====
-  _isLegalMove(color, m){
-    const snap = this.cloneBoard();
-    const piece = this.get(m.fromX,m.fromY);
-    const target = this.get(m.toX,m.toY);
-
-    // lakukan sementara
-    this.set(m.toX,m.toY,piece);
-    this.set(m.fromX,m.fromY,"");
-
-    const ok = !this._kingInCheckAfter(color);
-
-    // kembalikan
-    this.board = snap;
-    return ok;
-  }
-
-  _kingInCheckAfter(color){
-    const k = this._kingPos(color);
-    if(!k) return true;
-    return this._squareAttackedBy(k.x, k.y, this.opp(color));
-  }
-
-  _kingPos(color){
-    for(let y=0;y<8;y++){
-      for(let x=0;x<8;x++){
-        const p=this.get(x,y);
-        if(!p) continue;
-        if((color==='white' && p==='K') || (color==='black' && p==='k')){
-          return {x,y};
-        }
-      }
-    }
-    return null;
-  }
-
-  _squareAttackedBy(x,y,attackerColor){
-    // generate semua pseudo attackerColor, lihat apakah ada yg mendarat di (x,y)
-    for(let j=0;j<8;j++){
-      for(let i=0;i<8;i++){
-        const p=this.get(i,j);
-        if(!p || this.colorOf(p)!==attackerColor) continue;
-        const pseudo=[];
-        this._genPiecePseudo(p,i,j,pseudo);
-
-        // Pion: serangan berbeda dgn gerak maju
-        if(p.toLowerCase()==='p'){
-          const white = this.isWhite(p);
-          const dir = white ? 1 : -1;
-          for(const dx of [-1,1]){
-            const nx=i+dx, ny=j+dir;
-            if(nx===x && ny===y) { // asal dalam papan & target beda warna di atas tidak perlu dicek di sini
-              if(this.inBounds(nx,ny)) return true;
-            }
-          }
-          // hilangkan gerak maju pion dari pseudo (karena bukan serangan)
-          // (biar aman, kita cek manual dengan conditional di atas)
-        }
-
-        for(const m of pseudo){
-          if(m.toX===x && m.toY===y){
-            // valid khusus pion: hanya diagonal yg dianggap serang
-            if(p.toLowerCase()!=='p') return true;
-            // kalau pion, diagonal yang menghasilkan target adalah serangan → sudah dicek di atas
-          }
-        }
-      }
-    }
+  function isStalemate() {
     return false;
   }
-}
-// expose ke global agar bisa dipakai tanpa module import
-if (typeof window !== "undefined") window.ChessEngine = ChessEngine;
+
+  // inisialisasi awal
+  reset();
+
+  return {
+    getState,
+    movesFrom,
+    move,
+    reset,
+    undo,
+    redo,
+    setMode,
+    getMode: () => mode,
+    aiMoveIfNeeded,
+    isCheckmate,
+    isStalemate,
+  };
+})();
