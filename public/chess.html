@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Azbry Chess</title>
+
+  <!-- Tema global & style papan -->
+  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <link rel="stylesheet" href="/assets/css/chess.css">
+
+  <style>
+    /* Penjaga kecil biar rapi di device sempit */
+    body { overflow-x:hidden; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <!-- HEADER -->
+    <div class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD</span>
+        <h1>Chess</h1>
+      </div>
+    </div>
+
+    <!-- MODE PICKER -->
+    <div class="mode-picker">
+      <button id="modeHuman" class="seg active">VS Player</button>
+      <button id="modeAI" class="seg">VS Azbry-MD</button>
+    </div>
+
+    <!-- BOARD -->
+    <section class="board-wrap">
+      <div id="board" class="board"></div>
+    </section>
+
+    <!-- PANEL KONTROL + LOG -->
+    <section class="panel">
+      <div class="controls">
+        <button id="btnReset" class="btn dark">Muat Ulang</button>
+        <button id="btnUndo"  class="btn dark">Undo</button>
+        <button id="btnRedo"  class="btn dark">Redo</button>
+        <button id="btnFlip"  class="btn dark">Flip Board</button>
+
+        <!-- Board-only & kembali -->
+        <button id="btnBoardOnly" class="btn accent">Board Only</button>
+        <button id="btnBack" class="btn dark" style="display:none">Kembali</button>
+      </div>
+
+      <div class="move-log">
+        <h4>Riwayat Langkah</h4>
+        <pre id="moveHistory">_</pre>
+      </div>
+    </section>
+
+    <!-- LISENSI + PORTOFOLIO (gaya Azbry) -->
+    <div class="license">
+      <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+    </div>
+  </main>
+
+  <!-- SCRIPT (urutan WAJIB: engine → main) -->
+  <script src="/assets/js/chess-engine.js"></script>
+  <script src="/assets/js/main.js"></script>
+
+  <!-- Handler Board Only (toggle body.board-only) -->
+  <script>
+    (function(){
+      const btnOnly = document.getElementById('btnBoardOnly');
+      const btnBack = document.getElementById('btnBack');
+      if(btnOnly && btnBack){
+        btnOnly.addEventListener('click', () => {
+          document.body.classList.add('board-only');
+          btnOnly.style.display = 'none';
+          btnBack.style.display = 'inline-block';
+        });
+        btnBack.addEventListener('click', () => {
+          document.body.classList.remove('board-only');
+          btnBack.style.display = 'none';
+          btnOnly.style.display = 'inline-block';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
