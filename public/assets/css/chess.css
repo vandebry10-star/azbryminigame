@@ -120,3 +120,19 @@ button.btn {
 
 /* --- Mobile safe tap --- */
 #board .square:active { filter: brightness(1.04); }
+
+<style>
+  /* Fallback aman: bikin kotak 8×8 */
+  #board.board { 
+    --sq: min(10vw, 56px);
+    width: calc(var(--sq) * 8);
+    height: calc(var(--sq) * 8);
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    border-radius: 18px; 
+    overflow: hidden;
+  }
+  #board .square { display:flex; align-items:center; justify-content:center; }
+  #board .square.light { background:#e9ecef; }
+  #board .square.dark  { background:#2f3338; }
+</style>
