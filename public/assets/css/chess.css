@@ -120,3 +120,9 @@ body.board-only .board-wrap{ max-width: min(98vw, 1100px); padding: 10px; }
 /* pastikan petak menerima klik */
 .board * { pointer-events: auto; }
 .square { cursor: pointer; }
+
+/* Label / pseudo-element jangan block click */
+.board .rank, .board .file,
+.board .square::before, .board .square::after {
+  pointer-events: none;
+}
