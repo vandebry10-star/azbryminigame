@@ -1,234 +1,239 @@
-/* =====================================================
-   Azbry Chess — Chess Engine
-   Mengatur logika catur, giliran, langkah, undo/redo,
-   check & checkmate dasar.
-   ===================================================== */
+/* ==============================
+ *  AZBRY CHESS – ENGINE (CORE)
+ *  Feb 2025
+ *  Fitur: basic legal move, check & checkmate, promotion
+ *  ============================== */
 
-window.ChessEngine = (function () {
-  let board = [];
-  let history = [];
-  let future = [];
-  let currentTurn = "w";
-  let mode = "human";
-  let gameOver = false;
+window.boardState = [];        // 8x8 array of {type,color,symbol,hasMoved}
+const W = "white", B = "black";
 
-  // posisi awal
-  const START_FEN =
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+const SYMBOLS = {
+  white: { king:"♔", queen:"♕", rook:"♖", bishop:"♗", knight:"♘", pawn:"♙" },
+  black: { king:"♚", queen:"♛", rook:"♜", bishop:"♝", knight:"♞", pawn:"♟" },
+};
 
-  function reset() {
-    board = parseFEN(START_FEN);
-    history = [];
-    future = [];
-    currentTurn = "w";
-    gameOver = false;
+function piece(type, color) {
+  return { type, color, symbol: SYMBOLS[color][type], hasMoved: false };
+}
+
+function inBounds(x, y) { return x >= 0 && x < 8 && y >= 0 && y < 8; }
+
+function cloneBoard(b = boardState) {
+  return b.map(row => row.map(p => (p ? { ...p } : null)));
+}
+
+function initBoard() {
+  // Empty
+  boardState = Array.from({ length: 8 }, () => Array(8).fill(null));
+
+  // Black (top, y=0,1)
+  boardState[0] = [
+    piece("rook", B), piece("knight", B), piece("bishop", B), piece("queen", B),
+    piece("king", B), piece("bishop", B), piece("knight", B), piece("rook", B),
+  ];
+  boardState[1] = Array(8).fill(null).map(() => piece("pawn", B));
+
+  // White (bottom, y=7,6)
+  boardState[7] = [
+    piece("rook", W), piece("knight", W), piece("bishop", W), piece("queen", W),
+    piece("king", W), piece("bishop", W), piece("knight", W), piece("rook", W),
+  ];
+  boardState[6] = Array(8).fill(null).map(() => piece("pawn", W));
+}
+
+/* ------- PSEUDO MOVES (tanpa filter check) ------- */
+function rayMoves(board, x, y, dirs) {
+  const res = [];
+  const me = board[y][x];
+  for (const [dx, dy] of dirs) {
+    let nx = x + dx, ny = y + dy;
+    while (inBounds(nx, ny)) {
+      const t = board[ny][nx];
+      if (!t) {
+        res.push([nx, ny]);
+      } else {
+        if (t.color !== me.color) res.push([nx, ny]);
+        break;
+      }
+      nx += dx; ny += dy;
+    }
   }
+  return res;
+}
 
-  function parseFEN(fen) {
-    const rows = fen.split("/");
-    const arr = [];
-    for (const row of rows) {
-      for (const c of row) {
-        if (!isNaN(c)) {
-          for (let i = 0; i < parseInt(c); i++) arr.push(null);
-        } else {
-          const color = c === c.toUpperCase() ? "w" : "b";
-          arr.push(color + c.toLowerCase());
+function pseudoMoves(board, x, y) {
+  const res = [];
+  const p = board[y][x];
+  if (!p) return res;
+
+  const forward = p.color === W ? -1 : 1;
+  const startRank = p.color === W ? 6 : 1;
+  const promoRank = p.color === W ? 0 : 7;
+
+  switch (p.type) {
+    case "pawn": {
+      const f1y = y + forward;
+      if (inBounds(x, f1y) && !board[f1y][x]) {
+        res.push([x, f1y]);
+        const f2y = y + 2 * forward;
+        if (y === startRank && !board[f2y][x]) res.push([x, f2y]);
+      }
+      // captures
+      for (const dx of [-1, 1]) {
+        const nx = x + dx, ny = y + forward;
+        if (!inBounds(nx, ny)) continue;
+        const t = board[ny][nx];
+        if (t && t.color !== p.color) res.push([nx, ny]);
+      }
+      // (en passant belum)
+      break;
+    }
+    case "knight": {
+      const jumps = [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+      for (const [dx, dy] of jumps) {
+        const nx = x+dx, ny = y+dy;
+        if (!inBounds(nx, ny)) continue;
+        const t = board[ny][nx];
+        if (!t || t.color !== p.color) res.push([nx, ny]);
+      }
+      break;
+    }
+    case "bishop":
+      return rayMoves(board, x, y, [[1,1],[-1,1],[1,-1],[-1,-1]]);
+    case "rook":
+      return rayMoves(board, x, y, [[1,0],[-1,0],[0,1],[0,-1]]);
+    case "queen":
+      return rayMoves(board, x, y, [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]);
+    case "king": {
+      for (let dx=-1; dx<=1; dx++) for (let dy=-1; dy<=1; dy++) {
+        if (dx===0 && dy===0) continue;
+        const nx=x+dx, ny=y+dy;
+        if (!inBounds(nx,ny)) continue;
+        const t=board[ny][nx];
+        if (!t || t.color!==p.color) res.push([nx,ny]);
+      }
+      // (castling belum)
+      break;
+    }
+  }
+  return res;
+}
+
+/* ------- CHECK & LEGAL FILTER ------- */
+function findKing(board, color) {
+  for (let yy=0; yy<8; yy++) for (let xx=0; xx<8; xx++) {
+    const p = board[yy][xx];
+    if (p && p.type==="king" && p.color===color) return [xx, yy];
+  }
+  return null;
+}
+
+function isSquareAttacked(board, x, y, byColor) {
+  // cek semua buah lawan: kalau pseudo move-nya menyentuh (x,y) → attacked
+  for (let yy=0; yy<8; yy++) for (let xx=0; xx<8; xx++) {
+    const p = board[yy][xx];
+    if (!p || p.color !== byColor) continue;
+
+    // khusus pion: serangan diagonal saja
+    if (p.type === "pawn") {
+      const forward = p.color === W ? -1 : 1;
+      for (const dx of [-1, 1]) {
+        const nx = xx + dx, ny = yy + forward;
+        if (nx === x && ny === y) {
+          // valid jika dalam papan dan ada target (untuk serangan ke raja kita, cukup arah serang)
+          if (inBounds(nx, ny)) return true;
         }
       }
-    }
-    return arr;
-  }
-
-  function getState() {
-    return {
-      board: [...board],
-      history: [...history],
-      turn: currentTurn,
-      mode,
-      gameOver,
-    };
-  }
-
-  function setMode(m) {
-    mode = m;
-  }
-
-  // fungsi legal move basic
-  function movesFrom(index) {
-    if (gameOver) return [];
-    const piece = board[index];
-    if (!piece || piece[0] !== currentTurn) return [];
-    const type = piece[1];
-    const moves = [];
-
-    const dirs = {
-      p: currentTurn === "w" ? -8 : 8,
-      n: [-17, -15, -10, -6, 6, 10, 15, 17],
-      b: [-9, -7, 7, 9],
-      r: [-8, -1, 1, 8],
-      q: [-9, -8, -7, -1, 1, 7, 8, 9],
-      k: [-9, -8, -7, -1, 1, 7, 8, 9],
-    };
-
-    const isInside = (i) => i >= 0 && i < 64;
-
-    const file = index % 8;
-    const rank = Math.floor(index / 8);
-
-    const pushIfValid = (target) => {
-      if (!isInside(target)) return;
-      const diffFile = Math.abs((target % 8) - file);
-      const diffRank = Math.abs(Math.floor(target / 8) - rank);
-      if (diffFile > 2 || diffRank > 2) return;
-      const t = board[target];
-      if (!t || t[0] !== currentTurn) moves.push(target);
-    };
-
-    if (type === "p") {
-      const dir = dirs.p;
-      const oneStep = index + dir;
-      if (isInside(oneStep) && !board[oneStep]) moves.push(oneStep);
-      const startRank = currentTurn === "w" ? 6 : 1;
-      const twoStep = index + dir * 2;
-      if (rank === startRank && !board[oneStep] && !board[twoStep])
-        moves.push(twoStep);
-      const attacks = [dir - 1, dir + 1];
-      for (const atk of attacks) {
-        const target = index + atk;
-        if (isInside(target) && board[target] && board[target][0] !== currentTurn)
-          moves.push(target);
-      }
-    } else if (type === "n") {
-      for (const d of dirs.n) {
-        const t = index + d;
-        if (isInside(t)) {
-          const p = board[t];
-          if (!p || p[0] !== currentTurn) moves.push(t);
-        }
-      }
-    } else if (type === "b" || type === "r" || type === "q") {
-      const checkDirs =
-        type === "b" ? dirs.b : type === "r" ? dirs.r : dirs.q;
-      for (const d of checkDirs) {
-        let t = index + d;
-        while (isInside(t)) {
-          const diffF = Math.abs((t % 8) - file);
-          if (diffF > 7) break;
-          const p = board[t];
-          if (!p) moves.push(t);
-          else {
-            if (p[0] !== currentTurn) moves.push(t);
-            break;
-          }
-          if (Math.abs(d) === 1 && Math.floor(t / 8) !== rank)
-            break; // horizontal batas
-          t += d;
-        }
-      }
-    } else if (type === "k") {
-      for (const d of dirs.k) {
-        const t = index + d;
-        if (isInside(t)) {
-          const p = board[t];
-          if (!p || p[0] !== currentTurn) moves.push(t);
-        }
-      }
+      continue;
     }
 
-    return moves;
+    const list = pseudoMoves(board, xx, yy);
+    if (list.some(([mx, my]) => mx === x && my === y)) return true;
   }
+  return false;
+}
 
-  function move(from, to) {
-    if (gameOver) return false;
-    const moves = movesFrom(from);
-    if (!moves.includes(to)) return false;
+function isCheck(board, color) {
+  const kingPos = findKing(board, color);
+  if (!kingPos) return false;
+  const [kx, ky] = kingPos;
+  const opp = color === W ? B : W;
+  return isSquareAttacked(board, kx, ky, opp);
+}
 
-    history.push({ from, to, piece: board[from], capture: board[to] });
-    future = [];
+function applyMove(board, from, to) {
+  const nb = cloneBoard(board);
+  const [fx, fy] = from, [tx, ty] = to;
+  const p = nb[fy][fx];
+  nb[fy][fx] = null;
+  if (p) p.hasMoved = true;
+  nb[ty][tx] = p;
 
-    board[to] = board[from];
-    board[from] = null;
-
-    // ganti giliran
-    currentTurn = currentTurn === "w" ? "b" : "w";
-
-    checkEndGame();
-    return true;
-  }
-
-  function undo() {
-    const last = history.pop();
-    if (!last) return;
-    board[last.from] = last.piece;
-    board[last.to] = last.capture || null;
-    future.push(last);
-    currentTurn = last.piece[0];
-    gameOver = false;
-  }
-
-  function redo() {
-    const next = future.pop();
-    if (!next) return;
-    board[next.to] = next.piece;
-    board[next.from] = null;
-    history.push(next);
-    currentTurn = next.piece[0] === "w" ? "b" : "w";
-  }
-
-  function aiMoveIfNeeded() {
-    if (mode !== "ai" || currentTurn !== "b" || gameOver) return;
-    // langkah random AI sederhana
-    const allMoves = [];
-    for (let i = 0; i < 64; i++) {
-      const piece = board[i];
-      if (piece && piece[0] === "b") {
-        const mv = movesFrom(i);
-        mv.forEach((m) => allMoves.push({ from: i, to: m }));
-      }
+  // promotion
+  if (p && p.type === "pawn") {
+    const promoRank = p.color === W ? 0 : 7;
+    if (ty === promoRank) {
+      p.type = "queen";
+      p.symbol = SYMBOLS[p.color]["queen"];
     }
-    if (allMoves.length === 0) {
-      checkEndGame();
-      return;
+  }
+  return nb;
+}
+
+function getLegalMoves(x, y, board = boardState) {
+  const p = board[y][x];
+  if (!p) return [];
+  const raw = pseudoMoves(board, x, y);
+  const legal = [];
+
+  for (const mv of raw) {
+    const nb = applyMove(board, [x, y], mv);
+    if (!isCheck(nb, p.color)) legal.push(mv);
+  }
+  return legal;
+}
+
+function hasAnyLegalMoves(color, board = boardState) {
+  for (let y=0; y<8; y++) for (let x=0; x<8; x++) {
+    const p = board[y][x];
+    if (p && p.color === color) {
+      if (getLegalMoves(x, y, board).length) return true;
     }
-    const randomMove = allMoves[Math.floor(Math.random() * allMoves.length)];
-    move(randomMove.from, randomMove.to);
   }
+  return false;
+}
 
-  function checkEndGame() {
-    // checkmate basic
-    const movesAvailable = [];
-    for (let i = 0; i < 64; i++) {
-      const p = board[i];
-      if (p && p[0] === currentTurn) {
-        if (movesFrom(i).length > 0) movesAvailable.push(true);
-      }
-    }
-    if (movesAvailable.length === 0) gameOver = true;
-  }
+/* ------- PUBLIC API dipakai UI ------- */
+function makeMove(from, to, turnColor) {
+  const [fx, fy] = from, [tx, ty] = to;
+  const p = boardState[fy][fx];
+  if (!p || p.color !== turnColor) return false;
 
-  function isCheckmate() {
-    return gameOver;
-  }
+  const legal = getLegalMoves(fx, fy, boardState);
+  if (!legal.some(([mx, my]) => mx === tx && my === ty)) return false;
 
-  function isStalemate() {
-    return false;
-  }
+  boardState = applyMove(boardState, from, to);
 
-  // inisialisasi awal
-  reset();
+  // status akhir (optional – bisa dipakai UI)
+  const opp = turnColor === W ? B : W;
+  const check = isCheck(boardState, opp);
+  const mate  = check && !hasAnyLegalMoves(opp, boardState);
+  const stalemate = !check && !hasAnyLegalMoves(opp, boardState);
 
-  return {
-    getState,
-    movesFrom,
-    move,
-    reset,
-    undo,
-    redo,
-    setMode,
-    getMode: () => mode,
-    aiMoveIfNeeded,
-    isCheckmate,
-    isStalemate,
-  };
-})();
+  window.__lastStatus = { check, mate, stalemate, turnColor, next: opp };
+  return true;
+}
+
+function getGameStatus(forColor) {
+  // Convenience untuk UI polling status
+  const check = isCheck(boardState, forColor);
+  const mate = check && !hasAnyLegalMoves(forColor, boardState);
+  const stalemate = !check && !hasAnyLegalMoves(forColor, boardState);
+  return { check, mate, stalemate };
+}
+
+// Expose ke global
+window.initBoard = initBoard;
+window.getLegalMoves = getLegalMoves;
+window.makeMove = makeMove;
+window.getGameStatus = getGameStatus;
