@@ -1,0 +1,36 @@
+/* ===================== Chess board (melekat ke Azbry theme) ===================== */
+
+/* grid papan */
+.board { display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); }
+
+/* kotak */
+.sq{
+  position:relative; display:flex; align-items:center; justify-content:center;
+  user-select:none; -webkit-user-select:none;
+  font-size:clamp(28px, 6.8vw, 56px);
+}
+
+/* warna petak (kontras dengan meja Azbry) */
+.sq.light{ background:#e9edf2; }
+.sq.dark { background:#2f343c; }
+
+/* bidak unicode tebal + glow lembut */
+.piece{
+  line-height:1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55));
+}
+.piece.white{ color:#fff; }
+.piece.black{ color:#0b0f13; }
+
+/* highlight asal & tujuan langkah terakhir */
+.sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
+.sq.last { box-shadow: inset 0 0 0 4px rgba(255,255,0,.22); }
+
+/* indikasi langkah legal (dot) */
+.dot{
+  position:absolute; width:38%; height:38%; border-radius:50%;
+  background: rgba(184,255,154,.28);
+  outline:3px solid rgba(184,255,154,.18);
+}
+
+/* responsif board-only */
+body.board-only .board-wrap{ max-width:min(98vw, 1100px); }
