@@ -1,369 +1,122 @@
-/* ========== AZBRY CHESS STYLE (FINAL FIX) ========== */
+/* =========================
+   AZBRY Chess - chess.css
+   (FULL REPLACE)
+   ========================= */
 
-:root {
-  --bg: #0f1216;
-  --panel: #12161b;
-  --ink: #e6f0e8;
-  --muted: #9fb3a2;
-  --accent: #b6f39c;
-  --btn: #1a2027;
-  --btnEdge: #232b34;
-  --light: #e9edf1;
-  --dark: #363c44;
-  --sq: min(12vw, 70px);
-  --radius: 16px;
-}
-
-/* RESET */
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  height: 100%;
-}
-
-/* CONTAINER */
-.container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 16px;
-}
-
-/* HEADER */
-.top-header {
-  margin-bottom: 14px;
-}
-.top-header .tag {
-  background: #161c22;
-  color: var(--muted);
-  font-size: 12px;
-  padding: 5px 10px;
-  border-radius: 999px;
-}
-.top-header h1 {
-  font-size: 26px;
-  margin-top: 6px;
-  color: var(--accent);
-}
-
-/* MODE PICKER */
-.mode-picker {
+/* --- Board wrapper agar center & responsif --- */
+.board-wrap,
+#boardWrap {
+  width: 100%;
   display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.mode-picker .seg {
-  flex: 1;
-  border: 1px solid var(--btnEdge);
-  background: var(--btn);
-  color: var(--ink);
-  padding: 10px 12px;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: center;
-}
-.mode-picker .seg.active {
-  background: var(--accent);
-  color: #0b100b;
-  font-weight: 600;
+  justify-content: center;
+  align-items: center;
 }
 
-/* BOARD WRAP */
-.board-wrap {
-  background: #101418;
-  border-radius: var(--radius);
-  padding: 14px;
-  box-shadow: inset 0 0 0 1px #202830, 0 8px 18px rgba(0,0,0,.4);
-  margin-bottom: 16px;
-}
-
-/* BOARD GRID */
-.board {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sq));
-  grid-template-rows: repeat(8, var(--sq));
-  width: calc(var(--sq) * 8);
-  height: calc(var(--sq) * 8);
-  margin: 0 auto;
-  border-radius: 10px;
-  overflow: hidden;
-  user-select: none;
-}
-
-/* SQUARES */
-.square {
-  display: grid;
-  place-items: center;
-  font-size: calc(var(--sq) * 0.8);
-  position: relative;
-}
-.square.light { background: var(--light); }
-.square.dark  { background: var(--dark); }
-
-/* HIGHLIGHTS */
-.square.src  { box-shadow: inset 0 0 0 3px rgba(255,255,255,.5); }
-.square.last { box-shadow: inset 0 0 0 3px rgba(255,234,136,.6); }
-.square.move::after {
-  content: "";
-  position: absolute;
-  width: 22%;
-  height: 22%;
-  background: rgba(182,243,156,.8);
-  border-radius: 50%;
-}
-
-/* PIECES */
-.piece {
-  font-size: calc(var(--sq) * 0.9);
-  color: #e7f7e7;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.4));
-  pointer-events: none;
-  user-select: none;
-  line-height: 1;
-}
-
-/* PANEL */
-.panel {
-  background: var(--panel);
-  border-radius: var(--radius);
-  padding: 14px;
-}
-.controls {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-.btn {
-  background: var(--btn);
-  border: 1px solid var(--btnEdge);
-  color: var(--ink);
-  padding: 10px 14px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-.btn.dark {
-  background: #111820;
-}
-.btn.accent {
-  background: var(--accent);
-  color: #0c120c;
-  font-weight: 600;
-}
-.btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
-/* MOVE LOG */
-.move-log h3 {
-  color: var(--accent);
-  margin-bottom: 6px;
-  font-size: 16px;
-}
-#moveHistory {
-  font-size: 14px;
-  color: var(--muted);
-  white-space: pre-wrap;
-  min-height: 40px;
-}
-
-/* FOOTER */
-.footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 14px;
-}
-.footer .btn {
-  flex: 1;
-  margin: 4px;
-}
-
-/* TOAST */
-.az-toast {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 18px;
-  background: #0e1419;
-  color: var(--ink);
-  border: 1px solid #1f2b36;
-  padding: 10px 14px;
-  border-radius: 12px;
-  min-width: 200px;
-  text-align: center;
-  display: none;
-}
-.az-toast.show { display: block; }
-
-/* BOARD ONLY */
-.board-only .panel,
-.board-only .footer,
-.board-only .mode-picker { display: none; }
-
-/* RESPONSIVE */
-@media (max-width: 420px) {
-  :root { --sq: min(13vw, 58px); }
-  .controls { gap: 8px; }
-}
-
-/* --- FORCE VISIBLE PIECES & BIGGER --- */
-#board.chess-board { aspect-ratio: 1/1; }
-#board.chess-board .sq { position: relative; display:flex;align-items:center;justify-content:center; }
-#board.chess-board .piece{
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  font-size: clamp(36px, 7.6vw, 78px);
-  z-index: 2;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55)) drop-shadow(0 2px 6px rgba(0,0,0,.55));
-}
-#board.chess-board .piece.white{ color:#fff; text-shadow:0 0 6px #aef39c99, 0 0 14px #aef39c66; }
-#board.chess-board .piece.black{ color:#0e1115; }
-
-/* ==== BIDAK LEBIH JELAS & BESAR ==== */
-.chess-board .sq,
-#board .sq{
-  display:flex;align-items:center;justify-content:center;
-  /* gedein bidak responsif */
-  font-size: clamp(28px, 9vmin, 72px);
-  line-height: 1;
-}
-
-/* warna kotak biar kontras */
-.chess-board .light, #board .light{ background:#eef2f6; }   /* terang */
-.chess-board .dark,  #board .dark { background:#2a3037; }   /* gelap  */
-
-/* bidak putih – outline gelap */
-.chess-board .white, #board .white{
-  color:#ffffff;
-  /* stroke manual pakai text-shadow (5 arah) */
-  text-shadow:
-    0 0 0 #000,
-    -1px -1px 0 #000,
-    1px -1px 0 #000,
-    -1px  1px 0 #000,
-    1px  1px 0 #000;
-}
-
-/* bidak hitam – outline terang */
-.chess-board .black, #board .black{
-  color:#101418;
-  text-shadow:
-    0 0 0 #fff,
-    -1px -1px 0 #fff,
-    1px -1px 0 #fff,
-    -1px  1px 0 #fff,
-    1px  1px 0 #fff;
-}
-
-/* sedikit polish */
-#board, .chess-board{
-  border:3px solid #39ff14;
-  border-radius:16px;
-  overflow:hidden;
-}
-
-/* === Board & Pieces – Fix === */
-#board.chess-board {
+/* --- Papan 8x8 --- */
+#board.chess-board,
+#board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  aspect-ratio: 1/1;
-  width: min(92vmin, 560px);      /* papan responsif, agak diperbesar */
-  margin: 1rem auto;
+  grid-template-rows: repeat(8, 1fr);
+  width: min(92vmin, 560px);     /* responsif, max 560px */
+  aspect-ratio: 1 / 1;           /* pastikan 1:1 */
   border-radius: 16px;
   overflow: hidden;
+  background: #1a1d21;           /* fallback */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.3) inset,
+    0 10px 30px rgba(0,0,0,.45);
 }
 
-/* Kotak papan: HARUS .square (bukan .sq) */
+/* --- Kotak papan --- */
 #board .square {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
-  /* Bidak lebih besar dan selalu proporsional */
-  font-size: clamp(28px, 9.2vmin, 72px);
+  -webkit-tap-highlight-color: transparent;
+
+  /* Bidak besar & jelas */
+  font-size: clamp(28px, 8.6vmin, 72px);
   line-height: 1;
+  font-weight: 700;
 }
 
 /* Warna kotak */
-#board .light { background: #eef2f6; }
+#board .light { background: #e9edf2; }
 #board .dark  { background: #2a3037; }
 
-/* Warna bidak + outline kontras.
-   UI kamu kadang menaruh class warna di kotak/elemen bidak.
-   Kita cover keduanya. */
-#board .square.white,
-#board .piece.white {
-  color: #ffffff;
+/* --- Warna bidak + outline kontras (biar gak nyatu sama papan) --- */
+#board .white {
+  color: #f8fafc; /* putih */
   text-shadow:
-    0 0 0 #000,
-    -1px -1px 0 #000, 1px -1px 0 #000,
-    -1px 1px 0 #000,  1px 1px 0 #000;
+    0 0 0 #0b0e11,
+    -1px -1px 0 #0b0e11, 1px -1px 0 #0b0e11,
+    -1px  1px 0 #0b0e11, 1px  1px 0 #0b0e11;
+}
+#board .black {
+  color: #0b0e11; /* hitam */
+  text-shadow:
+    0 0 0 #f8fafc,
+    -1px -1px 0 #f8fafc, 1px -1px 0 #f8fafc,
+    -1px  1px 0 #f8fafc, 1px  1px 0 #f8fafc;
 }
 
-#board .square.black,
-#board .piece.black {
-  color: #0e1317;
-  text-shadow:
-    0 0 0 #fff,
-    -1px -1px 0 #fff, 1px -1px 0 #fff,
-    -1px 1px 0 #fff,  1px 1px 0 #fff;
-}
-
-/* Highlight legal moves (kalau UI-mu menambahkan .hint/.move dst, opsional) */
-#board .hint::after {
+/* --- Highlight legal move (lingkaran lembut) --- */
+#board .square.move::after {
   content: "";
-  width: 32%;
-  height: 32%;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 34%;
+  height: 34%;
   border-radius: 50%;
-  background: rgba(57,255,20,.35);
-  display: block;
+  background: rgba(132, 204, 22, .45); /* hijau lembut */
+  box-shadow: 0 0 0 6px rgba(132, 204, 22, .18);
 }
 
-/* Flip board (opsional – sudah ada tombolnya) */
-#board.flip {
-  transform: rotate(180deg);
-}
-#board.flip .square {
-  transform: rotate(180deg);
-}
-/* Kill the neon outline / glow */
-.board-wrap,
-#board.chess-board {
-  outline: none !important;
-  box-shadow: none !important;
-  border: 0 !important;
+/* --- Source kotak yang diklik --- */
+#board .square.src {
+  outline: 3px solid rgba(132, 204, 22, .6);
+  outline-offset: -3px;
 }
 
-/* Board + squares (tetap tema Azbry) */
-#board.chess-board{
-  display:grid;
-  grid-template-columns:repeat(8,1fr);
-  aspect-ratio:1/1;
-  width:min(92vmin,560px);
-  margin:1rem auto;
-  border-radius:16px;
-  overflow:hidden;
+/* --- Jejak last move --- */
+#board .square.last {
+  box-shadow: inset 0 0 0 9999px rgba(250, 204, 21, .14);
 }
-#board .square{
-  display:flex;align-items:center;justify-content:center;
-  user-select:none;
-  font-size:clamp(28px,9.2vmin,72px); /* bidak besar & jelas */
-  line-height:1;
-}
-#board .light{background:#eef2f6;}
-#board .dark{background:#2a3037;}
 
-/* Warna bidak + outline kontras (applies ke char di .square) */
-#board .square.white{
-  color:#fff;
-  text-shadow:
-    0 0 0 #000, -1px -1px 0 #000, 1px -1px 0 #000,
-    -1px 1px 0 #000, 1px 1px 0 #000;
+/* --- Saat flip board tetap rapi (grid tetap) --- */
+#board.flip { transform: rotate(180deg); }
+#board.flip .square { transform: rotate(180deg); }
+
+/* =========================
+   Panel tombol (opsional, biar rapi)
+   ========================= */
+.panel .btn,
+.controls .btn,
+button.btn {
+  border: 0;
+  border-radius: 12px;
+  padding: .8rem 1.1rem;
+  background: #111418;
+  color: #e6f6df;
+  font-weight: 600;
+  box-shadow: 0 4px 18px rgba(0,0,0,.35);
 }
-#board .square.black{
-  color:#0e1317;
-  text-shadow:
-    0 0 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff,
-    -1px 1px 0 #fff, 1px 1px 0 #fff;
+.panel .btn.accent { background: #7bed5a; color: #0a0d0f; }
+.panel .btn.dark   { background: #1b2026; color: #e9f0ea; }
+
+.panel .btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
+
+/* --- Hilangkan outline hijau yang mengganggu (kalau ada sisa class) --- */
+#board .outline,
+#board .glow,
+#board .ring { outline: none !important; box-shadow: none !important; }
+
+/* --- Mobile safe tap --- */
+#board .square:active { filter: brightness(1.04); }
