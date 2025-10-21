@@ -327,3 +327,43 @@ html, body {
 #board.flip .square {
   transform: rotate(180deg);
 }
+/* Kill the neon outline / glow */
+.board-wrap,
+#board.chess-board {
+  outline: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+/* Board + squares (tetap tema Azbry) */
+#board.chess-board{
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  aspect-ratio:1/1;
+  width:min(92vmin,560px);
+  margin:1rem auto;
+  border-radius:16px;
+  overflow:hidden;
+}
+#board .square{
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;
+  font-size:clamp(28px,9.2vmin,72px); /* bidak besar & jelas */
+  line-height:1;
+}
+#board .light{background:#eef2f6;}
+#board .dark{background:#2a3037;}
+
+/* Warna bidak + outline kontras (applies ke char di .square) */
+#board .square.white{
+  color:#fff;
+  text-shadow:
+    0 0 0 #000, -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px 1px 0 #000, 1px 1px 0 #000;
+}
+#board .square.black{
+  color:#0e1317;
+  text-shadow:
+    0 0 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff,
+    -1px 1px 0 #fff, 1px 1px 0 #fff;
+}
