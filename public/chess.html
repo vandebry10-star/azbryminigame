@@ -1,46 +1,103 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Azbry Chess</title>
 
-  <!-- Tema global & style papan -->
-  <link rel="stylesheet" href="/assets/css/azbry.css">
-  <link rel="stylesheet" href="/assets/css/chess.css">
+  <!-- THEME & BOARD STYLES -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=10">
+  <link rel="stylesheet" href="assets/css/chess.css?v=10">
+
+  <style>
+    /* Sedikit util UI bawaan halaman ini saja */
+    .hidden{display:none!important;}
+    .top-actions{display:flex;gap:12px;flex-wrap:wrap}
+    .btn.small{padding:8px 12px;font-weight:800;border-radius:10px}
+    /* Tombol “Kembali” khusus board-only */
+    #btnBack{display:none}
+    body.board-only #btnBack{display:inline-flex}
+    /* Overlay menu pertama kali */
+    #menuOverlay{
+      position:fixed; inset:0; z-index:9998;
+      background:rgba(11,13,16,.94);
+      display:flex; align-items:center; justify-content:center;
+      opacity:1; pointer-events:auto; transition:opacity .25s ease;
+    }
+    #menuOverlay.hide{opacity:0; pointer-events:none;}
+    .menu-card{
+      width:min(92vw,580px); padding:22px; border-radius:16px;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+      text-align:center;
+    }
+    .menu-card h2{
+      margin:6px 0 14px; font-weight:900; color:var(--azbry-accent);
+      text-shadow:0 0 16px var(--azbry-ring);
+      font-size:clamp(22px,4vw,32px);
+    }
+    .seg-wrap{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .menu-hint{margin-top:10px; opacity:.65}
+    /* Result modal */
+    #resultModal{
+      position:fixed; inset:0; z-index:10000;
+      background:rgba(11,13,16,.92);
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none; transition:opacity .25s ease;
+    }
+    #resultModal.show{opacity:1; pointer-events:auto}
+    .result-card{
+      width:min(92vw,560px); padding:22px; border-radius:16px;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      text-align:center;
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+    .result-card h2{
+      margin:4px 0 8px; color:var(--azbry-accent); font-weight:900;
+      text-shadow:0 0 18px var(--azbry-ring);
+      font-size:clamp(22px,4.4vw,34px);
+    }
+    .result-sub{color:#cfd8e6; opacity:.9; margin-bottom:14px}
+    .result-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+  </style>
 </head>
 <body>
-  <main class="container">
+  <main class="container" id="chess-app">
     <!-- HEADER -->
-    <div class="top-header">
+    <header class="top-header">
       <div class="title">
-        <span class="tag">AZBRY-MD</span>
-        <h1>Chess</h1>
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess</h1>
       </div>
+
+      <!-- tombol cepat -->
+      <div class="top-actions">
+        <button id="btnReset" class="btn accent small" type="button">Muat Ulang</button>
+        <button id="btnFlip" class="btn dark small" type="button">Flip Board</button>
+        <!-- Board Only + Kembali -->
+        <button id="btnBoardOnly" class="btn dark small" type="button">Board Only</button>
+        <button id="btnBack" class="btn dark small" type="button" title="Kembali dari Board Only">Kembali</button>
+      </div>
+    </header>
+
+    <!-- MODE PICKER (juga ada versi overlay) -->
+    <div class="mode-picker" aria-label="Pilih Mode">
+      <button id="btnHuman" class="seg active" type="button">VS Player</button>
+      <button id="btnAI" class="seg" type="button" aria-label="Mode vs Azbry-MD">VS Azbry-MD</button>
     </div>
 
-    <!-- MODE PICKER -->
-    <div class="mode-picker">
-      <button id="modeHuman" class="seg active">VS Player</button>
-      <button id="modeAI" class="seg">VS Azbry-MD</button>
-    </div>
-
-    <!-- BOARD -->
-    <section class="board-wrap">
-      <div id="board" class="board"></div>
+    <!-- PAPAN -->
+    <section class="board-wrap" aria-label="Papan Catur">
+      <div id="board" class="board" aria-label="board"></div>
     </section>
 
-    <!-- PANEL KONTROL + LOG -->
-    <section class="panel">
+    <!-- PANEL -->
+    <section class="panel" aria-label="Kontrol">
       <div class="controls">
-        <button id="btnReset" class="btn dark">Muat Ulang</button>
-        <button id="btnUndo"  class="btn dark">Undo</button>
-        <button id="btnRedo"  class="btn dark">Redo</button>
-        <button id="btnFlip"  class="btn dark">Flip Board</button>
-
-        <!-- Board-only + kembali -->
-        <button id="btnBoardOnly" class="btn accent">Board Only</button>
-        <button id="btnBack" class="btn dark" style="display:none;">Kembali</button>
+        <button id="btnUndo" class="btn" type="button">Undo</button>
+        <button id="btnRedo" class="btn" type="button">Redo</button>
       </div>
 
       <div class="move-log">
@@ -49,33 +106,98 @@
       </div>
     </section>
 
-    <!-- LISENSI + PORTOFOLIO (gaya Azbry) -->
-    <div class="license">
-      <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
-      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
-    </div>
+    <!-- FOOTER (optional lisensi/portofolio kamu) -->
+    <section class="license">
+      <p>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh <b>FebryWesker</b></p>
+      <a href="https://azbry-portofolio.vercel.app/" target="_blank" class="cta">↗ Portofolio</a>
+    </section>
   </main>
 
-  <!-- SCRIPT (urutan WAJIB: engine → main) -->
-  <script src="/assets/js/chess-engine.js"></script>
-  <script src="/assets/js/main.js"></script>
+  <!-- ======== MENU OVERLAY (muncul pertama kali) ======== -->
+  <div id="menuOverlay" aria-modal="true" role="dialog">
+    <div class="menu-card">
+      <div class="tag">AZBRY-MD</div>
+      <h2>Pilih Mode Permainan</h2>
+      <div class="seg-wrap">
+        <button id="menuHuman" class="seg active" type="button">VS Player</button>
+        <button id="menuAI" class="seg" type="button">VS Azbry-MD</button>
+      </div>
+      <div class="menu-hint">Kamu bisa ganti mode kapan saja dari tombol di atas papan.</div>
+    </div>
+  </div>
 
-  <!-- Handler Board Only + Kembali -->
+  <!-- ======== RESULT MODAL ======== -->
+  <div id="resultModal" aria-live="polite">
+    <div class="result-card">
+      <h2 id="resultText">Putih Menang</h2>
+      <div id="resultSub" class="result-sub"></div>
+      <div class="result-actions">
+        <button id="btnPlayAgain" class="btn accent" type="button">Main Lagi</button>
+        <button id="btnCloseResult" class="btn dark" type="button">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== SCRIPTS (URUTAN WAJIB) ======== -->
+  <script src="assets/js/chess-engine.js?v=10"></script>
+  <script src="assets/js/main.js?v=10"></script>
+
+  <!-- Hook ringan untuk overlay/menu & board-only UI -->
   <script>
-    const btnBoardOnly = document.getElementById('btnBoardOnly');
-    const btnBack = document.getElementById('btnBack');
+    (function(){
+      const menu = document.getElementById('menuOverlay');
+      const menuHuman = document.getElementById('menuHuman');
+      const menuAI = document.getElementById('menuAI');
+      const btnHuman = document.getElementById('btnHuman');
+      const btnAI = document.getElementById('btnAI');
 
-    btnBoardOnly.addEventListener('click', () => {
-      document.body.classList.add('board-only');
-      btnBoardOnly.style.display = 'none';
-      btnBack.style.display = 'inline-block';
-    });
+      // buka overlay saat pertama kali
+      let firstOpen = sessionStorage.getItem('azbry_chess_seen_menu') !== '1';
+      if(firstOpen) {
+        menu.classList.remove('hide');
+      } else {
+        menu.classList.add('hide');
+      }
 
-    btnBack.addEventListener('click', () => {
-      document.body.classList.remove('board-only');
-      btnBack.style.display = 'none';
-      btnBoardOnly.style.display = 'inline-block';
-    });
+      const chooseMode = (mode)=> {
+        // trigger tombol mode utama supaya main.js menangkap
+        if(mode === 'human') btnHuman.click();
+        else btnAI.click();
+        sessionStorage.setItem('azbry_chess_seen_menu','1');
+        menu.classList.add('hide');
+      };
+      menuHuman.addEventListener('click', ()=> chooseMode('human'));
+      menuAI.addEventListener('click', ()=> chooseMode('ai'));
+
+      // Board Only <-> Kembali
+      const btnBoardOnly = document.getElementById('btnBoardOnly');
+      const btnBack = document.getElementById('btnBack');
+      btnBoardOnly.addEventListener('click', ()=> {
+        document.body.classList.add('board-only');
+        // biar tombol “Kembali” kelihatan, style di CSS sudah handle
+      });
+      btnBack.addEventListener('click', ()=> {
+        document.body.classList.remove('board-only');
+      });
+
+      // Result modal close
+      const closeBtn = document.getElementById('btnCloseResult');
+      const modal = document.getElementById('resultModal');
+      closeBtn.addEventListener('click', ()=> modal.classList.remove('show'));
+
+      // OPTIONAL: expose helper supaya main.js bisa set taunt AI dengan mudah:
+      window.__azbrySetResult = function({text, sub}) {
+        const t = document.getElementById('resultText');
+        const s = document.getElementById('resultSub');
+        t.textContent = text || '';
+        s.textContent = sub || '';
+        modal.classList.add('show');
+      };
+      // Dari main.js, saat selesai game:
+      //   window.__azbrySetResult({ text: 'Putih Menang' })
+      // Mode vs Azbry-MD (kalau player menang), panggil:
+      //   window.__azbrySetResult({ text: 'Azbry Kalah', sub: '“Serius? Kamu menang? Kebetulan doang kali 😏”' })
+    })();
   </script>
 </body>
 </html>
