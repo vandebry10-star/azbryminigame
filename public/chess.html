@@ -1,125 +1,94 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Azbry Chess</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Azbry Chess</title>
+  <style>
+    :root{
+      --bg:#0e1115;--panel:#141820;--ring:#21303e;
+      --text:#e8f0f7;--muted:#a8b3c5;--accent:#b2f29b;--accent2:#7fe0a0;
+      --dark:#242a34;--light:#f4f6fa;--hl:#aef39c33;--hl2:#aef39c55;
+    }
+    body{margin:0;background:#0b0f14;color:var(--text);font-family:Inter,system-ui,sans-serif}
+    .container{max-width:1100px;margin:24px auto;padding:0 16px}
+    .top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .tag{font-size:12px;letter-spacing:.14em;color:var(--muted);background:#10161e;border:1px solid #1b2430;border-radius:999px;padding:6px 10px}
+    h1{margin:0;font-size:28px;color:var(--accent)}
 
-<style>
-  :root{
-    --bg:#0e1115;--panel:#141820;--soft:#19202a;--ring:#21303e;
-    --text:#e8f0f7;--muted:#a8b3c5;--accent:#b2f29b;--accent-2:#7fe0a0;
-    --dark:#2a3037;--light:#e9edf2;--hl:#aef39c33;--hl-2:#aef39c55;
-  }
+    /* SHELL BOARD */
+    .board-shell{
+      background:linear-gradient(180deg,#111822,#0a1016 40%,#070c12);
+      border:2px solid #2e3b4b;border-radius:28px;padding:22px;
+      box-shadow:0 10px 40px rgba(0,0,0,.65), inset 0 0 0 2px rgba(150,255,150,.07);
+    }
 
-  body{
-    margin:0;
-    background:radial-gradient(1200px 800px at 10% -10%,#0d1320,transparent),
-    radial-gradient(900px 700px at 110% 10%,#0f1a2a,transparent),var(--bg);
-    color:var(--text);
-    font-family:"Inter",system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
+    /* Papan WAJIB class ini: .chess-board  */
+    .chess-board{
+      width:100%;aspect-ratio:1/1;display:grid;
+      grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+      border-radius:20px;overflow:hidden;border:1px solid #1e2834;background:#0f141a;
+    }
+    .sq{display:flex;align-items:center;justify-content:center;
+        font-size:clamp(34px,7.5vw,72px); /* bidak lebih BESAR */
+        user-select:none;cursor:pointer}
+    .light{background:var(--light)}
+    .dark{background:var(--dark)}
 
-  .container{max-width:1100px;margin:24px auto;padding:0 16px}
-  .top{display:flex;align-items:center;gap:16px;margin-bottom:12px}
-  .tag{font-size:12px;letter-spacing:.15em;color:var(--muted);
-       background:#11161d;border:1px solid #1b2430;border-radius:999px;padding:6px 10px}
-  h1{margin:0;font-size:28px;color:var(--accent)}
+    /* Bidak */
+    .piece{filter:drop-shadow(0 1px 1px #0006) drop-shadow(0 2px 4px #0006)}
+    .piece.white{color:#fff;text-shadow:0 0 6px #aef39c77,0 0 14px #aef39c55}
+    .piece.black{color:#0f1216}
 
-  /* BOARD */
-  .board-shell{
-    background:linear-gradient(180deg,#111822,#0a1016 40%,#070c12);
-    border:2px solid #2e3b4b;
-    border-radius:28px;
-    box-shadow:
-      0 10px 40px rgba(0,0,0,0.65),
-      inset 0 0 0 2px rgba(150,255,150,0.07);
-    padding:22px;
-  }
+    /* Highlight langkah */
+    .sq.sel{box-shadow:inset 0 0 0 4px var(--hl2)}
+    .sq.move{box-shadow:inset 0 0 0 4px var(--hl)}
+    .sq.dot::after{content:"";width:26%;height:26%;border-radius:50%;background:var(--hl2)}
 
-  .board{
-    aspect-ratio:1/1; width:100%;
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    grid-template-rows:repeat(8,1fr);
-    border-radius:20px;
-    overflow:hidden;
-    border:1px solid #1e2834;
-    background:#0f141a;
-  }
+    /* Panel & tombol */
+    .panel{background:#141820;border:1px solid #1b2532;padding:14px;border-radius:18px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .grid2{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+    .btn{border:1px solid #253242;border-radius:12px;padding:10px 14px;cursor:pointer;transition:.15s}
+    .btn.accent{background:var(--accent);color:#0d130d;border-color:#93f07f}
+    .btn.dark{background:#0f141c;color:var(--text)}
+    .btn:hover{transform:translateY(-1px)}
+    .log{margin:10px 0 0;background:#0f141c;border:1px solid #1b2532;border-radius:12px;padding:12px;min-height:56px}
 
-  .sq{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:clamp(34px,7.5vw,72px);
-    user-select:none;
-    cursor:pointer;
-  }
-
-  /* WARNA PAPAN */
-  .light{background:#f4f6fa;}
-  .dark{background:#242a34;}
-
-  /* BIDAK */
-  .piece{
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-    transition: transform 0.1s ease-in-out;
-  }
-  .piece.white{
-    color:#ffffff;
-    text-shadow: 0 0 6px #aef39c77, 0 0 14px #aef39c55; /* 💡 efek neon hijau */
-  }
-  .piece.black{color:#11151a;}
-
-  /* Highlight langkah */
-  .sq.sel{outline:4px solid var(--hl-2) inset; box-shadow:inset 0 0 0 3px var(--hl-2);}
-  .sq.move{box-shadow:inset 0 0 0 4px var(--hl);}
-  .sq.dot::after{content:"";width:26%;height:26%;border-radius:999px;background:var(--hl-2);}
-
-  /* Panel */
-  .panel{background:var(--panel);border:1px solid #1b2532;padding:14px;border-radius:18px}
-  .btn{border:1px solid #253242;border-radius:12px;padding:10px 14px;cursor:pointer;transition:.15s}
-  .btn.accent{background:var(--accent);color:#0d130d;border-color:#93f07f}
-  .btn.dark{background:#0f141c;color:var(--text)}
-  .btn:hover{transform:translateY(-1px)}
-
-  /* Board Only */
-  .board-only .panel, .board-only .segrow { display:none }
-  .bo-exit{
-    position:fixed; left:12px; bottom:12px; z-index:11000;
-    display:none; padding:10px 14px; border-radius:999px;
-    background:linear-gradient(180deg,var(--accent),var(--accent-2));
-    color:#0d130d; border:none; font-weight:800; box-shadow:0 10px 30px #0008;
-  }
-  .board-only .bo-exit{ display:inline-flex }
-</style>
+    /* Board Only */
+    .board-only .panel, .board-only .segrow{display:none}
+    .bo-exit{position:fixed;left:12px;bottom:12px;z-index:10000;display:none;
+      padding:10px 14px;border-radius:999px;background:linear-gradient(180deg,var(--accent),var(--accent2));
+      color:#0d130d;border:none;font-weight:800;box-shadow:0 10px 30px #0008}
+    .board-only .bo-exit{display:inline-flex}
+  </style>
 </head>
-
 <body>
-<main class="container">
-  <div class="top">
-    <span class="tag">AZBRY-MD • BOARD</span>
-    <h1>Azbry Chess</h1>
-  </div>
+  <main class="container">
+    <div class="top">
+      <span class="tag">AZBRY-MD • BOARD</span>
+      <h1>Azbry Chess</h1>
+    </div>
 
-  <div class="segrow" role="tablist" aria-label="Pilih Mode">
-    <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-    <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
-  </div>
+    <!-- Mode picker -->
+    <div class="segrow" role="tablist" aria-label="Pilih Mode" style="display:flex;gap:10px;margin-bottom:12px">
+      <button id="modeHuman" class="btn accent" type="button">vs Human (Local)</button>
+      <button id="modeAI" class="btn dark" type="button">vs Azbry-MD</button>
+    </div>
 
-  <div class="wrap">
-    <section class="board-shell">
-      <div id="board" class="board" aria-label="Papan Catur"></div>
+    <!-- BOARD -->
+    <section class="board-shell" id="chess-board-wrap" aria-label="Papan Catur">
+      <!-- Wajib id & class ini: -->
+      <div id="board" class="chess-board"></div>
     </section>
 
-    <section class="panel">
-      <div class="row" style="margin-bottom:8px">
+    <!-- Panel kontrol -->
+    <section class="panel" aria-label="Kontrol Permainan">
+      <div class="row">
         <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-        <button id="btnUndo" class="btn dark"   type="button">Undo</button>
-        <button id="btnRedo" class="btn dark"   type="button">Redo</button>
-        <button id="btnFlip" class="btn dark"   type="button">Flip Board</button>
+        <button id="btnUndo"  class="btn dark"   type="button">Undo</button>
+        <button id="btnRedo"  class="btn dark"   type="button">Redo</button>
+        <button id="btnFlip"  class="btn dark"   type="button">Flip Board</button>
       </div>
 
       <div class="grid2">
@@ -128,19 +97,17 @@
       </div>
       <pre id="moveLog" class="log">–</pre>
 
-      <div class="row" style="margin-top:10px;justify-content:flex-end">
+      <div class="row" style="justify-content:flex-end;margin-top:10px">
         <button id="btnBack" class="btn dark" type="button">Kembali</button>
       </div>
     </section>
-  </div>
-</main>
+  </main>
 
-<button id="btnExitBO" class="bo-exit" type="button">Kembali</button>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <button id="btnExitBO" class="bo-exit" type="button">Kembali</button>
 
-<!-- SCRIPT -->
-<script src="assets/js/chess-engine.js"></script>
-<script src="assets/js/chess-ui.js"></script>
-<script src="assets/js/main.js"></script>
+  <!-- URUTAN SCRIPT (WAJIB) -->
+  <script src="assets/js/chess-engine.js"></script>
+  <script src="assets/js/chess-ui.js"></script>
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
