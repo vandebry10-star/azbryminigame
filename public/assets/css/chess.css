@@ -64,3 +64,12 @@
     width: 94vw !important;
   }
 }
+
+/* BOARD ONLY toggle */
+.panel.hidden { display: none; }
+
+/* Biar tombol mode keliatan aktif */
+.mode-picker .seg.active {
+  background: var(--azAccent, #9BE27A);
+  color: #111;
+}
