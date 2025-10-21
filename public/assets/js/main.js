@@ -1,200 +1,123 @@
-/* AZBRY CHESS – FINAL MAIN.JS FIX */
+/* Azbry Chess — MAIN glue */
 (() => {
-  window.currentTurnColor = "white";
-  let mode = "human";
-  const aiColor = "black";
-  let gameOver = false;
+  const $ = s => document.querySelector(s);
 
-  const H = [], R = [];
-  const logEl = document.getElementById("moveHistory");
-  const board = () => window.boardState;
-  const clone = (b) => b.map(r => r.map(p => (p ? { ...p } : null)));
-  const file = (i) => String.fromCharCode(97 + i);
-  const rank = (j) => 8 - j;
-  const alg = ([fx, fy], [tx, ty]) => `${file(fx)}${rank(fy)} → ${file(tx)}${rank(ty)}`;
+  let mode = 'human'; // 'human' | 'ai'
+  let flipped = false;
 
-  const renderLog = () => {
-    logEl.textContent = H.length ? H.map((h, i) => `${i + 1}. ${h.note}`).join("\n") : "—";
-  };
+  const boardEl = $('#board');
 
-  function toast(msg) {
-    let el = document.getElementById("resultModal");
-    if (!el) {
-      el = document.createElement("div");
-      el.id = "resultModal";
-      el.style.cssText =
-        "position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#202225;color:#9BE27A;padding:10px 14px;border-radius:10px;z-index:9999";
-      document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    el.style.display = "block";
-    setTimeout(() => (el.style.display = "none"), 1200);
-  }
-
-  function showResult(msg) {
-    const wrap = document.createElement("div");
-    wrap.className = "az-overlay";
-    wrap.innerHTML = `
-      <div class="az-box">
-        <h3>${msg}</h3>
-        <button id="azReload" class="btn accent">Main Lagi</button>
-      </div>`;
-    document.body.appendChild(wrap);
-    document.getElementById("azReload").onclick = () => {
-      wrap.remove();
-      resetGame();
-    };
-  }
-
-  const resetGame = () => {
-    window.initBoard?.();
-    window.currentTurnColor = "white";
-    H.length = 0;
-    R.length = 0;
-    gameOver = false;
-    window.UIChess?.rebuild();
-    renderLog();
-  };
-
-  const inCheck = (color) =>
-    window.isKingInCheck
-      ? window.isKingInCheck(color)
-      : !!window.getGameStatus?.(color)?.check;
-
-  const allMoves = (color) => {
-    const moves = [];
-    for (let y = 0; y < 8; y++)
-      for (let x = 0; x < 8; x++) {
-        const p = board()[y][x];
-        if (p && p.color === color) {
-          (window.getLegalMoves(x, y) || []).forEach(([tx, ty]) =>
-            moves.push({ from: [x, y], to: [tx, ty] })
-          );
-        }
-      }
-    return moves;
-  };
-
-  const sideStatus = (color) => {
-    const moves = allMoves(color);
-    if (moves.length > 0) return "play";
-    return inCheck(color) ? "mate" : "stalemate";
-  };
-
-  // === FIXED onMove ===
-  function onMove(from, to, prev) {
-    const note = alg(from, to);
-    H.push({ prev, next: clone(board()), note });
-    R.length = 0;
-    renderLog();
-
-    // Ganti giliran dulu baru cek status
-    window.currentTurnColor = window.currentTurnColor === "white" ? "black" : "white";
-
-    const state = sideStatus(window.currentTurnColor);
-
-    if (state === "mate") {
-      gameOver = true;
-      const winner = window.currentTurnColor === "white" ? "Hitam" : "Putih";
-      showResult(`${winner} menang (Checkmate)!`);
-      return;
-    }
-    if (state === "stalemate") {
-      gameOver = true;
-      showResult("Seri (Stalemate).");
-      return;
-    }
-
-    if (inCheck(window.currentTurnColor)) toast("Check!");
-
-    if (mode === "ai" && !gameOver && window.currentTurnColor === aiColor) aiMove();
-  }
-
-  window.onMoveApplied = (from, to, prev) => onMove(from, to, prev);
-
-  // === AI ===
-  const val = { P: 100, N: 300, B: 320, R: 500, Q: 900, K: 9999 };
-  const score = (b, c) => {
-    let s = 0;
-    b.forEach(r =>
-      r.forEach(p => {
-        if (!p) return;
-        s += p.color === c ? val[p.type.toUpperCase()] : -val[p.type.toUpperCase()];
-      })
-    );
+  function snapshot(){
+    const s = AzEngine.snapshot();
+    AzUI.update(s.board, s.turn, s.legal, AzEngine._hist, null);
     return s;
-  };
+  }
 
-  const pickMove = (color) => {
-    let best = null,
-      bestS = -1e9;
-    for (const mv of allMoves(color)) {
-      const tmp = clone(board());
-      const ok = window.makeMove(mv.from, mv.to, color);
-      if (!ok) {
-        window.boardState = tmp;
-        continue;
-      }
-      const s = score(board(), color);
-      if (s > bestS) (bestS = s), (best = mv);
-      window.boardState = tmp;
-    }
-    return best;
-  };
+  function reset(){
+    const s = AzEngine.reset();
+    AzUI.reset(s.board, s.turn, s.legal, AzEngine._hist);
+  }
 
-  const aiMove = () => {
-    const mv = pickMove(aiColor);
-    if (!mv) {
-      const s = sideStatus(aiColor);
-      if (s === "mate") showResult("Putih menang (Checkmate)");
-      else showResult("Seri.");
+  function applyAndRender(move){
+    const res = AzEngine.apply(move);
+    const snap = AzEngine.snapshot();
+    AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, move);
+    // check status (win/draw)
+    if(snap.status.over){
+      toastResult(snap.status);
       return;
     }
-    const prev = clone(board());
-    window.makeMove(mv.from, mv.to, aiColor);
-    onMove(mv.from, mv.to, prev);
+    // AI reply if needed
+    if(mode==='ai' && snap.turn==='b'){ // manusia selalu putih untuk sederhana
+      setTimeout(aiStep, 180);
+    }
+  }
+
+  function toastResult(st){
+    const msg = st.reason==='checkmate'
+      ? (st.result==='1-0'?'Putih menang (Checkmate)':'Hitam menang (Checkmate)')
+      : 'Seri';
+    const el = $('#resultToast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 2000);
+  }
+
+  function aiStep(){
+    const s = AzEngine.snapshot();
+    if(s.status.over) return;
+    const mv = AzEngine.randomAIMove();
+    if(!mv){ toastResult({reason:'stalemate'}); return; }
+    applyAndRender(mv);
+  }
+
+  // === UI events ===
+  $('#modeHuman').addEventListener('click', ()=>{
+    mode='human';
+    $('#modeHuman').classList.add('active');
+    $('#modeAI').classList.remove('active');
+    reset();
+  });
+  $('#modeAI').addEventListener('click', ()=>{
+    mode='ai';
+    $('#modeAI').classList.add('active');
+    $('#modeHuman').classList.remove('active');
+    reset(); // start fresh; manusia = putih
+  });
+
+  $('#btnReset').addEventListener('click', reset);
+
+  $('#btnFlip').addEventListener('click', ()=>{
+    flipped = !flipped;
+    AzUI.setFlipped(flipped);
+    snapshot();
+  });
+
+  $('#btnUndo').addEventListener('click', ()=>{
+    const s = AzEngine.undo();
+    if(s) AzUI.update(s.board, s.turn, s.legal, AzEngine._hist, null);
+  });
+
+  $('#btnRedo').addEventListener('click', ()=>{/* optional in next build */});
+
+  $('#btnBoardOnly').addEventListener('click', ()=>{
+    document.body.classList.toggle('board-only');
+  });
+
+  $('#btnBack').addEventListener('click', ()=>{
+    // balik ke tests.html atau index? di sini: history.back
+    history.back();
+  });
+
+  // Click square from UI
+  window.onSquareClick = function(i){
+    const snap = AzEngine.snapshot();
+    const legal = snap.legal;
+
+    // cari apakah sedang memilih source
+    const srcMoves = legal.filter(m=>m.from===i);
+    const isSrc = srcMoves.length>0;
+
+    // jika klik source
+    if(isSrc){
+      window.AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, null);
+      // tandai selection via UI internal
+      window.AzUI.selection = i; // not used (but kept)
+      // rebuild with highlight handled inside AzUI.update
+      window.AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, null);
+      return;
+    }
+
+    // atau klik target dari source yang sebelumnya?
+    // cek dari semua legal apakah ada move dengan to = i (ambiguous); ambil yang from terakhir dipilih (jika ada)
+    // untuk sederhana, pilih move pertama yang menuju i
+    const mv = legal.find(m=>m.to===i);
+    if(mv){
+      applyAndRender(mv);
+      return;
+    }
   };
 
-  // === Tombol ===
-  document.getElementById("btnReset")?.addEventListener("click", resetGame);
-  document.getElementById("btnUndo")?.addEventListener("click", () => {
-    if (!H.length) return;
-    const last = H.pop();
-    R.push({ prev: clone(board()), next: clone(last.next), note: last.note });
-    window.boardState = clone(last.prev);
-    window.currentTurnColor = window.currentTurnColor === "white" ? "black" : "white";
-    window.UIChess?.render();
-    renderLog();
-  });
-  document.getElementById("btnRedo")?.addEventListener("click", () => {
-    if (!R.length) return;
-    const step = R.pop();
-    H.push(step);
-    window.boardState = clone(step.next);
-    window.currentTurnColor = window.currentTurnColor === "white" ? "black" : "white";
-    window.UIChess?.render();
-    renderLog();
-  });
-  document.getElementById("btnFlip")?.addEventListener("click", () =>
-    document.getElementById("board")?.classList.toggle("flip")
-  );
-  document.getElementById("btnBoardOnly")?.addEventListener("click", () =>
-    document.querySelector(".panel")?.classList.toggle("hidden")
-  );
-  document.getElementById("btnBack")?.addEventListener("click", resetGame);
-  document.getElementById("modeHuman")?.addEventListener("click", () => {
-    mode = "human";
-    document.getElementById("modeAI")?.classList.remove("active");
-    document.getElementById("modeHuman")?.classList.add("active");
-  });
-  document.getElementById("modeAI")?.addEventListener("click", () => {
-    mode = "ai";
-    document.getElementById("modeHuman")?.classList.remove("active");
-    document.getElementById("modeAI")?.classList.add("active");
-  });
-
-  // === Init ===
-  if (!window.boardState?.length) window.initBoard?.();
-  window.UIChess?.rebuild();
-  renderLog();
+  // init
+  reset();
 })();
