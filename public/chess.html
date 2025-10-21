@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <!-- MODE PICKER (tetap ada untuk ganti mode in-game) -->
+    <!-- MODE PICKER -->
     <div class="mode-picker">
       <button id="modeHuman" class="seg active">VS Player</button>
       <button id="modeAI" class="seg">VS Azbry-MD</button>
@@ -38,9 +38,9 @@
         <button id="btnRedo"  class="btn dark">Redo</button>
         <button id="btnFlip"  class="btn dark">Flip Board</button>
 
-        <!-- Board-only & kembali -->
+        <!-- Board-only + kembali -->
         <button id="btnBoardOnly" class="btn accent">Board Only</button>
-        <button id="btnBack" class="btn dark" style="display:none">Kembali</button>
+        <button id="btnBack" class="btn dark" style="display:none;">Kembali</button>
       </div>
 
       <div class="move-log">
@@ -56,47 +56,26 @@
     </div>
   </main>
 
-  <!-- ===== OVERLAYS ===== -->
-
-  <!-- MENU AWAL -->
-  <div id="startMenu" class="overlay show">
-    <h2>Pilih Mode</h2>
-    <div class="overlay-actions">
-      <button id="btnStartHuman" class="btn accent">VS Player</button>
-      <button id="btnStartAI" class="btn accent">VS Azbry-MD</button>
-    </div>
-  </div>
-
-  <!-- POPUP HASIL -->
-  <div id="resultPopup" class="overlay">
-    <h2 id="resultText">Checkmate</h2>
-    <div class="overlay-actions">
-      <button id="btnRestart" class="btn accent">Main Lagi</button>
-    </div>
-  </div>
-
   <!-- SCRIPT (urutan WAJIB: engine → main) -->
   <script src="/assets/js/chess-engine.js"></script>
   <script src="/assets/js/main.js"></script>
 
-  <!-- Handler Board Only (toggle body.board-only) -->
+  <!-- Handler Board Only + Kembali -->
   <script>
-    (function(){
-      const btnOnly = document.getElementById('btnBoardOnly');
-      const btnBack = document.getElementById('btnBack');
-      if(btnOnly && btnBack){
-        btnOnly.addEventListener('click', () => {
-          document.body.classList.add('board-only');
-          btnOnly.style.display = 'none';
-          btnBack.style.display = 'inline-block';
-        });
-        btnBack.addEventListener('click', () => {
-          document.body.classList.remove('board-only');
-          btnBack.style.display = 'none';
-          btnOnly.style.display = 'inline-block';
-        });
-      }
-    })();
+    const btnBoardOnly = document.getElementById('btnBoardOnly');
+    const btnBack = document.getElementById('btnBack');
+
+    btnBoardOnly.addEventListener('click', () => {
+      document.body.classList.add('board-only');
+      btnBoardOnly.style.display = 'none';
+      btnBack.style.display = 'inline-block';
+    });
+
+    btnBack.addEventListener('click', () => {
+      document.body.classList.remove('board-only');
+      btnBack.style.display = 'none';
+      btnBoardOnly.style.display = 'inline-block';
+    });
   </script>
 </body>
 </html>
