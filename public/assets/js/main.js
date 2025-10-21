@@ -1,4 +1,4 @@
-// assets/js/main.js — QUICK-BOOT: papan & bidak pasti muncul
+// assets/js/main.js — QUICK-BOOT: papan & bidak pasti muncul + CLICK FIX
 document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
   const boardEl   = $('board');
@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnFlip   = $('btnFlip');
   const btnOnly   = $('btnBoardOnly');
   const btnBack   = $('btnBack');
+
+  // >>> CLICK SAFETY NET (tambahan fix) <<<
+  // memastikan klik/touch/pointer pada .square selalu memanggil onSquareClick
+  ['click','touchend','pointerup'].forEach(evt => {
+    boardEl.addEventListener(evt, (e) => {
+      const sqEl = e.target.closest?.('.square');
+      if (!sqEl) return;
+      e.preventDefault(); // penting di mobile (hindari long-press menu)
+      const sq = sqEl.dataset.square;
+      if (sq) onSquareClick(sq);
+    }, { passive:false });
+  });
 
   // --- CONST ---
   const FILES = ['a','b','c','d','e','f','g','h'];
@@ -27,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const d = document.createElement('div');
         d.className = `square ${((r+f)%2===0)?'light':'dark'}`;
         d.dataset.square = sq;
-        d.addEventListener('click', () => onSquareClick(sq));
+        // tetap pasang handler langsung di square
+        d.addEventListener('click', () => onSquareClick(sq), { passive:true });
         boardEl.appendChild(d);
       }
     }
@@ -64,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return boardEl.querySelector(`[data-square="${sq}"]`);
   }
 
-  // --- CLICK HANDLER (fallback minimal: hanya highlight) ---
+  // --- CLICK HANDLER ---
   let sel = null;
   function onSquareClick(sq){
     if (!engine) {
@@ -138,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function findKingSq(color){
-    // scan FEN untuk K/k (aman & simple)
     const fen = engine.fen().split(' ')[0];
     const rows = fen.split('/');
     for (let r=0;r<8;r++){
