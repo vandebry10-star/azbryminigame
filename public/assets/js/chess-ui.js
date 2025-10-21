@@ -1,108 +1,71 @@
-/* Azbry Chess UI (minimal) */
-/* Membangun grid 8x8, render bidak, highlight legal & last move, flip */
-
-(function () {
-  // Unicode bidak biar kontras & gede
-  const GLYPH = {
-    wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
-    bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟"
+/* Azbry Chess UI (final) */
+(() => {
+  const PIECE_GLYPH = {
+    K:"♔", Q:"♕", R:"♖", B:"♗", N:"♘", P:"♙",
+    k:"♚", q:"♛", r:"♜", b:"♝", n:"♞", p:"♟"
   };
+  const i2rc = i => [Math.floor(i/8), i%8];
 
-  // util posisi
-  function idxToRC(i){ return {r: Math.floor(i / 8), c: i % 8}; }
-  function rcToIdx(r,c){ return r*8 + c; }
-
-  class ChessUI {
+  class UI {
     constructor(boardEl, onSquareClick){
-      if(!boardEl) throw new Error("ChessUI: boardEl kosong");
+      if(!boardEl) throw new Error("boardEl required");
       this.boardEl = boardEl;
       this.onSquareClick = onSquareClick || (()=>{});
-      this.flipped = false;
-      this.sqEls = [];
+      this.squares = new Array(64);
+      this.flipped=false;
       this._build();
     }
-
     _build(){
-      // pastikan class untuk styling sudah ada
-      if(!this.boardEl.classList.contains("board")){
-        this.boardEl.classList.add("board");
-      }
-      this.boardEl.innerHTML = "";
-      this.sqEls = [];
-
-      // 64 kotak
+      this.boardEl.innerHTML="";
       for(let i=0;i<64;i++){
-        const s = document.createElement("div");
-        s.className = "sq " + (((Math.floor(i/8)+i)&1) ? "dark" : "light");
-        s.dataset.idx = i;
-        s.addEventListener("click", () => this.onSquareClick(i));
-        this.boardEl.appendChild(s);
-        this.sqEls.push(s);
+        const sq=document.createElement("div");
+        const [,c]=i2rc(i);
+        sq.className = "square " + ((c%2) ? "dark":"light");
+        sq.dataset.idx=i;
+        sq.addEventListener("click", e => this.onSquareClick(parseInt(sq.dataset.idx,10)));
+        this.boardEl.appendChild(sq);
+        this.squares[i]=sq;
       }
     }
-
-    setFlip(v){
-      this.flipped = !!v;
-      this.boardEl.classList.toggle("flip", this.flipped);
-    }
-
-    clearMarks(){
-      this.sqEls.forEach(el => el.classList.remove("src","move","last"));
-    }
-
-    markSource(i){
-      const d = this._displayIdx(i);
-      this.sqEls[d]?.classList.add("src");
-    }
-
-    markMoves(list){
-      (list||[]).forEach(i=>{
-        const d = this._displayIdx(i);
-        this.sqEls[d]?.classList.add("move");
-      });
-    }
-
-    markLast(from,to){
-      if(from!=null){
-        const df = this._displayIdx(from);
-        this.sqEls[df]?.classList.add("last");
-      }
-      if(to!=null){
-        const dt = this._displayIdx(to);
-        this.sqEls[dt]?.classList.add("last");
-      }
-    }
-
-    // Render array 64: null atau 'wP'/'bK' dst.
-    render(boardArr){
-      // bersihkan isi & marks ringan (kecuali last biar kelihatan)
-      this.sqEls.forEach(s=>{
-        s.innerHTML = "";
-        s.classList.remove("src","move");
-      });
-
+    render(pos, lastMove=null, legal=[], srcIdx=null){
+      // clear
       for(let i=0;i<64;i++){
-        const disp = this._displayIdx(i);
-        const sq = this.sqEls[disp];
-        const piece = boardArr[i];
-        if(!piece) continue;
-
-        const span = document.createElement("span");
-        span.className = "piece " + piece;
-        span.textContent = GLYPH[piece] || "?";
-        sq.appendChild(span);
+        const sq=this.squares[i];
+        sq.classList.remove("src","last");
+        const old= sq.querySelector(".piece"); if(old) old.remove();
+        const hint = sq.querySelector(".hint"); if(hint) hint.remove();
+      }
+      // pieces
+      for(let i=0;i<64;i++){
+        const mapIdx = this.flipped ? (63-i) : i;
+        const p = pos[mapIdx];
+        if(p==='.'||!p) continue;
+        const span=document.createElement("span");
+        span.className="piece "+(/[A-Z]/.test(p)?"w":"b");
+        span.textContent = PIECE_GLYPH[p] || "?";
+        this.squares[i].appendChild(span);
+      }
+      // last move highlight
+      if(lastMove){
+        const a = this.flipped ? 63-lastMove.from : lastMove.from;
+        const b = this.flipped ? 63-lastMove.to   : lastMove.to;
+        this.squares[a]?.classList.add("last");
+        this.squares[b]?.classList.add("last");
+      }
+      // legal hints
+      if(srcIdx!=null){
+        const srcMapped = this.flipped ? 63-srcIdx : srcIdx;
+        this.squares[srcMapped]?.classList.add("src");
+      }
+      for(const m of legal){
+        const t = this.flipped ? 63-m.to : m.to;
+        const dot=document.createElement("span");
+        dot.className="hint";
+        this.squares[t]?.appendChild(dot);
       }
     }
-
-    // convert indeks logika -> indeks tampilan kalau dibalik
-    _displayIdx(i){
-      if(!this.flipped) return i;
-      const {r,c} = idxToRC(i);
-      const rr = 7 - r, cc = 7 - c;
-      return rcToIdx(rr, cc);
-    }
+    flip(){ this.flipped=!this.flipped; }
   }
 
-  // export global
-  window.ChessUI = ChessUI;
+  window.AZ_UI = UI;
 })();
