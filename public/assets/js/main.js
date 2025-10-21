@@ -1,162 +1,124 @@
-/* AZBRY CHESS MAIN.JS (Final Stable)
-   Glue antara engine dan UI — 100% kompatibel dengan tema Azbry
-   © 2025 FebryWesker
-*/
+/* Glue: hubungkan UI <-> Engine, tombol, history, flip */
 
-(() => {
-  const $ = (id) => document.getElementById(id);
+(function(){
+  const elBoard   = document.getElementById('board');
+  const elReset   = document.getElementById('btnReset');
+  const elUndo    = document.getElementById('btnUndo');
+  const elRedo    = document.getElementById('btnRedo');
+  const elFlip    = document.getElementById('btnFlip');
+  const elHist    = document.getElementById('moveHistory');
+  const btnModeH  = document.getElementById('modeHuman');
+  const btnModeAI = document.getElementById('modeAI');
 
-  const boardEl = $('board');
-  const btnReset = $('btnReset');
-  const btnUndo = $('btnUndo');
-  const btnRedo = $('btnRedo');
-  const btnFlip = $('btnFlip');
-  const btnHuman = $('modeHuman');
-  const btnAI = $('modeAI');
-  const moveHistory = $('moveHistory');
-
-  // === State ===
-  let vsAI = false;
-  let selected = null;
-  let legalMoves = [];
-  const moveList = [];
-
-  // === Engine & UI ===
+  // engine wajib sudah ada
   const engine = new ChessEngine();
-  const ui = new ChessUI(boardEl, onSquareClick);
+  const ui = new ChessUI(elBoard, onSquareClick);
 
-  // === Render ===
-  function render() {
-    const board = engine.board();
-    const last = engine.lastMove || null;
-    ui.render(board, { legal: legalMoves, lastMove: last });
-    moveHistory.textContent = moveList.length ? moveList.join('  ') : '—';
-  }
+  // state klik
+  let selected = null;
+  let legalCache = [];
 
-  // === Square click ===
-  function onSquareClick(idx) {
-    const board = engine.board();
-    const piece = board[idx];
+  // mode
+  let mode = 'human'; // 'human' | 'ai'
 
-    // Pilih bidak
-    if (selected === null) {
-      if (piece && piece[0] === engine.turn()) {
-        selected = idx;
-        legalMoves = engine.legalMovesFrom(idx);
-        ui.markSource(idx);
-      }
-      render();
-      return;
-    }
+  // ----- init -----
+  refreshAll();
 
-    // Klik bidak sendiri → ganti seleksi
-    if (piece && piece[0] === engine.turn()) {
-      selected = idx;
-      legalMoves = engine.legalMovesFrom(idx);
-      ui.markSource(idx);
-      render();
-      return;
-    }
-
-    // Klik kotak tujuan
-    if (legalMoves.includes(idx)) {
-      const result = engine.move({ from: selected, to: idx });
-      if (result?.ok) {
-        moveList.push(result.san || toAlg(selected) + ' → ' + toAlg(idx));
-        selected = null;
-        legalMoves = [];
-        render();
-
-        // Cek status akhir
-        if (engine.isCheckmate()) return showToast('Skakmat!');
-        if (engine.isDraw()) return showToast('Seri!');
-        if (engine.isCheck()) showToast('Skak!');
-
-        // Jika AI
-        if (vsAI) setTimeout(aiMove, 300);
-      } else {
-        selected = null;
-        legalMoves = [];
-        render();
-      }
-    } else {
-      selected = null;
-      legalMoves = [];
-      render();
-    }
-  }
-
-  // === Fungsi AI (Azbry-MD) ===
-  function aiMove() {
-    const move = engine.getBestMove?.(1) || engine.randomMove();
-    if (!move) return;
-    engine.move(move);
-    moveList.push(move.san || toAlg(move.from) + ' → ' + toAlg(move.to));
-    render();
-
-    if (engine.isCheckmate()) return showToast('Kamu Kalah 😭');
-    if (engine.isDraw()) return showToast('Seri 🤝');
-    if (engine.isCheck()) showToast('Skak!');
-  }
-
-  // === Tombol kontrol ===
-  btnReset?.addEventListener('click', () => {
+  // ----- handlers tombol -----
+  elReset?.addEventListener('click', ()=>{
     engine.reset();
-    selected = null;
-    legalMoves = [];
-    moveList.length = 0;
-    render();
+    selected = null; legalCache = [];
+    refreshAll(true);
   });
 
-  btnUndo?.addEventListener('click', () => {
-    engine.undo();
-    moveList.pop();
-    render();
+  elUndo?.addEventListener('click', ()=>{
+    if(engine.undo) {
+      engine.undo();
+      selected = null; legalCache = [];
+      refreshAll();
+    }
   });
 
-  btnRedo?.addEventListener('click', () => {
-    engine.redo();
-    render();
+  elRedo?.addEventListener('click', ()=>{
+    if(engine.redo) {
+      engine.redo();
+      selected = null; legalCache = [];
+      refreshAll();
+    }
   });
 
-  btnFlip?.addEventListener('click', () => {
+  elFlip?.addEventListener('click', ()=>{
     ui.setFlip(!ui.flipped);
-    render();
   });
 
-  // === Mode AI / Human ===
-  btnHuman?.addEventListener('click', () => {
-    vsAI = false;
-    btnHuman.classList.add('active');
-    btnAI.classList.remove('active');
-    engine.reset();
-    moveList.length = 0;
-    render();
-  });
+  btnModeH?.addEventListener('click', () => { mode='human'; btnModeH.classList.add('active'); btnModeAI?.classList.remove('active'); });
+  btnModeAI?.addEventListener('click', () => { mode='ai';    btnModeAI.classList.add('active'); btnModeH?.classList.remove('active'); });
 
-  btnAI?.addEventListener('click', () => {
-    vsAI = true;
-    btnAI.classList.add('active');
-    btnHuman.classList.remove('active');
-    engine.reset();
-    moveList.length = 0;
-    render();
-  });
+  // ----- klik papan -----
+  function onSquareClick(idx){
+    // kalau ada legal list dan idx ada di dalam -> eksekusi move
+    if(selected!=null && legalCache.includes(idx)){
+      const res = engine.move(selected, idx);
+      selected=null; legalCache=[];
+      refreshAll();
 
-  // === Helper ===
-  function toAlg(i) {
-    return 'abcdefgh'[i % 8] + (8 - Math.floor(i / 8));
+      // langkah AI (sederhana): langsung minta engine pilih
+      if(mode==='ai' && engine.bestMove){
+        const ai = engine.bestMove(); // {from,to}
+        if(ai){
+          engine.move(ai.from, ai.to, {ai:true});
+          refreshAll();
+        }
+      }
+      return;
+    }
+
+    // pilih kotak sebagai sumber
+    // cek apakah bidak milik side yang jalan
+    const bd = engine.board();
+    const piece = bd[idx];
+    if(!piece) { selected=null; legalCache=[]; ui.clearMarks(); return; }
+    const turn = engine.turn && engine.turn() || 'w';
+    const isWhite = piece && piece[0]==='w';
+    if((turn==='w' && !isWhite) || (turn==='b' && isWhite)) return;
+
+    selected = idx;
+    ui.clearMarks();
+    ui.markSource(idx);
+
+    // dapatkan langkah legal
+    legalCache = (engine.legalMovesFrom ? engine.legalMovesFrom(idx) : []) || [];
+    ui.markMoves(legalCache);
   }
 
-  function showToast(msg) {
-    const toast = document.createElement('div');
-    toast.className = 'az-toast show';
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 1800);
+  // ----- render ulang -----
+  function refreshAll(resetHistory=false){
+    ui.render(engine.board());
+
+    ui.clearMarks();
+    const last = (engine.lastMove && engine.lastMove()) || null;
+    if(last) ui.markLast(last.from, last.to);
+
+    // status akhir
+    if(engine.isCheckmate && engine.isCheckmate()){
+      pushHistory("Checkmate! " + (engine.turn()==='w' ? "Hitam menang" : "Putih menang"));
+      return;
+    }
+    if(engine.isStalemate && engine.isStalemate()){
+      pushHistory("Seri (Stalemate)");
+      return;
+    }
+
+    if(resetHistory) { elHist && (elHist.textContent = "—"); }
   }
 
-  // === Init ===
-  engine.reset();
-  render();
+  // ----- sejarah langkah -----
+  function pushHistory(text){
+    if(!elHist) return;
+    if(elHist.textContent === "—") elHist.textContent = "";
+    elHist.textContent += (elHist.textContent ? "\n" : "") + text;
+  }
+
+  // Expose kecil untuk debug di console
+  window.__az = {engine, ui};
 })();
