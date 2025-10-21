@@ -54,21 +54,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderPieces(){
-    const mat=game.board();
-    for(let r=0;r<8;r++){
-      for(let c=0;c<8;c++){
-        const p=mat[r][c];
-        if(!p)continue;
-        const sq=files[c]+(8-r);
-        const idx=sqToIdx(sq);
-        const cell=boardEl.children[idx];
-        const span=document.createElement('span');
-        span.className='piece';
-        span.textContent=PIECE_CHAR[p.color+p.type]||'?';
-        cell.appendChild(span);
+  function renderPieces() {
+  const fen = game.fen();
+  const rows = fen.split(' ')[0].split('/');
+
+  for (let r = 0; r < 8; r++) {
+    let file = 0;
+    for (const ch of rows[r]) {
+      if (/\d/.test(ch)) {
+        file += parseInt(ch, 10);
+        continue;
       }
+      const rank = 8 - r;
+      const f = files[file];
+      const sq = `${f}${rank}`;
+      const idx = sqToIdx(sq);
+      const cell = boardEl.children[idx];
+      const span = document.createElement('span');
+      span.className = 'piece';
+      const key = (ch === ch.toUpperCase() ? 'w' : 'b') + ch.toLowerCase();
+      span.textContent = PIECE_CHAR[key] || '?';
+      if (ch === ch.toUpperCase()) span.classList.add('white');
+      else span.classList.add('black');
+      cell.appendChild(span);
+      file++;
     }
+  }
   }
 
   function highlight(){
