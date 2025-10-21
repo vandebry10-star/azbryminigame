@@ -1,243 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Azbry Chess.com</title>
 
-  <link rel="stylesheet" href="assets/css/azbry.css?v=13" />
-  <link rel="stylesheet" href="assets/css/chess.css?v=13" />
-  <style>
-    /* toolbar & modal hasil tetap dari versi sebelumnya kamu */
-    .hidden{display:none!important}
-    .hero-title{text-align:center;margin:10px 0 6px}
-    .hero-title h1{margin:0;font-weight:900;font-size:clamp(26px,6vw,40px);color:var(--azbry-accent);text-shadow:0 0 18px var(--azbry-ring)}
-    .board-wrap{position:relative;margin:12px auto 8px}
-    .toolbar{
-      max-width:820px;margin:0 auto 10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;
-      padding:10px;border-radius:16px;background:var(--panel-bg-2);border:1px solid var(--panel-bd)
-    }
-    .seg{padding:10px 14px;border-radius:12px;font-weight:800;background:var(--panel-bg-1);border:1px solid var(--panel-bd);color:#dbe4ee;cursor:pointer}
-    .seg.active{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:var(--azbry-ink);border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.35)}
-    .btn{padding:10px 14px;border-radius:12px;font-weight:800;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#e8f0fb;cursor:pointer}
-    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:var(--azbry-ink);border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.25)}
-    #btnBack{display:none} body.board-only #btnBack{display:inline-flex}
-    .panel{max-width:820px;margin:0 auto}
-  </style>
+  <!-- Tema & papan -->
+  <link rel="stylesheet" href="assets/css/azbry.css">
+  <link rel="stylesheet" href="assets/css/chess.css">
 </head>
 <body>
-  <main class="container" id="chess-app">
-    <div class="hero-title"><h1>Azbry Chess.com</h1></div>
-
-    <!-- PAPAN + KOORDINAT -->
-    <section class="board-wrap" aria-label="Papan Catur">
-      <div id="board" class="board" aria-label="board"></div>
-
-      <!-- Overlays koordinat -->
-      <div class="coords">
-        <div class="files" id="files"></div>
-        <div class="ranks" id="ranks"></div>
+  <main class="container">
+    <header class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess.com</h1>
       </div>
+    </header>
+
+    <!-- Board -->
+    <section class="board-wrap">
+      <div id="board" class="board" aria-label="Papan Catur"></div>
     </section>
 
-    <!-- TOOLBAR BAWAH -->
-    <div class="toolbar">
-      <div class="segbar" aria-label="Pilih Mode">
-        <button id="btnHuman" class="seg active" type="button">VS Player</button>
-        <button id="btnAI" class="seg" type="button">VS Azbry-MD</button>
+    <!-- Panel kontrol -->
+    <section class="panel" aria-label="Kontrol Permainan">
+      <div class="controls">
+        <button id="modeHuman" class="seg active" type="button">VS Player</button>
+        <button id="modeAI" class="seg" type="button">VS Azbry-MD</button>
+        <div style="flex:1"></div>
+        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
       </div>
 
-      <!-- proxy lama -->
-      <button id="modeHuman" class="hidden" type="button" data-mode="human"></button>
-      <button id="modeAI" class="hidden" type="button" data-mode="ai"></button>
+      <div class="controls">
+        <button id="btnUndo" class="btn" type="button">Undo</button>
+        <button id="btnRedo" class="btn" type="button">Redo</button>
+        <button id="btnFlip" class="btn" type="button">Flip Board</button>
+        <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
+        <button id="btnBack" class="btn dark" type="button" style="display:none">Kembali</button>
+      </div>
 
-      <span style="width:12px"></span>
-
-      <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-      <button id="btnUndo" class="btn" type="button">Undo</button>
-      <button id="btnRedo" class="btn" type="button">Redo</button>
-      <button id="btnFlip" class="btn" type="button">Flip Board</button>
-      <button id="btnBoardOnly" class="btn" type="button">Board Only</button>
-      <button id="btnBack" class="btn" type="button">Kembali</button>
-    </div>
-
-    <!-- TRAY BIDAK MATI -->
-    <div class="captured-wrap">
-      <div id="trayWhite" class="tray white" aria-label="Bidak putih mati"></div>
-      <div id="trayBlack" class="tray black" aria-label="Bidak hitam mati"></div>
-    </div>
-
-    <!-- LOG -->
-    <section class="panel" aria-label="Riwayat">
       <div class="move-log">
         <h4>Riwayat Langkah</h4>
         <pre id="moveHistory">_</pre>
       </div>
     </section>
 
-    <!-- LISENSI -->
-    <section class="license">
-      <p>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh <b>FebryWesker</b></p>
-      <a href="https://azbry-portofolio.vercel.app/" target="_blank" class="cta">↗ Portofolio</a>
-    </section>
+    <footer class="license">
+      <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+    </footer>
   </main>
 
-  <!-- PROMOTION MODAL -->
-  <div id="promo" class="promo-modal" aria-modal="true" role="dialog">
-    <div class="promo-card">
-      <h3>Pilih Promosi</h3>
-      <div class="promo-choices">
-        <button data-promo="q">♛ Queen</button>
-        <button data-promo="r">♜ Rook</button>
-        <button data-promo="b">♝ Bishop</button>
-        <button data-promo="n">♞ Knight</button>
-      </div>
-    </div>
-  </div>
+  <!-- 1) Engine harus duluan -->
+  <script src="assets/js/chess-engine.js"></script>
 
-  <!-- Scripts (urutan wajib) -->
-  <script src="assets/js/chess-engine.js?v=13"></script>
-  <script src="assets/js/main.js?v=13"></script>
-
-  <!-- UI Helpers: check/brilliant, tray, promosi, koordinat -->
+  <!-- 2) Helper kecil: files & PIECE_CHAR biar render FEN pasti jalan -->
   <script>
-    (function(){
-      const boardEl   = document.getElementById('board');
-      const trayW     = document.getElementById('trayWhite');
-      const trayB     = document.getElementById('trayBlack');
-      const promo     = document.getElementById('promo');
-      const promoBtns = Array.from(promo.querySelectorAll('[data-promo]'));
-      const filesEl   = document.getElementById('files');
-      const ranksEl   = document.getElementById('ranks');
-
-      // ====== COORDS ======
-      const files = ['a','b','c','d','e','f','g','h'];
-      const ranks = ['8','7','6','5','4','3','2','1'];
-      filesEl.innerHTML = files.map(f=>`<span>${f}</span>`).join('');
-      ranksEl.innerHTML = ranks.map(r=>`<span>${r}</span>`).join('');
-
-      // ====== MODE PICKER (tetap dari versi sebelumnya) ======
-      const btnHuman = document.getElementById('btnHuman');
-      const btnAI    = document.getElementById('btnAI');
-      const proxyH   = document.getElementById('modeHuman');
-      const proxyA   = document.getElementById('modeAI');
-
-      function markSeg(mode){
-        if(mode==='human'){ btnHuman.classList.add('active'); btnAI.classList.remove('active'); }
-        else{ btnAI.classList.add('active'); btnHuman.classList.remove('active'); }
-      }
-      function setMode(mode){
-        try{ window.dispatchEvent(new CustomEvent('azbry:setMode',{detail:{mode}})); }catch(e){}
-        if(window.AzbryChess?.setMode) try{ AzbryChess.setMode(mode) }catch(e){}
-        (mode==='human'?proxyH:proxyA)?.click();
-        markSeg(mode);
-      }
-      btnHuman.addEventListener('click', ()=> setMode('human'));
-      btnAI.addEventListener('click', ()=> setMode('ai'));
-      document.getElementById('btnBoardOnly').addEventListener('click', ()=> document.body.classList.add('board-only'));
-      document.getElementById('btnBack').addEventListener('click', ()=> document.body.classList.remove('board-only'));
-
-      // ====== UI STATE ======
-      let pendingPromotion = null; // { from,to,color, commit(type) }
-
-      function clearCheckUI(){
-        boardEl.querySelectorAll('.sq.check-king').forEach(sq=>sq.classList.remove('check-king'));
-        boardEl.querySelectorAll('.piece.brilliant').forEach(p=>p.classList.remove('brilliant'));
-      }
-
-      function setCheckUI({kingSq, attackerSq}){
-        // tandai kotak raja
-        const king = boardEl.querySelector(`[data-sq="${kingSq}"]`);
-        if(king) king.classList.add('check-king');
-        // tandai penyerang (!!) pada element piece di attackerSq
-        const attSq = boardEl.querySelector(`[data-sq="${attackerSq}"]`);
-        if(attSq){
-          const pc = attSq.querySelector('.piece');
-          if(pc) pc.classList.add('brilliant');
-        }
-      }
-
-      function addCaptured(pieceChar){
-        // pieceChar contoh: 'p','P','q','Q' dsb
-        const isWhite = (pieceChar === pieceChar.toUpperCase());
-        const el = document.createElement('span');
-        el.className = 'cap';
-        el.textContent = pieceToGlyph(pieceChar);
-        (isWhite ? trayW : trayB).appendChild(el);
-      }
-
-      function pieceToGlyph(ch){
-        const map = { k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟', K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙' };
-        return map[ch] || '?';
-      }
-
-      function showPromotion({ from, to, color, commit }){
-        pendingPromotion = { from, to, color, commit };
-        promo.classList.add('show');
-      }
-      promoBtns.forEach(b=>{
-        b.addEventListener('click', ()=>{
-          const type = b.getAttribute('data-promo'); // q,r,b,n
-          const p = pendingPromotion;
-          if(p && typeof p.commit === 'function'){
-            p.commit(type); // serahkan ke main.js (engine) untuk selesaikan promosi
-          }
-          pendingPromotion = null;
-          promo.classList.remove('show');
-        });
-      });
-
-      // ====== EXPOSE untuk dipanggil dari main.js ======
-      window.AzbryUI = {
-        // panggil ini SETELAH sebuah langkah sudah diaplikasikan di engine & board
-        // move = { from:'e2', to:'e4', piece:'P', color:'w'|'b', captured:'p'|null, isCheck:true|false, attackerSq:'e4', kingSq:'e8', needsPromotion:false|true, commitPromotion:(type)=>{} }
-        afterMove(move){
-          // tray bidak mati
-          if(move.captured){ addCaptured(move.captured); }
-
-          // check UI
-          clearCheckUI();
-          if(move.isCheck && move.kingSq){
-            setCheckUI({ kingSq: move.kingSq, attackerSq: move.attackerSq || move.to });
-          }
-
-          // promosi
-          if(move.needsPromotion && typeof move.commitPromotion === 'function'){
-            showPromotion({ from: move.from, to: move.to, color: move.color, commit: move.commitPromotion });
-          }
-        },
-
-        // opsional: update hint squares (hijau tua) → beri dot di kotak2
-        showHints(squares){
-          // squares: array seperti ['e4','e5',...]
-          boardEl.querySelectorAll('.dot').forEach(n=>n.remove());
-          squares?.forEach(sqName=>{
-            const sq = boardEl.querySelector(`[data-sq="${sqName}"]`);
-            if(!sq) return;
-            const d=document.createElement('div'); d.className='dot';
-            sq.appendChild(d);
-          });
-        },
-        clearHints(){
-          boardEl.querySelectorAll('.dot').forEach(n=>n.remove());
-        },
-
-        // opsional: reset tray & UI
-        resetUI(){
-          clearCheckUI();
-          trayW.innerHTML=''; trayB.innerHTML='';
-          promo.classList.remove('show'); pendingPromotion=null;
-          this.clearHints();
-        }
-      };
-
-      // ====== OPTIONAL: EVENT BRIDGES ======
-      // Kalau main.js kamu kirim event ini, UI ikut sinkron:
-      window.addEventListener('azbry:reset', ()=> window.AzbryUI.resetUI());
-    })();
+    // file a..h buat mapping indeks -> algebraic
+    window.files = ['a','b','c','d','e','f','g','h'];
+    // unicode bidak, dipakai main.js saat render FEN
+    window.PIECE_CHAR = {
+      wb:'♗', wn:'♘', wr:'♖', wq:'♕', wk:'♔', wp:'♙',
+      bb:'♝', bn:'♞', br:'♜', bq:'♛', bk:'♚', bp:'♟'
+    };
   </script>
 
-  <!-- RESULT MODAL (punyamu sebelumnya, kalau ada, tetap) -->
-  <div id="resultModal" class="hidden"></div>
+  <!-- 3) Controller/renderer -->
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
