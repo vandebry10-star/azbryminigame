@@ -1,10 +1,4 @@
-/* AZBRY CHESS – MAIN FINAL FIX (2025)
-   Perbaikan:
-   - AI gak langsung stalemate
-   - Deteksi checkmate & seri valid
-   - Undo/Redo/BoardOnly tetap jalan
-*/
-
+/* AZBRY CHESS – FINAL MAIN.JS FIX */
 (() => {
   window.currentTurnColor = "white";
   let mode = "human";
@@ -14,16 +8,13 @@
   const H = [], R = [];
   const logEl = document.getElementById("moveHistory");
   const board = () => window.boardState;
-  const clone = (b) => b.map((r) => r.map((p) => (p ? { ...p } : null)));
+  const clone = (b) => b.map(r => r.map(p => (p ? { ...p } : null)));
   const file = (i) => String.fromCharCode(97 + i);
   const rank = (j) => 8 - j;
   const alg = ([fx, fy], [tx, ty]) => `${file(fx)}${rank(fy)} → ${file(tx)}${rank(ty)}`;
 
   const renderLog = () => {
-    if (!logEl) return;
-    logEl.textContent = H.length
-      ? H.map((h, i) => `${i + 1}. ${h.note}`).join("\n")
-      : "—";
+    logEl.textContent = H.length ? H.map((h, i) => `${i + 1}. ${h.note}`).join("\n") : "—";
   };
 
   function toast(msg) {
@@ -37,7 +28,7 @@
     }
     el.textContent = msg;
     el.style.display = "block";
-    setTimeout(() => (el.style.display = "none"), 1300);
+    setTimeout(() => (el.style.display = "none"), 1200);
   }
 
   function showResult(msg) {
@@ -56,7 +47,7 @@
   }
 
   const resetGame = () => {
-    window.initBoard();
+    window.initBoard?.();
     window.currentTurnColor = "white";
     H.length = 0;
     R.length = 0;
@@ -90,18 +81,21 @@
     return inCheck(color) ? "mate" : "stalemate";
   };
 
+  // === FIXED onMove ===
   function onMove(from, to, prev) {
     const note = alg(from, to);
     H.push({ prev, next: clone(board()), note });
     R.length = 0;
     renderLog();
 
-    const nextSide = window.currentTurnColor === "white" ? "black" : "white";
-    const state = sideStatus(nextSide);
+    // Ganti giliran dulu baru cek status
+    window.currentTurnColor = window.currentTurnColor === "white" ? "black" : "white";
+
+    const state = sideStatus(window.currentTurnColor);
 
     if (state === "mate") {
       gameOver = true;
-      const winner = nextSide === "white" ? "Hitam" : "Putih";
+      const winner = window.currentTurnColor === "white" ? "Hitam" : "Putih";
       showResult(`${winner} menang (Checkmate)!`);
       return;
     }
@@ -110,20 +104,20 @@
       showResult("Seri (Stalemate).");
       return;
     }
-    if (inCheck(nextSide)) toast("Check!");
 
-    window.currentTurnColor = nextSide;
-    if (mode === "ai" && !gameOver && nextSide === aiColor) aiMove();
+    if (inCheck(window.currentTurnColor)) toast("Check!");
+
+    if (mode === "ai" && !gameOver && window.currentTurnColor === aiColor) aiMove();
   }
 
   window.onMoveApplied = (from, to, prev) => onMove(from, to, prev);
 
-  // ---- AI ----
+  // === AI ===
   const val = { P: 100, N: 300, B: 320, R: 500, Q: 900, K: 9999 };
   const score = (b, c) => {
     let s = 0;
-    b.forEach((r) =>
-      r.forEach((p) => {
+    b.forEach(r =>
+      r.forEach(p => {
         if (!p) return;
         s += p.color === c ? val[p.type.toUpperCase()] : -val[p.type.toUpperCase()];
       })
@@ -161,7 +155,7 @@
     onMove(mv.from, mv.to, prev);
   };
 
-  // ---- Tombol ----
+  // === Tombol ===
   document.getElementById("btnReset")?.addEventListener("click", resetGame);
   document.getElementById("btnUndo")?.addEventListener("click", () => {
     if (!H.length) return;
@@ -199,7 +193,7 @@
     document.getElementById("modeAI")?.classList.add("active");
   });
 
-  // ---- Init ----
+  // === Init ===
   if (!window.boardState?.length) window.initBoard?.();
   window.UIChess?.rebuild();
   renderLog();
