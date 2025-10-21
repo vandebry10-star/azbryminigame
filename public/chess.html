@@ -1,84 +1,56 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Azbry Chess.com</title>
-
-  <!-- Tema & papan -->
-  <link rel="stylesheet" href="assets/css/azbry.css">
-  <link rel="stylesheet" href="assets/css/chess.css">
+  <link rel="stylesheet" href="assets/css/azbry.css" />
+  <link rel="stylesheet" href="assets/css/chess.css" />
 </head>
 <body>
   <main class="container">
-    <header class="top-header">
-      <div class="title">
-        <span class="tag">AZBRY-MD • BOARD</span>
-        <h1>Azbry Chess.com</h1>
-      </div>
-    </header>
+    <div class="top-header">
+      <div class="tag">AZBRY-MD • BOARD</div>
+      <div class="title"><h1>Azbry Chess.com</h1></div>
+    </div>
 
-    <!-- Board -->
-    <section class="board-wrap">
-      <div id="board" class="board" aria-label="Papan Catur"></div>
-    </section>
+    <div class="board-wrap">
+      <div id="board" class="board"></div>
+    </div>
 
-    <!-- Panel kontrol -->
-    <section class="panel" aria-label="Kontrol Permainan">
+    <div class="panel">
       <div class="controls">
-        <button id="modeHuman" class="seg active" type="button">VS Player</button>
-        <button id="modeAI" class="seg" type="button">VS Azbry-MD</button>
-        <div style="flex:1"></div>
-        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+        <button id="modeHuman" class="btn accent active">VS Player</button>
+        <button id="modeAI" class="btn dark">VS Azbry-MD</button>
+        <button id="btnReset" class="btn accent">Muat Ulang</button>
       </div>
-
       <div class="controls">
-        <button id="btnUndo" class="btn" type="button">Undo</button>
-        <button id="btnRedo" class="btn" type="button">Redo</button>
-        <button id="btnFlip" class="btn" type="button">Flip Board</button>
-        <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
-        <button id="btnBack" class="btn dark" type="button" style="display:none">Kembali</button>
+        <button id="btnUndo" class="btn dark">Undo</button>
+        <button id="btnRedo" class="btn dark">Redo</button>
+        <button id="btnFlip" class="btn dark">Flip Board</button>
+        <button id="btnBoardOnly" class="btn accent">Board Only</button>
+        <button id="btnBack" class="btn accent" style="display:none;">Kembali</button>
       </div>
+    </div>
 
-      <div class="move-log">
-        <h4>Riwayat Langkah</h4>
-        <pre id="moveHistory">_</pre>
-      </div>
-    </section>
+    <div class="move-log">
+      <h4>Riwayat Langkah</h4>
+      <pre id="moveHistory">_</pre>
+    </div>
 
     <footer class="license">
       <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
-      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank">↗ Portofolio</a>
     </footer>
   </main>
 
-  <!-- 1) Engine harus duluan -->
-  <script src="assets/js/chess-engine.js"></script>
-
-  <!-- 2) Helper kecil: files & PIECE_CHAR biar render FEN pasti jalan -->
-  <script>
-    // file a..h buat mapping indeks -> algebraic
-    window.files = ['a','b','c','d','e','f','g','h'];
-    // unicode bidak, dipakai main.js saat render FEN
-    window.PIECE_CHAR = {
-      wb:'♗', wn:'♘', wr:'♖', wq:'♕', wk:'♔', wp:'♙',
-      bb:'♝', bn:'♞', br:'♜', bq:'♛', bk:'♚', bp:'♟'
-    };
-  </script>
-
-  <!-- 3) Controller/renderer -->
-  <script src="assets/js/main.js"></script>
   <!-- Engine dari CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
 
-<!-- Wrapper kecil biar bisa dipanggil pakai new Chess() -->
-<script>
-  if (typeof window.Chess === "undefined" && window.chess && typeof window.chess.Chess === "function") {
-    window.Chess = window.chess.Chess;
-  }
-</script>
+  <!-- Chess UI (renderer papan & bidak) -->
+  <script src="assets/js/chess-ui.js"></script>
 
-<!-- Main logic -->
-<script src="assets/js/main.js"></script>
+  <!-- Main Controller (logika permainan & mode) -->
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
