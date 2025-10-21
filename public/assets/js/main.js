@@ -1,138 +1,111 @@
-/* ==========================
- *  AZBRY CHESS – MAIN (FIX)
- *  – wiring tombol, history, turn, move log
- *  ========================== */
-
+/* AZBRY CHESS – MAIN (FIX)
+   - simpan history {prev,next,note}
+   - undo/redo jalan
+   - board only toggle
+   - toast untuk check/checkmate
+*/
 (() => {
-  // turn & mode
   window.currentTurnColor = 'white';
-  let mode = 'human'; // 'human' | 'ai' (AI nyusul)
+  let mode = 'human'; // 'ai' nanti
 
-  // history (deep-clone boardState per langkah)
-  const history = [];
-  const redoStack = [];
+  const history = [];   // { prev, next, note }
+  const redo   = [];
+  const logEl  = document.getElementById('moveHistory');
+  const board  = () => window.boardState;
+  const clone  = b => b.map(r=>r.map(p=>p?{...p}:null));
 
-  const logEl = document.getElementById('moveHistory');
+  const file = i => String.fromCharCode(97+i);
+  const rank = j => 8-j;
+  const alg  = ([fx,fy],[tx,ty]) => `${file(fx)}${rank(fy)} → ${file(tx)}${rank(ty)}`;
 
-  function cloneBoard(b=window.boardState){ return b.map(r=>r.map(p=>p?{...p}:null)); }
-
-  function pushHistory(note) {
-    history.push({ board: cloneBoard(), note });
-    // kalau ada langkah baru, redo kosong
-    redoStack.length = 0;
-    renderLog();
+  function renderLog(){
+    if(!logEl){return;}
+    if(!history.length){ logEl.textContent='—'; return; }
+    logEl.textContent = history.map((h,i)=>`${i+1}. ${h.note}`).join('\n');
   }
-
-  function renderLog() {
-    if (!logEl) return;
-    if (!history.length) { logEl.textContent = '—'; return; }
-    const rows = history.map((h,i)=>`${i+1}. ${h.note}`).join('\n');
-    logEl.textContent = rows;
-  }
-
-  function algebra([fx,fy],[tx,ty]){
-    const file = i => String.fromCharCode(97 + i);
-    const rank = j => 8 - j;
-    return `${file(fx)}${rank(fy)} → ${file(tx)}${rank(ty)}`;
-  }
-
-  // dipanggil UI saat move sukses
-  window.onMoveApplied = (from,to) => {
-    const note = algebra(from,to);
-    pushHistory(note);
-
-    // cek status
-    const next = window.currentTurnColor === 'white' ? 'black' : 'white';
-    const st = window.getGameStatus(next); // status utk pihak yg akan jalan
-    if (st.mate) {
-      // tampilkan modal simple
-      toast(`${next === 'white' ? 'Putih' : 'Hitam'} MAT!`);
-    } else if (st.check) {
-      toast('Check!');
+  function toast(msg){
+    let w=document.getElementById('resultModal');
+    if(!w){ w=document.createElement('div'); w.id='resultModal';
+      w.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#202225;color:#e6ffe6;padding:10px 14px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:10000';
+      document.body.appendChild(w);
     }
+    w.textContent=msg; w.style.display='block';
+    setTimeout(()=>w.style.display='none',1400);
+  }
 
-    // ganti turn
-    window.currentTurnColor = next;
+  // dipanggil UI setelah makeMove sukses; prev= snapshot sebelum langkah
+  window.onMoveApplied = (from,to, prev) => {
+    const note = alg(from,to);
+    const next = clone(board());
+    history.push({ prev, next, note });
+    redo.length = 0;
+    renderLog();
+
+    const sideNext = (window.currentTurnColor==='white')?'black':'white';
+    const st = window.getGameStatus(sideNext);
+    if(st.mate){ toast(`${sideNext==='white'?'Putih':'Hitam'} MAT!`); }
+    else if(st.check){ toast('Check!'); }
+
+    window.currentTurnColor = sideNext;
   };
 
-  function toast(msg){
-    let box = document.getElementById('resultModal');
-    if(!box){
-      box = document.createElement('div');
-      box.id='resultModal';
-      box.style.cssText='position:fixed;inset:auto 0 24px 0;margin:auto;width:max-content;max-width:90%;background:#202225;color:#e6ffe6;padding:10px 14px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.4);z-index:10000';
-      document.body.appendChild(box);
-    }
-    box.textContent = msg;
-    box.style.display='block';
-    setTimeout(()=>{ box.style.display='none'; }, 1400);
-  }
-
   // tombol
-  document.getElementById('btnReset')?.addEventListener('click', () => {
-    window.initBoard();
-    window.currentTurnColor = 'white';
-    history.length = 0; redoStack.length = 0;
-    window.UIChess?.rebuild();
-    renderLog();
+  document.getElementById('btnReset')?.addEventListener('click', ()=>{
+    window.initBoard(); window.currentTurnColor='white';
+    history.length=0; redo.length=0;
+    window.UIChess?.rebuild(); renderLog();
   });
 
-  document.getElementById('btnUndo')?.addEventListener('click', () => {
-    if (!history.length) return;
+  document.getElementById('btnUndo')?.addEventListener('click', ()=>{
+    if(!history.length) return;
     const last = history.pop();
-    redoStack.push({ board: cloneBoard(), note: last.note });
-    window.boardState = cloneBoard(last.board);
-    // balik turn
-    window.currentTurnColor = (window.currentTurnColor === 'white') ? 'black' : 'white';
-    window.UIChess?.render();
-    renderLog();
+    // simpan state sekarang ke redo
+    redo.push({ prev: clone(board()), next: clone(board()), note:last.note });
+    window.boardState = clone(last.prev);
+    window.currentTurnColor = (window.currentTurnColor==='white')?'black':'white';
+    window.UIChess?.render(); renderLog();
   });
 
-  document.getElementById('btnRedo')?.addEventListener('click', () => {
-    if (!redoStack.length) return;
-    const nxt = redoStack.pop();
-    history.push({ board: cloneBoard(), note: nxt.note });
-    window.boardState = cloneBoard(nxt.board);
-    window.currentTurnColor = (window.currentTurnColor === 'white') ? 'black' : 'white';
-    window.UIChess?.render();
-    renderLog();
+  document.getElementById('btnRedo')?.addEventListener('click', ()=>{
+    if(!redo.length) return;
+    const step = redo.pop();
+    // simpan state sekarang ke history
+    history.push({ prev: clone(board()), next: clone(step.next), note: step.note });
+    window.boardState = clone(step.next);
+    window.currentTurnColor = (window.currentTurnColor==='white')?'black':'white';
+    window.UIChess?.render(); renderLog();
   });
 
-  document.getElementById('btnFlip')?.addEventListener('click', () => {
+  document.getElementById('btnFlip')?.addEventListener('click', ()=>{
     document.getElementById('board')?.classList.toggle('flip');
   });
 
-  // mode
-  document.getElementById('modeHuman')?.addEventListener('click', () => {
-    mode = 'human';
+  // Mode tombol (AI belum diaktifkan)
+  document.getElementById('modeHuman')?.addEventListener('click', ()=>{
+    mode='human';
     document.getElementById('modeHuman')?.classList.add('active');
     document.getElementById('modeAI')?.classList.remove('active');
   });
-
-  document.getElementById('modeAI')?.addEventListener('click', () => {
-    mode = 'ai';
+  document.getElementById('modeAI')?.addEventListener('click', ()=>{
+    mode='ai';
     document.getElementById('modeAI')?.classList.add('active');
     document.getElementById('modeHuman')?.classList.remove('active');
-    // (AI move generator nyusul—sekarang tetap manusia vs manusia,
-    //  tapi tombolnya sudah hidup dan tidak bikin JS error)
+    // TODO: panggil bot setelah giliran manusia
   });
 
-  // board only / back – biar gak bikin error kalau belum di-wire ke halaman lain
-  document.getElementById('btnBoardOnly')?.addEventListener('click', () => {
+  // Board Only = sembunyikan panel kontrol (toggle)
+  document.getElementById('btnBoardOnly')?.addEventListener('click', ()=>{
     document.querySelector('.panel')?.classList.toggle('hidden');
   });
-  document.getElementById('btnBack')?.addEventListener('click', () => {
-    history.length = 0; redoStack.length = 0;
-    window.initBoard();
-    window.currentTurnColor = 'white';
-    window.UIChess?.rebuild();
-    renderLog();
+  // Kembali = reset state ringan (biar tidak mati)
+  document.getElementById('btnBack')?.addEventListener('click', ()=>{
+    window.initBoard(); window.currentTurnColor='white';
+    history.length=0; redo.length=0;
+    window.UIChess?.rebuild(); renderLog();
   });
 
-  // init pertama
-  if (!window.boardState || !window.boardState.length) {
-    window.initBoard();
-  }
+  // init
+  if(!window.boardState?.length) window.initBoard?.();
   window.UIChess?.rebuild();
   renderLog();
 })();
