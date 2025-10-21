@@ -1,7 +1,16 @@
 /* ===================== Chess board (melekat ke Azbry theme) ===================== */
 
 /* grid papan */
-.board { display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr); }
+.board {
+  display:grid;
+  grid-template-columns:repeat(8,1fr);
+  grid-template-rows:repeat(8,1fr);
+  width:100%;
+  aspect-ratio:1/1;
+  margin:0 auto;
+  border-radius:16px;
+  overflow:hidden;
+}
 
 /* kotak */
 .sq{
@@ -34,3 +43,29 @@
 
 /* responsif board-only */
 body.board-only .board-wrap{ max-width:min(98vw, 1100px); }
+
+/* ===================== Overlay (menu & hasil) ===================== */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(11,13,16,.92);
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+  z-index: 9999;
+}
+.overlay.show { opacity: 1; pointer-events: auto; }
+.overlay h2 {
+  color: var(--azbry-accent);
+  font-weight: 800;
+  font-size: 2.2rem;
+  text-shadow: 0 0 18px var(--azbry-ring);
+  margin-bottom: 16px;
+}
+.overlay .overlay-actions {
+  display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+}
+.overlay .btn {
+  font-size: 1rem;
+  padding: 10px 22px;
+}
