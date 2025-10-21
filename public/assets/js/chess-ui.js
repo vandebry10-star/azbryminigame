@@ -77,5 +77,22 @@
     }
   }
 
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const b = document.getElementById('board');
+  if (!b) return;
+  b.classList.add('board');               // pastikan class 'board' ada
+  if (b.children.length !== 64) {         // kalau belum ada kotaknya, bangun 8x8
+    b.innerHTML = '';
+    for (let i = 0; i < 64; i++) {
+      const sq = document.createElement('div');
+      const r = Math.floor(i / 8), c = i % 8;
+      sq.className = 'square ' + ((r + c) % 2 ? 'dark' : 'light');
+      b.appendChild(sq);
+    }
+  }
+});
+</script>
+
   window.ChessUI = ChessUI;
 })();
