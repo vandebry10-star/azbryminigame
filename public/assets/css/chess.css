@@ -1,176 +1,90 @@
-/* ===================== Azbry Chess — Visual Clarity+ & UX ===================== */
+/* ============================
+   Azbry Chess — Board Styles
+   ============================ */
 
-/* BOARD GRID */
-.board {
+/* Papan (kotak 8×8). Wajib ada height → pakai aspect-ratio biar selalu kotak */
+.board{
   position: relative;
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;                 /* <- bikin tinggi = lebar */
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  width: 100%;
-  aspect-ratio: 1/1;
-  margin: 0 auto;
+  grid-auto-rows: 1fr;                 /* tiap baris tinggi sama */
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 0 40px rgba(184,255,154,.15),
-              inset 0 0 0 1px rgba(255,255,255,.04);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06) inset,
+    0 16px 40px rgba(0,0,0,.35);
 }
 
-/* Papan: kontras jelas, masih tema Azbry */
-.sq.light { background: #C6E5B1; } /* hijau muda lembut */
-.sq.dark  { background: #27323E; } /* biru-abu gelap */
-
-/* Kotak umum */
-.sq {
+/* Satu petak */
+.square{
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
-  -webkit-user-select: none;
-  font-size: clamp(42px, 9vw, 76px);
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Bidak default (putih/hitam asli) */
-.piece {
+/* Warna papan — kontras biar bidak hitam/putih tetap jelas */
+.square.light{ background: #d9f0c4; }      /* hijau muda */
+.square.dark { background: #22282b; }      /* abu gelap kehijauan */
+
+/* Bidak (unicode) */
+.piece{
   line-height: 1;
-  filter: none;
-  -webkit-text-stroke: 0;
+  font-size: clamp(24px, 5.8vw, 58px);
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.45));
 }
-.piece.white {
-  color: #ffffff;
-  text-shadow: 0 0 6px rgba(0,0,0,.28);
+.piece.white{
+  color: #f7faf7;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35), 0 0 8px rgba(255,255,255,.06);
 }
-.piece.black {
-  color: #000000;
-  text-shadow: 0 0 4px rgba(255,255,255,.28);
-  transform: rotate(180deg); /* biar “feel” 2 player */
-}
-
-/* ===== HINT & SELEKSI ===== */
-
-/* Titik langkah legal — hijau tua */
-.dot {
-  position: absolute;
-  width: 36%;
-  height: 36%;
-  border-radius: 50%;
-  background: #1B5E20;                 /* hijau tua pekat */
-  outline: 3px solid rgba(27,94,32,.35);/* aura tipis */
+.piece.black{
+  color: #0e1112;
+  text-shadow: 0 1px 0 rgba(255,255,255,.08);
 }
 
-/* Kotak asal & kotak tujuan terakhir */
-.sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
-.sq.last { box-shadow: inset 0 0 0 4px rgba(184,255,154,.38); }
-
-/* ===== CHECK & BRILLIANT ===== */
-
-/* Raja diserang (check): outline merah kayak chess.com */
-.sq.check-king {
-  box-shadow:
-    inset 0 0 0 5px rgba(255,0,0,.75),
-    inset 0 0 30px rgba(255,0,0,.35);
+/* Highlight jalur langkah & seleksi */
+.square.sel{ outline: 3px solid #b8ff9a; outline-offset: -3px; }
+.square.src::after, .square.dst::after{
+  content:""; position:absolute; inset:0;
+  box-shadow: inset 0 0 0 3px rgba(184,255,154,.65);
+  border-radius: 2px;
 }
+.square.dst::after{ box-shadow: inset 0 0 0 3px rgba(184,255,154,.95); }
 
-/* Penyerang diberi label (!!) */
-.piece.brilliant::after {
-  content: "!!";
-  position: absolute;
-  top: 4%;
-  right: 6%;
-  font-weight: 900;
-  font-size: clamp(12px, 2.8vw, 16px);
-  color: #ffdb4d;
-  text-shadow: 0 0 10px rgba(255,219,77,.6), 0 0 18px rgba(255,219,77,.45);
+/* King in check (outline merah) */
+.square.check::after{
+  content:""; position:absolute; inset:0;
+  box-shadow: inset 0 0 0 4px rgba(255,78,78,.95);
+  border-radius: 2px;
 }
 
-/* ===== KOORDINAT PAPAN ===== */
-
-.coords {
-  pointer-events: none;
+/* Board flipped (opsional dari JS) */
+.board.flipped{
+  transform: scaleY(-1);
 }
-.files, .ranks {
-  position: absolute;
-  display: grid;
-  color: rgba(255,255,255,.85);
-  font-weight: 800;
-  text-shadow: 0 0 8px rgba(184,255,154,.25);
-}
-.files {
-  bottom: 6px;
-  left: 0; right: 0;
-  grid-template-columns: repeat(8, 1fr);
-  padding: 0 8px;
-  font-size: clamp(10px, 2.4vw, 13px);
-}
-.ranks {
-  right: 6px;
-  top: 0; bottom: 0;
-  grid-template-rows: repeat(8, 1fr);
-  padding: 8px 0;
-  font-size: clamp(10px, 2.4vw, 13px);
-  justify-items: end;
-}
-.files span, .ranks span { opacity: .9; }
-
-/* ===== PROMOTION MODAL ===== */
-
-.promo-modal {
-  position: fixed; inset: 0; z-index: 10010;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(11,13,16,.82);
-  opacity: 0; pointer-events: none; transition: opacity .18s ease;
-}
-.promo-modal.show { opacity: 1; pointer-events: auto; }
-.promo-card {
-  width: min(92vw, 480px);
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px; padding: 16px;
-  text-align: center;
-  box-shadow: 0 18px 50px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
-}
-.promo-card h3 {
-  margin: 6px 0 12px;
-  color: var(--azbry-accent);
-  font-weight: 900; text-shadow: 0 0 14px var(--azbry-ring);
-}
-.promo-choices {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-}
-.promo-choices button {
-  padding: 10px 0;
-  border-radius: 12px;
-  font-weight: 900;
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(255,255,255,.04);
-  color: #eaf2ff;
-  cursor: pointer;
-}
-.promo-choices button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0 0 1px var(--azbry-ring) inset, 0 10px 28px rgba(184,255,154,.2);
+.board.flipped .piece{
+  transform: scaleY(-1); /* biar ikon nggak ikut kebalik */
 }
 
-/* ===== CAPTURED TRAYS (bidak mati) ===== */
+/* Label koordinat (kalau kamu pakai elemen label terpisah, biarkan; 
+   kalau mau label di dalam square, bisa tambah di JS) */
 
-.captured-wrap {
-  max-width: 820px; margin: 8px auto;
-  display: grid; gap: 6px;
+/* Responsive wrapper (kalau dibungkus .board-wrap) */
+.board-wrap{
+  margin: 8px auto 16px;
+  max-width: 820px;
+  border-radius: 22px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
 }
-.tray {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  min-height: 28px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: var(--panel-bg-2);
-  border: 1px solid var(--panel-bd);
-}
-.tray .cap {
-  font-size: 20px; line-height: 1;
-  filter: none; -webkit-text-stroke: 0;
-}
-.tray.white .cap { color: #fff; text-shadow: 0 0 4px rgba(0,0,0,.25); }
-.tray.black .cap { color: #000; text-shadow: 0 0 3px rgba(255,255,255,.25); }
 
-/* ===================== Overlay (menu/hasil bawaan) kompatibel ===================== */
-.overlay { /* jika kamu masih pakai */ }
+/* Board-only mode (biar cakep di layar penuh) */
+body.board-only .board-wrap{ max-width: min(98vw, 1100px); padding: 10px; }
