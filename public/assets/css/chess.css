@@ -1,6 +1,5 @@
-/* ===================== Chess board (melekat ke Azbry theme) ===================== */
+/* ===================== Chess board (Azbry Theme - FIX + top flipped) ===================== */
 
-/* grid papan */
 .board {
   display:grid;
   grid-template-columns:repeat(8,1fr);
@@ -10,41 +9,52 @@
   margin:0 auto;
   border-radius:16px;
   overflow:hidden;
+  box-shadow:0 0 40px rgba(184,255,154,.15), inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* kotak */
+.sq.light{ background:#EDEFF5; }
+.sq.dark { background:#1A1E29; }
+
 .sq{
-  position:relative; display:flex; align-items:center; justify-content:center;
+  position:relative;
+  display:flex; align-items:center; justify-content:center;
   user-select:none; -webkit-user-select:none;
-  font-size:clamp(28px, 6.8vw, 56px);
+  font-size:clamp(42px, 9vw, 76px);
 }
 
-/* warna petak (kontras dengan meja Azbry) */
-.sq.light{ background:#e9edf2; }
-.sq.dark { background:#2f343c; }
-
-/* bidak unicode tebal + glow lembut */
+/* Bidak: dua sisi saling berhadapan */
 .piece{
-  line-height:1; filter: drop-shadow(0 2px 4px rgba(0,0,0,.55));
+  line-height:1;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,.6));
+  text-shadow:0 1px 3px rgba(0,0,0,.4);
 }
-.piece.white{ color:#fff; }
-.piece.black{ color:#0b0f13; }
 
-/* highlight asal & tujuan langkah terakhir */
+/* Putih normal */
+.piece.white{
+  color:#fff;
+  -webkit-text-stroke: 1.3px rgba(0,0,0,.45);
+}
+
+/* Hitam dibalik (rotate) agar seolah hadap bawah */
+.piece.black{
+  color:#0b0f13;
+  -webkit-text-stroke: 1.3px rgba(255,255,255,.35);
+  transform: rotate(180deg);
+}
+
 .sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
-.sq.last { box-shadow: inset 0 0 0 4px rgba(255,255,0,.22); }
+.sq.last { box-shadow: inset 0 0 0 4px rgba(184,255,154,.3); }
 
-/* indikasi langkah legal (dot) */
 .dot{
-  position:absolute; width:38%; height:38%; border-radius:50%;
-  background: rgba(184,255,154,.28);
-  outline:3px solid rgba(184,255,154,.18);
+  position:absolute;
+  width:36%; height:36%;
+  border-radius:50%;
+  background: rgba(184,255,154,.4);
+  outline:3px solid rgba(184,255,154,.2);
 }
 
-/* responsif board-only */
 body.board-only .board-wrap{ max-width:min(98vw, 1100px); }
 
-/* ===================== Overlay (menu & hasil) ===================== */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(11,13,16,.92);
@@ -58,12 +68,12 @@ body.board-only .board-wrap{ max-width:min(98vw, 1100px); }
 .overlay h2 {
   color: var(--azbry-accent);
   font-weight: 800;
-  font-size: 2.2rem;
-  text-shadow: 0 0 18px var(--azbry-ring);
-  margin-bottom: 16px;
+  font-size: 2.4rem;
+  text-shadow: 0 0 20px var(--azbry-ring);
+  margin-bottom: 18px;
 }
 .overlay .overlay-actions {
-  display:flex; gap:12px; flex-wrap:wrap; justify-content:center;
+  display:flex; gap:14px; flex-wrap:wrap; justify-content:center;
 }
 .overlay .btn {
   font-size: 1rem;
