@@ -88,3 +88,35 @@
 
 /* Board-only mode (biar cakep di layar penuh) */
 body.board-only .board-wrap{ max-width: min(98vw, 1100px); padding: 10px; }
+
+/* --- koordinat papan (CSS-only) --- */
+.square::before,
+.square::after{
+  position:absolute; z-index:2; font-size:12px; font-weight:800;
+  color: rgba(255,255,255,.75); text-shadow: 0 1px 0 rgba(0,0,0,.5);
+  pointer-events:none;         /* biar nggak ngeblok klik */
+}
+
+/* label rank (8..1) di kolom kiri */
+.square:nth-child(1)::before  { content:"8"; left:6px;  top:6px;  }
+.square:nth-child(9)::before  { content:"7"; left:6px;  top:6px;  }
+.square:nth-child(17)::before { content:"6"; left:6px;  top:6px;  }
+.square:nth-child(25)::before { content:"5"; left:6px;  top:6px;  }
+.square:nth-child(33)::before { content:"4"; left:6px;  top:6px;  }
+.square:nth-child(41)::before { content:"3"; left:6px;  top:6px;  }
+.square:nth-child(49)::before { content:"2"; left:6px;  top:6px;  }
+.square:nth-child(57)::before { content:"1"; left:6px;  top:6px;  }
+
+/* label file (a..h) di baris bawah */
+.square:nth-child(57)::after { content:"a"; right:8px; bottom:6px; }
+.square:nth-child(58)::after { content:"b"; right:8px; bottom:6px; }
+.square:nth-child(59)::after { content:"c"; right:8px; bottom:6px; }
+.square:nth-child(60)::after { content:"d"; right:8px; bottom:6px; }
+.square:nth-child(61)::after { content:"e"; right:8px; bottom:6px; }
+.square:nth-child(62)::after { content:"f"; right:8px; bottom:6px; }
+.square:nth-child(63)::after { content:"g"; right:8px; bottom:6px; }
+.square:nth-child(64)::after { content:"h"; right:8px; bottom:6px; }
+
+/* pastikan petak menerima klik */
+.board * { pointer-events: auto; }
+.square { cursor: pointer; }
