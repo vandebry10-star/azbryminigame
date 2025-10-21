@@ -68,6 +68,15 @@
     position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0f1a22;color:#eaf7ff;border:1px solid #224055;
     padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px #000a;z-index:10000;display:none
   }
+  /* BOARD ONLY: sembunyikan panel/mode; munculkan tombol kembali */
+  .board-only .panel, .board-only .segrow { display:none }
+  .bo-exit{
+    position:fixed; left:12px; bottom:12px; z-index:11000;
+    display:none; padding:10px 14px; border-radius:999px;
+    background:linear-gradient(180deg,var(--accent),var(--accent-2));
+    color:#0d130d; border:none; font-weight:800; box-shadow:0 10px 30px #0008;
+  }
+  .board-only .bo-exit{ display:inline-flex }
   @media (min-width:980px){ .wrap{grid-template-columns:minmax(380px,1fr) 340px} }
 </style>
 </head>
@@ -109,6 +118,9 @@
   </div>
 </main>
 
+<!-- Tombol “Kembali” khusus saat Board Only -->
+<button id="btnExitBO" class="bo-exit" type="button">Kembali</button>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -123,7 +135,7 @@ function parseFEN(fen){
   for(let r=0;r<8;r++){
     const row = [];
     for(const ch of rows[r]){
-      if(/\d/.test(ch)){ for(let k=0;k<Number(ch);k++) row.push(null); }
+      if(/\\d/.test(ch)){ for(let k=0;k<Number(ch);k++) row.push(null); }
       else row.push(ch);
     }
     board.push(row);
@@ -146,43 +158,32 @@ function movesFor(board,r,c){
   const p = board[r][c]; if(!p) return [];
   const white = isWhite(p);
   const out = [];
-  const push = (rr,cc)=>{ if(!inBounds(rr,cc)) return;
+  const add=(rr,cc)=>{ if(!inBounds(rr,cc)) return false;
     const t=board[rr][cc];
     if(!t){ out.push([rr,cc]); return true; }
     if(white && isBlack(t) || (!white && isWhite(t))){ out.push([rr,cc]); }
     return false;
   };
-  const addRay=(dr,dc)=>{ let rr=r+dr, cc=c+dc; while(inBounds(rr,cc)){ const t=board[rr][cc];
+  const ray=(dr,dc)=>{ let rr=r+dr,cc=c+dc; while(inBounds(rr,cc)){ const t=board[rr][cc];
       if(!t){ out.push([rr,cc]); } else { if(white?isBlack(t):isWhite(t)) out.push([rr,cc]); break; }
       rr+=dr; cc+=dc;
     }};
-
-  const lower = p.toLowerCase();
+  const lower=p.toLowerCase();
   if(lower==='p'){
-    const dir = white? -1: 1;
-    const sr = white?6:1;
-    // forward
+    const dir=white?-1:1, sr=white?6:1;
     if(!board[r+dir]?.[c]){ out.push([r+dir,c]); if(r===sr && !board[r+2*dir]?.[c]) out.push([r+2*dir,c]); }
-    // capture
-    for(const dc of [-1,1]){
-      const rr=r+dir, cc=c+dc;
-      if(inBounds(rr,cc)){
-        const t=board[rr][cc];
-        if(white?isBlack(t):isWhite(t)) out.push([rr,cc]);
-      }
-    }
+    for(const dc of [-1,1]){ const rr=r+dir, cc=c+dc; if(inBounds(rr,cc)){ const t=board[rr][cc]; if(white?isBlack(t):isWhite(t)) out.push([rr,cc]); } }
   } else if(lower==='n'){
     [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
-      const rr=r+dr, cc=c+dc; if(!inBounds(rr,cc)) return;
-      const t=board[rr][cc];
+      const rr=r+dr,cc=c+dc; if(!inBounds(rr,cc))return; const t=board[rr][cc];
       if(!t || (white?isBlack(t):isWhite(t))) out.push([rr,cc]);
     });
-  } else if(lower==='b'){ addRay(-1,-1); addRay(-1,1); addRay(1,-1); addRay(1,1); }
-  else if(lower==='r'){ addRay(-1,0); addRay(1,0); addRay(0,-1); addRay(0,1); }
-  else if(lower==='q'){ addRay(-1,-1); addRay(-1,1); addRay(1,-1); addRay(1,1); addRay(-1,0); addRay(1,0); addRay(0,-1); addRay(0,1); }
+  } else if(lower==='b'){ ray(-1,-1); ray(-1,1); ray(1,-1); ray(1,1); }
+  else if(lower==='r'){ ray(-1,0); ray(1,0); ray(0,-1); ray(0,1); }
+  else if(lower==='q'){ ray(-1,-1); ray(-1,1); ray(1,-1); ray(1,1); ray(-1,0); ray(1,0); ray(0,-1); ray(0,1); }
   else if(lower==='k'){
     for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
-      if(!dr&&!dc) continue; const rr=r+dr,cc=c+dc; if(!inBounds(rr,cc)) continue;
+      if(!dr&&!dc)continue; const rr=r+dr,cc=c+dc; if(!inBounds(rr,cc))continue;
       const t=board[rr][cc]; if(!t || (white?isBlack(t):isWhite(t))) out.push([rr,cc]);
     }
   }
@@ -190,14 +191,11 @@ function movesFor(board,r,c){
 }
 
 function attackedBy(board, white){
-  // squares attacked by given side
   const atk = Array.from({length:8},()=>Array(8).fill(false));
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
     const p=board[r][c]; if(!p) continue;
     if(white !== isWhite(p)) continue;
-    for(const [rr,cc] of movesFor(board,r,c)){
-      atk[rr][cc]=true;
-    }
+    for(const [rr,cc] of movesFor(board,r,c)) atk[rr][cc]=true;
   }
   return atk;
 }
@@ -210,7 +208,6 @@ function legalMoves(board, turnWhite){
     for(const [rr,cc] of movesFor(board,r,c)){
       const nb = cloneBoard(board);
       nb[rr][cc]=nb[r][c]; nb[r][c]=null;
-      // auto promote (queen)
       if((nb[rr][cc]==='P' && rr===0)) nb[rr][cc]='Q';
       if((nb[rr][cc]==='p' && rr===7)) nb[rr][cc]='q';
       const kpos = kingPos(nb, turnWhite);
@@ -221,7 +218,7 @@ function legalMoves(board, turnWhite){
   return moves;
 }
 
-function evaluate(board){ // piece-square very light
+function evaluate(board){
   const val={p:100,n:320,b:330,r:500,q:900,k:0};
   let s=0;
   for(let r=0;r<8;r++)for(let c=0;c<8;c++){
@@ -235,15 +232,15 @@ function evaluate(board){ // piece-square very light
 function bestMove(board, whiteTurn){
   const moves = legalMoves(board, whiteTurn);
   if(!moves.length) return null;
-  // 1-ply with capture preference
   let best = moves[0], bestScore = -Infinity;
   for(const m of moves){
-    const sc = (whiteTurn?1:-1)*evaluate(m.board) + (m.capt?50:0);
+    const sc = (whiteTurn?1:-1)*evaluate(m.board);
     if(sc>bestScore){ bestScore=sc; best=m; }
   }
   return best;
 }
-/* -------------------- UI -------------------- */
+
+/* -------------------- APP (UI glue) -------------------- */
 const PIECE_CHAR = {
   'K':'\u2654','Q':'\u2655','R':'\u2656','B':'\u2657','N':'\u2658','P':'\u2659',
   'k':'\u265A','q':'\u265B','r':'\u265C','b':'\u265D','n':'\u265E','p':'\u265F'
@@ -256,12 +253,13 @@ const App = {
     whiteTurn: true,
     selected:null, legalTarget: new Set(),
     history:[], future:[], flipped:false,
-    mode:'human' // or 'ai'
+    mode:'human'
   },
   mount(){
     this.$board = $('#board');
     this.$log   = $('#moveLog');
     this.$toast = $('#toast');
+    this.$exitBO= $('#btnExitBO'); // tombol kembali (board-only)
     this.buildGrid();
     this.render();
     this.bind();
@@ -280,21 +278,17 @@ const App = {
   squareAtDom(d){ return [Number(d.dataset.r), Number(d.dataset.c)]; },
   render(){
     const {board, selected, legalTarget, flipped} = this.state;
-    // squares
     this.$board.querySelectorAll('.sq').forEach(sq=>{
-      const [r0,c0] = this.squareAtDom(sq);
-      const r = flipped? 7-r0 : r0;
-      const c = flipped? 7-c0 : c0;
-      const p = board[r][c];
-      sq.innerHTML='';
-      sq.classList.remove('sel','move','dot');
+      const r0=Number(sq.dataset.r), c0=Number(sq.dataset.c);
+      const r=flipped?7-r0:r0, c=flipped?7-c0:c0;
+      const p=board[r][c];
+      sq.innerHTML=''; sq.classList.remove('sel','move','dot');
       if(p){
         const i=document.createElement('span');
         i.className='piece '+(isWhite(p)?'white':'black');
-        i.textContent = PIECE_CHAR[p];
+        i.textContent=PIECE_CHAR[p];
         sq.appendChild(i);
       }
-      // highlight
       if(selected && selected[0]===r && selected[1]===c) sq.classList.add('sel');
       if(legalTarget.has(r+','+c)){
         if(board[r][c]) sq.classList.add('move'); else sq.classList.add('dot');
@@ -309,88 +303,72 @@ const App = {
   },
   algebra([r,c]){ return FILES[c]+(8-r); },
   clickSquare(r0,c0){
-    // account flip
-    const r = this.state.flipped? 7-r0 : r0;
-    const c = this.state.flipped? 7-c0 : c0;
+    const r=this.state.flipped?7-r0:r0, c=this.state.flipped?7-c0:c0;
+    const {board, whiteTurn, selected}=this.state;
+    const p=board[r][c];
 
-    const {board, whiteTurn, selected} = this.state;
-    const p = board[r][c];
-
-    // selecting own piece
     if(!selected){
-      if(!p) return;
-      if(whiteTurn !== isWhite(p)) return;
-      const moves = legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
+      if(!p || (whiteTurn!==isWhite(p))) return;
+      const moves=legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
       this.state.selected=[r,c];
-      this.state.legalTarget = new Set(moves.map(m=>m.to.join(',')));
+      this.state.legalTarget=new Set(moves.map(m=>m.to.join(',')));
       return this.render();
     }
 
-    // try move to target
-    const key = r+','+c;
+    const key=r+','+c;
     if(!this.state.legalTarget.has(key)){
-      // reselect piece (if belongs to mover)
       if(p && (whiteTurn===isWhite(p))){
-        const moves = legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
+        const moves=legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
         this.state.selected=[r,c];
-        this.state.legalTarget = new Set(moves.map(m=>m.to.join(',')));
+        this.state.legalTarget=new Set(moves.map(m=>m.to.join(',')));
         return this.render();
       }
-      // clear selection
       this.state.selected=null; this.state.legalTarget.clear(); return this.render();
     }
 
-    // execute move
     this.makeMove(this.state.selected,[r,c]);
   },
-  makeMove(from,to, skipAILater=false){
-    const {board, whiteTurn} = this.state;
-    const piece = board[from[0]][from[1]];
-    const nb = cloneBoard(board);
+  makeMove(from,to, skipAI=false){
+    const {board, whiteTurn}=this.state;
+    const piece=board[from[0]][from[1]];
+    const nb=cloneBoard(board);
     nb[to[0]][to[1]]=piece; nb[from[0]][from[1]]=null;
-    // promotion
     if(piece==='P' && to[0]===0) nb[to[0]][to[1]]='Q';
     if(piece==='p' && to[0]===7) nb[to[0]][to[1]]='q';
 
-    // push history
     this.state.history.push({board:cloneBoard(board), whiteTurn});
-    this.state.future.length = 0;
+    this.state.future.length=0;
 
-    this.state.board = nb;
-    this.state.whiteTurn = !whiteTurn;
+    this.state.board=nb;
+    this.state.whiteTurn=!whiteTurn;
     this.state.selected=null; this.state.legalTarget.clear();
 
     this.logPush((whiteTurn?'♙':'♟')+'  '+this.algebra(from)+' → '+this.algebra(to));
     this.render();
 
-    // end-state?
-    const usMoves = legalMoves(nb, this.state.whiteTurn);
-    const usKing  = kingPos(nb, this.state.whiteTurn);
-    const oppAtk  = attackedBy(nb, !this.state.whiteTurn);
+    const usMoves=legalMoves(nb,this.state.whiteTurn);
+    const usKing =kingPos(nb,this.state.whiteTurn);
+    const oppAtk =attackedBy(nb,!this.state.whiteTurn);
     if(!usMoves.length){
-      if(usKing && oppAtk[usKing[0]][usKing[1]]){
-        this.setToast((this.state.whiteTurn?'Hitam':'Putih')+' MAT!'); // current to move is mated by previous mover
-      }else{
-        this.setToast('Stalemate (Seri)');
-      }
+      if(usKing && oppAtk[usKing[0]][usKing[1]]) this.setToast((this.state.whiteTurn?'Hitam':'Putih')+' MAT!');
+      else this.setToast('Stalemate (Seri)');
       return;
     }
 
-    // AI move if enabled
-    if(!skipAILater && this.state.mode==='ai' && this.state.whiteTurn===false){
+    if(!skipAI && this.state.mode==='ai' && this.state.whiteTurn===false){
       setTimeout(()=>this.aiMove(), 300);
     }
   },
   aiMove(){
-    const {board, whiteTurn} = this.state;
-    if(whiteTurn){ return; } // AI is hitam saja (untuk contoh)
-    const mv = bestMove(board, whiteTurn);
+    const {board, whiteTurn}=this.state;
+    if(whiteTurn) return;
+    const mv=bestMove(board, whiteTurn);
     if(!mv){ this.setToast('Seri'); return; }
-    this.makeMove(mv.from, mv.to, /*skipAILater*/true);
+    this.makeMove(mv.from,mv.to,true);
   },
   reset(){
-    this.state.board = parseFEN(startFEN).board;
-    this.state.whiteTurn = true;
+    this.state.board=parseFEN(startFEN).board;
+    this.state.whiteTurn=true;
     this.state.selected=null; this.state.legalTarget.clear();
     this.state.history.length=0; this.state.future.length=0;
     this.$log.textContent='–';
@@ -412,40 +390,32 @@ const App = {
     this.state.selected=null; this.state.legalTarget.clear();
     this.render();
   },
-  flip(){
-    this.state.flipped=!this.state.flipped; this.render();
-  },
+  flip(){ this.state.flipped=!this.state.flipped; this.render(); },
   boardOnly(on){
-    document.querySelector('.panel').style.display = on?'none':'block';
+    document.body.classList.toggle('board-only', on);
+    this.$exitBO.style.display = on ? 'inline-flex' : 'none';
   },
   bind(){
-    // board click
-    this.$board.addEventListener('click', (e)=>{
+    this.$board.addEventListener('click',(e)=>{
       const sq=e.target.closest('.sq'); if(!sq) return;
       this.clickSquare(Number(sq.dataset.r), Number(sq.dataset.c));
     });
-    // buttons
     $('#btnReset').onclick = ()=>this.reset();
     $('#btnUndo').onclick  = ()=>this.undo();
     $('#btnRedo').onclick  = ()=>this.redo();
     $('#btnFlip').onclick  = ()=>this.flip();
     $('#btnBack').onclick  = ()=>history.back();
-    $('#btnBoardOnly').onclick = (e)=>{
-      const on = e.currentTarget.dataset.on!=='1';
-      e.currentTarget.dataset.on = on?'1':'0';
-      e.currentTarget.textContent = on?'Tampilkan Panel':'Board Only';
-      this.boardOnly(on);
-    };
-    // modes
-    const selMode = (m)=>{
+    $('#btnBoardOnly').onclick = ()=>this.boardOnly(true);
+    this.$exitBO.onclick = ()=>this.boardOnly(false);
+
+    const pick=(m)=>{
       this.state.mode=m; this.reset();
       $('#modeHuman').classList.toggle('active', m==='human');
       $('#modeAI').classList.toggle('active', m==='ai');
       this.setToast(m==='human'?'Mode: vs Human':'Mode: vs Azbry-MD');
-      // jika AI dan giliran hitam, biar player putih start normal
     };
-    $('#modeHuman').onclick = ()=>selMode('human');
-    $('#modeAI').onclick    = ()=>selMode('ai');
+    $('#modeHuman').onclick = ()=>pick('human');
+    $('#modeAI').onclick    = ()=>pick('ai');
   }
 };
 
