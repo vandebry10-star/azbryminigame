@@ -1,61 +1,170 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="id">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Chess Test</title>
-<style>
-body{background:#0b0d10;color:#e6f0ff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-#board{
-  display:grid;
-  grid-template-columns:repeat(8,1fr);
-  width:90vmin;
-  aspect-ratio:1/1;
-  border:3px solid #39ff14;
-  border-radius:12px;
-  overflow:hidden;
-}
-.sq{
-  display:flex;align-items:center;justify-content:center;font-size:6vmin;user-select:none
-}
-.light{background:#f4f6fa}
-.dark{background:#2a3037}
-.white{color:#fff;text-shadow:0 0 8px #aef39c99,0 0 16px #aef39c66}
-.black{color:#111}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azbry Chess</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/azbry.css" />
+  <link rel="stylesheet" href="assets/css/chess.css" />
+  <style>
+    /* ==== FIX BIDAK BESAR + OUTLINE ==== */
+    .chess-board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      aspect-ratio: 1/1;
+      border: 3px solid #39ff14;
+      border-radius: 16px;
+      overflow: hidden;
+      width: min(90vmin, 480px);
+      margin: 1rem auto;
+    }
+    .sq {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(28px, 9vmin, 72px);
+      line-height: 1;
+      user-select: none;
+    }
+    .light {
+      background: #eef2f6;
+    }
+    .dark {
+      background: #2a3037;
+    }
+    .white {
+      color: #ffffff;
+      text-shadow:
+        0 0 0 #000,
+        -1px -1px 0 #000,
+        1px -1px 0 #000,
+        -1px 1px 0 #000,
+        1px 1px 0 #000;
+    }
+    .black {
+      color: #101418;
+      text-shadow:
+        0 0 0 #fff,
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+    }
+    /* Tombol dan layout */
+    .top-header {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .mode-picker {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .panel {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    footer.footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 1rem;
+    }
+    .btn {
+      background: #1e1f22;
+      border: none;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .btn:hover {
+      background: #39ff1455;
+    }
+    .btn.accent {
+      background: #39ff14;
+      color: #000;
+    }
+  </style>
 </head>
 <body>
-<div id="board"></div>
-<script>
-const board=document.getElementById("board");
-const PIECE={
-  K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",
-  k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"
-};
-const layout=[
-  "rnbqkbnr",
-  "pppppppp",
-  "........",
-  "........",
-  "........",
-  "........",
-  "PPPPPPPP",
-  "RNBQKBNR"
-];
-for(let r=0;r<8;r++){
-  for(let c=0;c<8;c++){
-    const sq=document.createElement("div");
-    sq.className="sq "+((r+c)%2?"dark":"light");
-    const ch=layout[r][c];
-    if(ch!=="."){
-      const span=document.createElement("span");
-      span.textContent=PIECE[ch];
-      span.className="piece "+(ch===ch.toUpperCase()?"white":"black");
-      sq.appendChild(span);
-    }
-    board.appendChild(sq);
-  }
-}
-</script>
+  <main id="chess-app" class="container">
+    <!-- HEADER -->
+    <header class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD • BOARD</span>
+        <h1>Azbry Chess</h1>
+      </div>
+    </header>
+
+    <!-- MODE -->
+    <div class="mode-picker">
+      <button id="modeHuman" class="btn accent" type="button">vs Human (Local)</button>
+      <button id="modeAI" class="btn" type="button">vs Azbry-MD</button>
+    </div>
+
+    <!-- BOARD -->
+    <section class="board-wrap">
+      <div id="board" class="chess-board" aria-label="Papan Catur"></div>
+    </section>
+
+    <!-- CONTROL PANEL -->
+    <section class="panel" aria-label="Kontrol Permainan">
+      <div class="controls">
+        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+        <button id="btnUndo" class="btn" type="button">Undo</button>
+        <button id="btnRedo" class="btn" type="button">Redo</button>
+        <button id="btnFlip" class="btn" type="button">Flip Board</button>
+      </div>
+      <div class="move-log">
+        <h3>Riwayat Langkah</h3>
+        <pre id="moveHistory">_</pre>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="left-btn">
+        <button id="btnBoardOnly" class="btn" type="button">Board Only</button>
+      </div>
+      <div class="right-btn">
+        <button id="btnBack" class="btn" type="button">Kembali</button>
+      </div>
+    </footer>
+
+    <!-- LICENSE -->
+    <div class="license" style="text-align:center;margin-top:1rem">
+      <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
+      <p>Dikelola oleh <b>FebryWesker</b></p>
+      <a href="../index.html" class="btn accent">⬆️ Portofolio</a>
+    </div>
+  </main>
+
+  <!-- JS -->
+  <script src="assets/js/chess-engine.js"></script>
+  <script src="assets/js/chess-ui.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script>
+    // Tombol tambahan
+    document.getElementById("btnFlip").addEventListener("click", () => {
+      document.getElementById("board").classList.toggle("flip");
+    });
+
+    // Tombol Board Only
+    document.getElementById("btnBoardOnly").addEventListener("click", () => {
+      document.querySelector(".panel").style.display = "none";
+      document.querySelector("footer").style.display = "none";
+      const backBtn = document.createElement("button");
+      backBtn.textContent = "Kembali ke Mode";
+      backBtn.className = "btn accent";
+      backBtn.style.margin = "1rem auto";
+      backBtn.onclick = () => location.reload();
+      document.body.appendChild(backBtn);
+    });
+  </script>
 </body>
 </html>
