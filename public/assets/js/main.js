@@ -1,123 +1,242 @@
-/* Azbry Chess — MAIN glue */
-(() => {
-  const $ = s => document.querySelector(s);
+/* ===== Azbry Chess Main (final) =====
+   Glue antara engine & UI.
+   Butuh chess-engine.js expose object ChessEngine dengan:
+   - initialPosition() -> array 64 ("", "wP", ...)
+   - generateMoves(pos, side) -> array {from, to}
+   - legalMoves(pos, side, from) -> array toIndex (optional; fallback filter)
+   - makeMove(pos, move) -> { next, captured?:string, promo?:string }
+   - isCheck(pos, side) -> bool
+   - isCheckmate(pos, side) -> bool
+   - isStalemate(pos, side) -> bool
+   - bestMove(pos, side, depth) -> {from,to}  (AI)
+*/
 
-  let mode = 'human'; // 'human' | 'ai'
-  let flipped = false;
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const boardEl = $("#board");
+  const btnHuman = $("#modeHuman");
+  const btnAI    = $("#modeAI");
+  const btnReset = $("#btnReset");
+  const btnUndo  = $("#btnUndo");
+  const btnRedo  = $("#btnRedo");
+  const btnFlip  = $("#btnFlip");
+  const moveLog  = $("#moveHistory");
 
-  const boardEl = $('#board');
+  // Safety engine object
+  const E = (window.ChessEngine || window.Engine || {});
+  const have = (k) => typeof E[k] === "function";
 
-  function snapshot(){
-    const s = AzEngine.snapshot();
-    AzUI.update(s.board, s.turn, s.legal, AzEngine._hist, null);
-    return s;
+  // State
+  let pos = have("initialPosition") ? E.initialPosition() : new Array(64).fill("");
+  let whiteToMove = true;
+  let mode = "human"; // 'human' | 'ai'
+  let selected = null;
+  let legalTargets = [];
+  let lastMove = null;
+  const undoStack = [];
+  const redoStack = [];
+
+  // UI
+  const UI = new window.AzChessUI({
+    boardEl,
+    onSquareClick: handleSquareClick,
+  });
+
+  // ===== INIT =====
+  render();
+
+  // ===== EVENTS =====
+  if (btnHuman) btnHuman.onclick = () => setMode("human");
+  if (btnAI)    btnAI.onclick    = () => setMode("ai");
+  if (btnReset) btnReset.onclick = () => resetGame();
+  if (btnUndo)  btnUndo.onclick  = () => doUndo();
+  if (btnRedo)  btnRedo.onclick  = () => doRedo();
+  if (btnFlip)  btnFlip.onclick  = () => { UI.flip(); render(); };
+
+  function setMode(m) {
+    mode = m;
+    btnHuman?.classList.toggle("active", mode === "human");
+    btnAI?.classList.toggle("active", mode === "ai");
+    resetGame();
   }
 
-  function reset(){
-    const s = AzEngine.reset();
-    AzUI.reset(s.board, s.turn, s.legal, AzEngine._hist);
+  function resetGame() {
+    pos = have("initialPosition") ? E.initialPosition() : new Array(64).fill("");
+    whiteToMove = true;
+    selected = null;
+    legalTargets = [];
+    lastMove = null;
+    undoStack.length = 0;
+    redoStack.length = 0;
+    moveLog.textContent = "_";
+    render();
   }
 
-  function applyAndRender(move){
-    const res = AzEngine.apply(move);
-    const snap = AzEngine.snapshot();
-    AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, move);
-    // check status (win/draw)
-    if(snap.status.over){
-      toastResult(snap.status);
-      return;
-    }
-    // AI reply if needed
-    if(mode==='ai' && snap.turn==='b'){ // manusia selalu putih untuk sederhana
-      setTimeout(aiStep, 180);
-    }
+  function render() {
+    UI.render(pos, { lastMove, legal: legalTargets });
+    if (selected != null) UI.markSource(selected);
+    updateButtons();
   }
 
-  function toastResult(st){
-    const msg = st.reason==='checkmate'
-      ? (st.result==='1-0'?'Putih menang (Checkmate)':'Hitam menang (Checkmate)')
-      : 'Seri';
-    const el = $('#resultToast');
-    el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(()=>el.classList.remove('show'), 2000);
+  function updateButtons() {
+    btnUndo && (btnUndo.disabled = undoStack.length === 0);
+    btnRedo && (btnRedo.disabled = redoStack.length === 0);
   }
 
-  function aiStep(){
-    const s = AzEngine.snapshot();
-    if(s.status.over) return;
-    const mv = AzEngine.randomAIMove();
-    if(!mv){ toastResult({reason:'stalemate'}); return; }
-    applyAndRender(mv);
-  }
+  function sideStr() { return whiteToMove ? "w" : "b"; }
 
-  // === UI events ===
-  $('#modeHuman').addEventListener('click', ()=>{
-    mode='human';
-    $('#modeHuman').classList.add('active');
-    $('#modeAI').classList.remove('active');
-    reset();
-  });
-  $('#modeAI').addEventListener('click', ()=>{
-    mode='ai';
-    $('#modeAI').classList.add('active');
-    $('#modeHuman').classList.remove('active');
-    reset(); // start fresh; manusia = putih
-  });
+  function handleSquareClick(idxDom) {
+    // Map balik index jika papan di-flip
+    const idx = UI.flipped ? 63 - idxDom : idxDom;
+    const piece = pos[idx];
 
-  $('#btnReset').addEventListener('click', reset);
-
-  $('#btnFlip').addEventListener('click', ()=>{
-    flipped = !flipped;
-    AzUI.setFlipped(flipped);
-    snapshot();
-  });
-
-  $('#btnUndo').addEventListener('click', ()=>{
-    const s = AzEngine.undo();
-    if(s) AzUI.update(s.board, s.turn, s.legal, AzEngine._hist, null);
-  });
-
-  $('#btnRedo').addEventListener('click', ()=>{/* optional in next build */});
-
-  $('#btnBoardOnly').addEventListener('click', ()=>{
-    document.body.classList.toggle('board-only');
-  });
-
-  $('#btnBack').addEventListener('click', ()=>{
-    // balik ke tests.html atau index? di sini: history.back
-    history.back();
-  });
-
-  // Click square from UI
-  window.onSquareClick = function(i){
-    const snap = AzEngine.snapshot();
-    const legal = snap.legal;
-
-    // cari apakah sedang memilih source
-    const srcMoves = legal.filter(m=>m.from===i);
-    const isSrc = srcMoves.length>0;
-
-    // jika klik source
-    if(isSrc){
-      window.AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, null);
-      // tandai selection via UI internal
-      window.AzUI.selection = i; // not used (but kept)
-      // rebuild with highlight handled inside AzUI.update
-      window.AzUI.update(snap.board, snap.turn, snap.legal, AzEngine._hist, null);
+    // Jika sedang memilih sumber
+    if (selected == null) {
+      if (!piece || piece[0] !== sideStr()) return; // hanya bidak sisi aktif
+      selected = idx;
+      legalTargets = getLegalTargets(idx);
+      render();
       return;
     }
 
-    // atau klik target dari source yang sebelumnya?
-    // cek dari semua legal apakah ada move dengan to = i (ambiguous); ambil yang from terakhir dipilih (jika ada)
-    // untuk sederhana, pilih move pertama yang menuju i
-    const mv = legal.find(m=>m.to===i);
-    if(mv){
-      applyAndRender(mv);
+    // Klik kotak yang sama: batal
+    if (idx === selected) {
+      selected = null;
+      legalTargets = [];
+      render();
       return;
     }
+
+    // Jika klik target legal -> lakukan langkah
+    if (legalTargets.includes(idx)) {
+      makeMove({ from: selected, to: idx });
+      selected = null;
+      legalTargets = [];
+      render();
+      // Jika mode AI dan game belum selesai -> giliran AI
+      if (mode === "ai") {
+        setTimeout(aiMove, 250);
+      }
+      return;
+    }
+
+    // Kalau klik piece sisi aktif lain -> ganti selection
+    if (piece && piece[0] === sideStr()) {
+      selected = idx;
+      legalTargets = getLegalTargets(idx);
+      render();
+      return;
+    }
+
+    // Selain itu, reset selection
+    selected = null;
+    legalTargets = [];
+    render();
+  }
+
+  function getLegalTargets(from) {
+    if (have("legalMoves")) {
+      return E.legalMoves(pos, sideStr(), from) || [];
+    }
+    // Fallback: generateMoves lalu filter from
+    if (have("generateMoves")) {
+      const gen = E.generateMoves(pos, sideStr()) || [];
+      return gen.filter(m => m.from === from).map(m => m.to);
+    }
+    return [];
+  }
+
+  function makeMove(m) {
+    // Simpan untuk undo
+    undoStack.push({ pos: pos.slice(), white: whiteToMove, lastMove });
+    redoStack.length = 0;
+
+    const res = have("makeMove") ? E.makeMove(pos, m) : null;
+    if (res && res.next) pos = res.next;
+    else {
+      // fallback manual (sederhana)
+      pos[m.to] = pos[m.from];
+      pos[m.from] = "";
+    }
+
+    whiteToMove = !whiteToMove;
+    lastMove = { from: m.from, to: m.to };
+    appendMoveLog(m);
+
+    // Cek endgame
+    if (have("isCheckmate") && E.isCheckmate(pos, sideStr())) {
+      UI.toast(`${whiteToMove ? "Hitam" : "Putih"} skakmat!`);
+    } else if (have("isStalemate") && E.isStalemate(pos, sideStr())) {
+      UI.toast("Seri (Stalemate)");
+    }
+  }
+
+  function doUndo() {
+    if (!undoStack.length) return;
+    const s = undoStack.pop();
+    redoStack.push({ pos: pos.slice(), white: whiteToMove, lastMove });
+    pos = s.pos.slice();
+    whiteToMove = s.white;
+    lastMove = s.lastMove || null;
+    selected = null;
+    legalTargets = [];
+    render();
+    trimLastPlyFromLog();
+  }
+
+  function doRedo() {
+    if (!redoStack.length) return;
+    const s = redoStack.pop();
+    undoStack.push({ pos: pos.slice(), white: whiteToMove, lastMove });
+    pos = s.pos.slice();
+    whiteToMove = s.white;
+    lastMove = s.lastMove || null;
+    render();
+  }
+
+  function aiMove() {
+    // Kalau sudah selesai, jangan gerak
+    if (have("isCheckmate") && E.isCheckmate(pos, sideStr())) return;
+    if (have("isStalemate") && E.isStalemate(pos, sideStr())) return;
+
+    let mv = null;
+    if (have("bestMove")) {
+      mv = E.bestMove(pos, sideStr(), 2);
+    } else if (have("generateMoves")) {
+      const moves = E.generateMoves(pos, sideStr());
+      if (moves && moves.length) mv = moves[Math.floor(Math.random() * moves.length)];
+    }
+    if (!mv) {
+      UI.toast("Seri");
+      return;
+    }
+    makeMove(mv);
+  }
+
+  function squareName(i) {
+    const file = "abcdefgh"[i % 8];
+    const rank = 8 - Math.floor(i / 8);
+    return file + rank;
+  }
+
+  function appendMoveLog(m) {
+    const s = `${squareName(m.from)} → ${squareName(m.to)}`;
+    if (moveLog.textContent.trim() === "_" || moveLog.textContent.trim() === "") {
+      moveLog.textContent = s;
+    } else {
+      moveLog.textContent += "\n" + s;
+    }
+  }
+
+  function trimLastPlyFromLog() {
+    const lines = moveLog.textContent.split("\n").filter(Boolean);
+    lines.pop();
+    moveLog.textContent = lines.length ? lines.join("\n") : "_";
+  }
+
+  // Ekspor buat debug
+  window.__AZ_CHESS__ = {
+    get pos() { return pos.slice(); },
+    render, resetGame, setMode
   };
-
-  // init
-  reset();
 })();
