@@ -46,34 +46,7 @@
     }
 
     // pos: array 64 string "" / "wP"/"bK", lastMove: {from,to} | null
-    render(pos, opts = {}) {
-      const { lastMove = null, legal = [] } = opts;
-
-      for (let i = 0; i < 64; i++) {
-        const domIdx = this.flipped ? 63 - i : i; // flip tampilan
-        const sq = this.squares[domIdx];
-        sq.classList.remove("src", "last", "move");
-        sq.innerHTML = "";
-
-        const p = pos[i];
-        if (p) {
-          const span = document.createElement("span");
-          span.className = "piece";
-          span.textContent = PIECE_MAP[p] || "?";
-          sq.appendChild(span);
-        }
-      }
-
-      if (lastMove) {
-        const a = this.flipped ? 63 - lastMove.from : lastMove.from;
-        const b = this.flipped ? 63 - lastMove.to   : lastMove.to;
-        this.squares[a]?.classList.add("last");
-        this.squares[b]?.classList.add("last");
-      }
-      if (legal && legal.length) {
-        for (const i of legal) {
-          const domIdx = this.flipped ? 63 - i : i;
-          this.squares[domIdx]?.classList.add("move");
+    
         }
       }
     }
@@ -86,7 +59,27 @@
     flip() {
       this.flipped = !this.flipped;
       // Reflow grid urutan DOM tetap, tapi mapping index di render()
-      // cukup panggil ulang render dari main.js setelah flip.
+      // cukup panggil ulang render dari main.js setelafor (let i = 0; i < 64; i++) {
+  const domIdx = this.flipped ? 63 - i : i; // flip tampilan
+  const sq = this.squares[domIdx];
+  sq.classList.remove("src", "last", "move");
+  sq.innerHTML = "";
+
+  const p = pos[i];
+  if (p) {
+    const span = document.createElement("span");
+    span.className = "piece";
+
+    // Warna berdasarkan huruf pertama
+    const color = p[0] === "w" ? "white" : "black";
+    sq.classList.add(color);
+
+    // Ambil simbol dari map (hapus fallback "?")
+    span.textContent = PIECE_MAP[p] ?? "";
+
+    sq.appendChild(span);
+  }
+    }h flip.
     }
 
     toast(msg, ms = 1600) {
