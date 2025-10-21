@@ -52,5 +52,18 @@
 
   <!-- Main Controller (logika permainan & mode) -->
   <script src="assets/js/main.js"></script>
+  <!-- Engine (wajib) -->
+<script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
+
+<!-- Shim supaya selalu ada window.Chess -->
+<script>
+  if (typeof window.Chess === "undefined" &&
+      window.chess && typeof window.chess.Chess === "function") {
+    window.Chess = window.chess.Chess;
+  }
+</script>
+
+<!-- Controller -->
+<script src="assets/js/main.js"></script>
 </body>
 </html>
