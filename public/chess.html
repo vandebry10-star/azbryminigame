@@ -1,88 +1,455 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Azbry Chess</title>
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="/assets/css/azbry.css?v=20251021a">
-  <link rel="stylesheet" href="/assets/css/chess.css?v=20251021a">
-
-  <style>
-    .top-strip,.debug-strip{display:none!important}
-    body{overscroll-behavior:none}
-    #board{touch-action:none}
-    #buildTag{position:fixed;right:.75rem;top:.5rem;opacity:.35;font:500 12px/1 ui-sans-serif,system-ui}
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Azbry Chess</title>
+<style>
+  :root{
+    --bg:#0e1115;--panel:#141820;--soft:#19202a;--ring:#21303e;
+    --text:#e8f0f7;--muted:#a8b3c5;--accent:#b2f29b;--accent-2:#7fe0a0;
+    --dark:#2a3037;--light:#e9edf2;--hl:#aef39c33;--hl-2:#aef39c55;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:radial-gradient(1200px 800px at 10% -10%,#0d1320,transparent),
+    radial-gradient(900px 700px at 110% 10%,#0f1a2a,transparent),var(--bg);
+    color:var(--text);font:500 16px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;
+    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+  .container{max-width:1100px;margin:24px auto;padding:0 16px}
+  .top{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+  .tag{font-size:12px;letter-spacing:.15em;color:var(--muted);background:#11161d;border:1px solid #1b2430;border-radius:999px;padding:6px 10px}
+  h1{margin:0;font-size:28px;color:var(--accent)}
+  .segrow{display:flex;gap:10px;margin:14px 0 18px}
+  .seg{appearance:none;border:none;border-radius:14px;padding:12px 16px;background:#11161d;color:var(--muted);
+       border:1px solid #1b2430;cursor:pointer;transition:.15s}
+  .seg:hover{transform:translateY(-1px)}
+  .seg.active{color:#0e1510;background:var(--accent);border-color:#93f07f}
+  .wrap{display:grid;grid-template-columns:1fr;gap:16px}
+  .board-shell{background:linear-gradient(180deg,#10161d,#0d141a 30%,#0c1218);border:1px solid #1b2532;
+               border-radius:22px;box-shadow:0 8px 30px #0008, inset 0 0 0 1px #25324240;padding:14px}
+  /* board keeps square ratio */
+  .board{
+    aspect-ratio:1/1; width:100%;
+    display:grid; grid-template-columns:repeat(8,1fr); grid-template-rows:repeat(8,1fr);
+    border-radius:14px; overflow:hidden; background:#0f141a; position:relative;
+  }
+  .sq{
+    display:flex; align-items:center; justify-content:center;
+    font-size: clamp(20px, 5.5vw, 42px); user-select:none; cursor:pointer;
+  }
+  .light{background:var(--light)}
+  .dark{background:#3a3f45}
+  .piece{filter: drop-shadow(0 1px 0 #0006)}
+  .white{color:#fafcff}
+  .black{color:#0c1116}
+  .sq.sel{outline:3px solid var(--hl-2) inset; box-shadow: inset 0 0 0 3px var(--hl-2)}
+  .sq.move{box-shadow: inset 0 0 0 4px var(--hl)}
+  .sq.dot::after{
+    content:""; width:28%; height:28%; border-radius:999px; background:var(--hl-2);
+  }
+  /* panel */
+  .panel{background:var(--panel);border:1px solid #1b2532;padding:14px;border-radius:18px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{
+    appearance:none;border:1px solid #253242;border-radius:12px;padding:10px 14px;background:#121722;color:var(--text);
+    cursor:pointer;transition:.15s;min-width:110px;text-align:center
+  }
+  .btn:hover{transform:translateY(-1px)}
+  .btn.accent{background:var(--accent);color:#0d130d;border-color:#93f07f}
+  .btn.dark{background:#0f141c}
+  .btn.ghost{background:transparent}
+  .grid2{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+  pre.log{margin:8px 0 0;background:#0c1218;border:1px solid #1b2532;border-radius:12px;padding:12px;min-height:56px}
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0f1a22;color:#eaf7ff;border:1px solid #224055;
+    padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px #000a;z-index:10000;display:none
+  }
+  @media (min-width:980px){ .wrap{grid-template-columns:minmax(380px,1fr) 340px} }
+</style>
 </head>
 <body>
-<main id="chess-app" class="container">
-
-  <div id="buildTag">build: 20251021a</div>
-
-  <!-- HEADER -->
-  <header class="top-header" aria-label="Judul Halaman">
-    <div class="title">
-      <span class="tag">AZBRY-MD • BOARD</span>
-      <h1>Azbry Chess</h1>
-    </div>
-  </header>
-
-  <!-- MODE PICKER -->
-  <div class="mode-picker" aria-label="Pilih Mode">
-    <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
-    <button id="modeAI" class="seg" type="button" title="Mode vs Azbry-MD">vs Azbry-MD</button>
+<main class="container">
+  <div class="top">
+    <span class="tag">AZBRY-MD • BOARD</span>
+    <h1>Azbry Chess</h1>
   </div>
 
-  <!-- BOARD -->
-  <section class="board-wrap" aria-label="Papan Catur">
-    <div id="board" class="board" role="grid" aria-label="Board"></div>
-  </section>
+  <div class="segrow" role="tablist" aria-label="Pilih Mode">
+    <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
+    <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
+  </div>
 
-  <!-- CONTROL PANEL -->
-  <section class="panel" aria-label="Kontrol Permainan">
-    <div class="controls">
-      <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-      <button id="btnUndo"  class="btn" type="button">Undo</button>
-      <button id="btnRedo"  class="btn" type="button">Redo</button>
-      <button id="btnFlip"  class="btn dark" type="button">Flip Board</button>
-    </div>
+  <div class="wrap">
+    <section class="board-shell">
+      <div id="board" class="board" aria-label="Papan Catur"></div>
+    </section>
 
-    <div class="move-log">
-      <h3>Riwayat Langkah</h3>
-      <pre id="moveHistory">_</pre>
-    </div>
-  </section>
+    <section class="panel">
+      <div class="row" style="margin-bottom:8px">
+        <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
+        <button id="btnUndo" class="btn dark"   type="button">Undo</button>
+        <button id="btnRedo" class="btn dark"   type="button">Redo</button>
+        <button id="btnFlip" class="btn dark"   type="button">Flip Board</button>
+      </div>
 
-  <!-- FOOTER NAV -->
-  <footer class="footer">
-    <div class="left-btn">
-      <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
-    </div>
-    <div class="right-btn">
-      <button id="btnBack" class="btn dark" type="button">Kembali</button>
-    </div>
-  </footer>
+      <div class="grid2">
+        <div style="color:#9eb3c7">Riwayat Langkah</div>
+        <button id="btnBoardOnly" class="btn ghost" type="button">Board Only</button>
+      </div>
+      <pre id="moveLog" class="log">–</pre>
 
-  <div id="resultModal" class="az-toast" aria-live="polite" hidden></div>
+      <div class="row" style="margin-top:10px;justify-content:flex-end">
+        <button id="btnBack" class="btn dark" type="button">Kembali</button>
+      </div>
+    </section>
+  </div>
 </main>
 
-<!-- URUTAN WAJIB: engine -> ui -> main (ABSOLUT + cache-buster) -->
-<script>
-  window.AZ_BUILD = "20251021a";
-  console.log("[AzbryChess] boot build", window.AZ_BUILD);
-</script>
-<script src="/assets/js/chess-engine.js?v=20251021a"></script>
-<script src="/assets/js/chess-ui.js?v=20251021a"></script>
-<script src="/assets/js/main.js?v=20251021a"></script>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-<!-- Guard flip kecil (tidak bentrok kalau main.js sudah binding) -->
 <script>
-  (function(){
-    const b=document.getElementById('btnFlip'), bd=document.getElementById('board');
-    if(b && bd && !b.dataset.bound){ b.addEventListener('click',()=>bd.classList.toggle('flip')); b.dataset.bound='1'; }
-  })();
+/* -------------------- ENGINE (mini) -------------------- */
+const FILES = ['a','b','c','d','e','f','g','h'];
+const startFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+function parseFEN(fen){
+  const [placement, turn] = fen.split(' ');
+  const rows = placement.split('/');
+  const board = [];
+  for(let r=0;r<8;r++){
+    const row = [];
+    for(const ch of rows[r]){
+      if(/\d/.test(ch)){ for(let k=0;k<Number(ch);k++) row.push(null); }
+      else row.push(ch);
+    }
+    board.push(row);
+  }
+  return {board, turn};
+}
+
+function cloneBoard(b){ return b.map(r=>r.slice()); }
+function inBounds(r,c){ return r>=0&&r<8&&c>=0&&c<8; }
+function isWhite(p){ return p && p === p.toUpperCase(); }
+function isBlack(p){ return p && p === p.toLowerCase(); }
+
+function kingPos(board, white=true){
+  const target = white ? 'K':'k';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++) if(board[r][c]===target) return [r,c];
+  return null;
+}
+
+function movesFor(board,r,c){
+  const p = board[r][c]; if(!p) return [];
+  const white = isWhite(p);
+  const out = [];
+  const push = (rr,cc)=>{ if(!inBounds(rr,cc)) return;
+    const t=board[rr][cc];
+    if(!t){ out.push([rr,cc]); return true; }
+    if(white && isBlack(t) || (!white && isWhite(t))){ out.push([rr,cc]); }
+    return false;
+  };
+  const addRay=(dr,dc)=>{ let rr=r+dr, cc=c+dc; while(inBounds(rr,cc)){ const t=board[rr][cc];
+      if(!t){ out.push([rr,cc]); } else { if(white?isBlack(t):isWhite(t)) out.push([rr,cc]); break; }
+      rr+=dr; cc+=dc;
+    }};
+
+  const lower = p.toLowerCase();
+  if(lower==='p'){
+    const dir = white? -1: 1;
+    const sr = white?6:1;
+    // forward
+    if(!board[r+dir]?.[c]){ out.push([r+dir,c]); if(r===sr && !board[r+2*dir]?.[c]) out.push([r+2*dir,c]); }
+    // capture
+    for(const dc of [-1,1]){
+      const rr=r+dir, cc=c+dc;
+      if(inBounds(rr,cc)){
+        const t=board[rr][cc];
+        if(white?isBlack(t):isWhite(t)) out.push([rr,cc]);
+      }
+    }
+  } else if(lower==='n'){
+    [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr,dc])=>{
+      const rr=r+dr, cc=c+dc; if(!inBounds(rr,cc)) return;
+      const t=board[rr][cc];
+      if(!t || (white?isBlack(t):isWhite(t))) out.push([rr,cc]);
+    });
+  } else if(lower==='b'){ addRay(-1,-1); addRay(-1,1); addRay(1,-1); addRay(1,1); }
+  else if(lower==='r'){ addRay(-1,0); addRay(1,0); addRay(0,-1); addRay(0,1); }
+  else if(lower==='q'){ addRay(-1,-1); addRay(-1,1); addRay(1,-1); addRay(1,1); addRay(-1,0); addRay(1,0); addRay(0,-1); addRay(0,1); }
+  else if(lower==='k'){
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+      if(!dr&&!dc) continue; const rr=r+dr,cc=c+dc; if(!inBounds(rr,cc)) continue;
+      const t=board[rr][cc]; if(!t || (white?isBlack(t):isWhite(t))) out.push([rr,cc]);
+    }
+  }
+  return out;
+}
+
+function attackedBy(board, white){
+  // squares attacked by given side
+  const atk = Array.from({length:8},()=>Array(8).fill(false));
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(!p) continue;
+    if(white !== isWhite(p)) continue;
+    for(const [rr,cc] of movesFor(board,r,c)){
+      atk[rr][cc]=true;
+    }
+  }
+  return atk;
+}
+
+function legalMoves(board, turnWhite){
+  const moves=[];
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(!p) continue;
+    if(turnWhite !== isWhite(p)) continue;
+    for(const [rr,cc] of movesFor(board,r,c)){
+      const nb = cloneBoard(board);
+      nb[rr][cc]=nb[r][c]; nb[r][c]=null;
+      // auto promote (queen)
+      if((nb[rr][cc]==='P' && rr===0)) nb[rr][cc]='Q';
+      if((nb[rr][cc]==='p' && rr===7)) nb[rr][cc]='q';
+      const kpos = kingPos(nb, turnWhite);
+      const oppAtk = attackedBy(nb, !turnWhite);
+      if(kpos && !oppAtk[kpos[0]][kpos[1]]) moves.push({from:[r,c],to:[rr,cc],board:nb});
+    }
+  }
+  return moves;
+}
+
+function evaluate(board){ // piece-square very light
+  const val={p:100,n:320,b:330,r:500,q:900,k:0};
+  let s=0;
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const p=board[r][c]; if(!p) continue;
+    const v=val[p.toLowerCase()]||0;
+    s += isWhite(p)? v : -v;
+  }
+  return s;
+}
+
+function bestMove(board, whiteTurn){
+  const moves = legalMoves(board, whiteTurn);
+  if(!moves.length) return null;
+  // 1-ply with capture preference
+  let best = moves[0], bestScore = -Infinity;
+  for(const m of moves){
+    const sc = (whiteTurn?1:-1)*evaluate(m.board) + (m.capt?50:0);
+    if(sc>bestScore){ bestScore=sc; best=m; }
+  }
+  return best;
+}
+/* -------------------- UI -------------------- */
+const PIECE_CHAR = {
+  'K':'\u2654','Q':'\u2655','R':'\u2656','B':'\u2657','N':'\u2658','P':'\u2659',
+  'k':'\u265A','q':'\u265B','r':'\u265C','b':'\u265D','n':'\u265E','p':'\u265F'
+};
+const $ = sel => document.querySelector(sel);
+
+const App = {
+  state:{
+    board: parseFEN(startFEN).board,
+    whiteTurn: true,
+    selected:null, legalTarget: new Set(),
+    history:[], future:[], flipped:false,
+    mode:'human' // or 'ai'
+  },
+  mount(){
+    this.$board = $('#board');
+    this.$log   = $('#moveLog');
+    this.$toast = $('#toast');
+    this.buildGrid();
+    this.render();
+    this.bind();
+  },
+  buildGrid(){
+    this.$board.innerHTML='';
+    for(let r=0;r<8;r++){
+      for(let c=0;c<8;c++){
+        const d=document.createElement('div');
+        d.className='sq '+(((r+c)%2)?'dark':'light');
+        d.dataset.r=r; d.dataset.c=c;
+        this.$board.appendChild(d);
+      }
+    }
+  },
+  squareAtDom(d){ return [Number(d.dataset.r), Number(d.dataset.c)]; },
+  render(){
+    const {board, selected, legalTarget, flipped} = this.state;
+    // squares
+    this.$board.querySelectorAll('.sq').forEach(sq=>{
+      const [r0,c0] = this.squareAtDom(sq);
+      const r = flipped? 7-r0 : r0;
+      const c = flipped? 7-c0 : c0;
+      const p = board[r][c];
+      sq.innerHTML='';
+      sq.classList.remove('sel','move','dot');
+      if(p){
+        const i=document.createElement('span');
+        i.className='piece '+(isWhite(p)?'white':'black');
+        i.textContent = PIECE_CHAR[p];
+        sq.appendChild(i);
+      }
+      // highlight
+      if(selected && selected[0]===r && selected[1]===c) sq.classList.add('sel');
+      if(legalTarget.has(r+','+c)){
+        if(board[r][c]) sq.classList.add('move'); else sq.classList.add('dot');
+      }
+    });
+  },
+  setToast(msg){ const t=this.$toast; t.textContent=msg; t.style.display='block'; clearTimeout(this._t);
+    this._t=setTimeout(()=>t.style.display='none', 1600); },
+  logPush(notation){
+    if(this.$log.textContent==='–') this.$log.textContent='';
+    this.$log.textContent += (this.$log.textContent?'\n':'')+notation;
+  },
+  algebra([r,c]){ return FILES[c]+(8-r); },
+  clickSquare(r0,c0){
+    // account flip
+    const r = this.state.flipped? 7-r0 : r0;
+    const c = this.state.flipped? 7-c0 : c0;
+
+    const {board, whiteTurn, selected} = this.state;
+    const p = board[r][c];
+
+    // selecting own piece
+    if(!selected){
+      if(!p) return;
+      if(whiteTurn !== isWhite(p)) return;
+      const moves = legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
+      this.state.selected=[r,c];
+      this.state.legalTarget = new Set(moves.map(m=>m.to.join(',')));
+      return this.render();
+    }
+
+    // try move to target
+    const key = r+','+c;
+    if(!this.state.legalTarget.has(key)){
+      // reselect piece (if belongs to mover)
+      if(p && (whiteTurn===isWhite(p))){
+        const moves = legalMoves(board, whiteTurn).filter(m=>m.from[0]===r && m.from[1]===c);
+        this.state.selected=[r,c];
+        this.state.legalTarget = new Set(moves.map(m=>m.to.join(',')));
+        return this.render();
+      }
+      // clear selection
+      this.state.selected=null; this.state.legalTarget.clear(); return this.render();
+    }
+
+    // execute move
+    this.makeMove(this.state.selected,[r,c]);
+  },
+  makeMove(from,to, skipAILater=false){
+    const {board, whiteTurn} = this.state;
+    const piece = board[from[0]][from[1]];
+    const nb = cloneBoard(board);
+    nb[to[0]][to[1]]=piece; nb[from[0]][from[1]]=null;
+    // promotion
+    if(piece==='P' && to[0]===0) nb[to[0]][to[1]]='Q';
+    if(piece==='p' && to[0]===7) nb[to[0]][to[1]]='q';
+
+    // push history
+    this.state.history.push({board:cloneBoard(board), whiteTurn});
+    this.state.future.length = 0;
+
+    this.state.board = nb;
+    this.state.whiteTurn = !whiteTurn;
+    this.state.selected=null; this.state.legalTarget.clear();
+
+    this.logPush((whiteTurn?'♙':'♟')+'  '+this.algebra(from)+' → '+this.algebra(to));
+    this.render();
+
+    // end-state?
+    const usMoves = legalMoves(nb, this.state.whiteTurn);
+    const usKing  = kingPos(nb, this.state.whiteTurn);
+    const oppAtk  = attackedBy(nb, !this.state.whiteTurn);
+    if(!usMoves.length){
+      if(usKing && oppAtk[usKing[0]][usKing[1]]){
+        this.setToast((this.state.whiteTurn?'Hitam':'Putih')+' MAT!'); // current to move is mated by previous mover
+      }else{
+        this.setToast('Stalemate (Seri)');
+      }
+      return;
+    }
+
+    // AI move if enabled
+    if(!skipAILater && this.state.mode==='ai' && this.state.whiteTurn===false){
+      setTimeout(()=>this.aiMove(), 300);
+    }
+  },
+  aiMove(){
+    const {board, whiteTurn} = this.state;
+    if(whiteTurn){ return; } // AI is hitam saja (untuk contoh)
+    const mv = bestMove(board, whiteTurn);
+    if(!mv){ this.setToast('Seri'); return; }
+    this.makeMove(mv.from, mv.to, /*skipAILater*/true);
+  },
+  reset(){
+    this.state.board = parseFEN(startFEN).board;
+    this.state.whiteTurn = true;
+    this.state.selected=null; this.state.legalTarget.clear();
+    this.state.history.length=0; this.state.future.length=0;
+    this.$log.textContent='–';
+    this.render();
+  },
+  undo(){
+    if(!this.state.history.length) return;
+    const prev=this.state.history.pop();
+    this.state.future.push({board:cloneBoard(this.state.board), whiteTurn:this.state.whiteTurn});
+    this.state.board=prev.board; this.state.whiteTurn=prev.whiteTurn;
+    this.state.selected=null; this.state.legalTarget.clear();
+    this.render();
+  },
+  redo(){
+    if(!this.state.future.length) return;
+    const next=this.state.future.pop();
+    this.state.history.push({board:cloneBoard(this.state.board), whiteTurn:this.state.whiteTurn});
+    this.state.board=next.board; this.state.whiteTurn=next.whiteTurn;
+    this.state.selected=null; this.state.legalTarget.clear();
+    this.render();
+  },
+  flip(){
+    this.state.flipped=!this.state.flipped; this.render();
+  },
+  boardOnly(on){
+    document.querySelector('.panel').style.display = on?'none':'block';
+  },
+  bind(){
+    // board click
+    this.$board.addEventListener('click', (e)=>{
+      const sq=e.target.closest('.sq'); if(!sq) return;
+      this.clickSquare(Number(sq.dataset.r), Number(sq.dataset.c));
+    });
+    // buttons
+    $('#btnReset').onclick = ()=>this.reset();
+    $('#btnUndo').onclick  = ()=>this.undo();
+    $('#btnRedo').onclick  = ()=>this.redo();
+    $('#btnFlip').onclick  = ()=>this.flip();
+    $('#btnBack').onclick  = ()=>history.back();
+    $('#btnBoardOnly').onclick = (e)=>{
+      const on = e.currentTarget.dataset.on!=='1';
+      e.currentTarget.dataset.on = on?'1':'0';
+      e.currentTarget.textContent = on?'Tampilkan Panel':'Board Only';
+      this.boardOnly(on);
+    };
+    // modes
+    const selMode = (m)=>{
+      this.state.mode=m; this.reset();
+      $('#modeHuman').classList.toggle('active', m==='human');
+      $('#modeAI').classList.toggle('active', m==='ai');
+      this.setToast(m==='human'?'Mode: vs Human':'Mode: vs Azbry-MD');
+      // jika AI dan giliran hitam, biar player putih start normal
+    };
+    $('#modeHuman').onclick = ()=>selMode('human');
+    $('#modeAI').onclick    = ()=>selMode('ai');
+  }
+};
+
+App.mount();
 </script>
 </body>
 </html>
