@@ -1,45 +1,32 @@
-/* AZBRY CHESS – CSS FINAL FIX */
+/* AZBRY CHESS – FINAL CSS FIX */
+
 #board {
   --sq: min(13vw, 70px);
   display: grid;
   grid-template-columns: repeat(8, var(--sq));
   grid-template-rows: repeat(8, var(--sq));
-  background: #181a1d;
+  gap: 0;
   border-radius: 14px;
   overflow: hidden;
+  box-shadow: 0 0 12px rgba(155, 226, 122, 0.1);
 }
 
-.square {
-  position: relative;
-  width: var(--sq);
-  height: var(--sq);
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  border: none;
-  background: transparent;
-}
+/* warna papan */
+.square.light { background: #E9ECF1; }
+.square.dark { background: #3A3F45; }
 
-.square.light {
-  background: #2a2d30;
-}
-.square.dark {
-  background: #1f2124;
-}
-
+/* gaya bidak */
 .piece {
-  font-size: calc(var(--sq) * 0.75);
+  font-size: calc(var(--sq) * 0.78);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.35));
   pointer-events: none;
-  transform: translateY(2px);
 }
 
+/* highlight langkah */
 .square.selected {
   outline: 3px solid #9BE27A;
   outline-offset: -3px;
 }
-
 .square.hint::after {
   content: "";
   position: absolute;
@@ -49,7 +36,6 @@
   background: rgba(155, 226, 122, 0.35);
   box-shadow: 0 0 0 2px rgba(155, 226, 122, 0.45) inset;
 }
-
 .square.capture::after {
   content: "";
   position: absolute;
@@ -59,18 +45,18 @@
   border-radius: 50%;
 }
 
-/* Tombol mode */
+/* tombol mode */
 .mode-picker .seg.active {
   background: #9BE27A;
   color: #111;
 }
 
-/* Panel toggle */
+/* panel toggle */
 .panel.hidden {
   display: none;
 }
 
-/* Result overlay */
+/* modal hasil */
 .az-overlay {
   position: fixed;
   inset: 0;
@@ -89,7 +75,7 @@
 }
 .az-box h3 {
   color: #9BE27A;
-  margin: 0 0 8px;
+  margin-bottom: 10px;
 }
 .az-box .btn.accent {
   background: #9BE27A;
