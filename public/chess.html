@@ -5,21 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess</title>
 
-  <!-- Styles (tema umum + styling papan) -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=fix3">
-  <link rel="stylesheet" href="assets/css/chess.css?v=fix3">
+  <!-- Styles -->
+  <link rel="stylesheet" href="/assets/css/azbry.css?v=20251021a">
+  <link rel="stylesheet" href="/assets/css/chess.css?v=20251021a">
 
-  <!-- Hardening kecil biar gak ada overlay tak sengaja -->
   <style>
-    /* pastikan tidak ada strip/header menutupi board */
-    .top-strip, .debug-strip { display:none !important; }
-    /* container dasar */
-    body { overscroll-behavior: none; }
-    #board { touch-action: none; } /* drag di mobile tidak scroll halaman */
+    .top-strip,.debug-strip{display:none!important}
+    body{overscroll-behavior:none}
+    #board{touch-action:none}
+    #buildTag{position:fixed;right:.75rem;top:.5rem;opacity:.35;font:500 12px/1 ui-sans-serif,system-ui}
   </style>
 </head>
 <body>
 <main id="chess-app" class="container">
+
+  <div id="buildTag">build: 20251021a</div>
 
   <!-- HEADER -->
   <header class="top-header" aria-label="Judul Halaman">
@@ -37,7 +37,6 @@
 
   <!-- BOARD -->
   <section class="board-wrap" aria-label="Papan Catur">
-    <!-- Penting: id="board" + class="board" -->
     <div id="board" class="board" role="grid" aria-label="Board"></div>
   </section>
 
@@ -66,26 +65,23 @@
     </div>
   </footer>
 
-  <!-- MODAL HASIL (checkmate/seri) -->
   <div id="resultModal" class="az-toast" aria-live="polite" hidden></div>
-
 </main>
 
-<!-- ====== URUTAN SCRIPT WAJIB: engine -> ui -> main ====== -->
-<script src="assets/js/chess-engine.js?v=fix3"></script>
-<script src="assets/js/chess-ui.js?v=fix3"></script>
-<script src="assets/js/main.js?v=fix3"></script>
-
-<!-- Guard ringan (tidak bentrok dengan main.js). Boleh dibiarkan. -->
+<!-- URUTAN WAJIB: engine -> ui -> main (ABSOLUT + cache-buster) -->
 <script>
-  // Kalau main.js sudah binding, ini tidak akan mengganggu.
-  (function () {
-    const flipBtn = document.getElementById('btnFlip');
-    const boardEl = document.getElementById('board');
-    if (flipBtn && boardEl && !flipBtn.dataset.bound) {
-      flipBtn.addEventListener('click', () => boardEl.classList.toggle('flip'));
-      flipBtn.dataset.bound = '1';
-    }
+  window.AZ_BUILD = "20251021a";
+  console.log("[AzbryChess] boot build", window.AZ_BUILD);
+</script>
+<script src="/assets/js/chess-engine.js?v=20251021a"></script>
+<script src="/assets/js/chess-ui.js?v=20251021a"></script>
+<script src="/assets/js/main.js?v=20251021a"></script>
+
+<!-- Guard flip kecil (tidak bentrok kalau main.js sudah binding) -->
+<script>
+  (function(){
+    const b=document.getElementById('btnFlip'), bd=document.getElementById('board');
+    if(b && bd && !b.dataset.bound){ b.addEventListener('click',()=>bd.classList.toggle('flip')); b.dataset.bound='1'; }
   })();
 </script>
 </body>
