@@ -219,3 +219,46 @@ html, body {
 }
 #board.chess-board .piece.white{ color:#fff; text-shadow:0 0 6px #aef39c99, 0 0 14px #aef39c66; }
 #board.chess-board .piece.black{ color:#0e1115; }
+
+/* ==== BIDAK LEBIH JELAS & BESAR ==== */
+.chess-board .sq,
+#board .sq{
+  display:flex;align-items:center;justify-content:center;
+  /* gedein bidak responsif */
+  font-size: clamp(28px, 9vmin, 72px);
+  line-height: 1;
+}
+
+/* warna kotak biar kontras */
+.chess-board .light, #board .light{ background:#eef2f6; }   /* terang */
+.chess-board .dark,  #board .dark { background:#2a3037; }   /* gelap  */
+
+/* bidak putih – outline gelap */
+.chess-board .white, #board .white{
+  color:#ffffff;
+  /* stroke manual pakai text-shadow (5 arah) */
+  text-shadow:
+    0 0 0 #000,
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px  1px 0 #000,
+    1px  1px 0 #000;
+}
+
+/* bidak hitam – outline terang */
+.chess-board .black, #board .black{
+  color:#101418;
+  text-shadow:
+    0 0 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+    1px  1px 0 #fff;
+}
+
+/* sedikit polish */
+#board, .chess-board{
+  border:3px solid #39ff14;
+  border-radius:16px;
+  overflow:hidden;
+}
