@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess</title>
 
-  <!-- Tema global Azbry + style catur -->
-  <link rel="stylesheet" href="assets/css/azbry.css" />
-  <link rel="stylesheet" href="assets/css/chess.css" />
+  <!-- URUTAN WAJIB: theme dulu baru chess.css -->
+  <link rel="stylesheet" href="assets/css/azbry.css">
+  <link rel="stylesheet" href="assets/css/chess.css?v=fix1">
 </head>
 <body>
   <main id="chess-app" class="container">
@@ -19,18 +19,18 @@
       </div>
     </header>
 
-    <!-- MODE PICKER -->
+    <!-- MODE -->
     <div class="mode-picker" aria-label="Pilih Mode">
       <button id="modeHuman" class="seg active" type="button">vs Human (Local)</button>
       <button id="modeAI" class="seg" type="button">vs Azbry-MD</button>
     </div>
 
-    <!-- BOARD -->
-    <section class="board-wrap" aria-label="Papan Catur">
-      <div id="board" class="board"></div>
+    <!-- BOARD WRAP: WAJIB ADA -->
+    <section class="board-wrap" id="chess-board-wrap" aria-label="Papan Catur">
+      <div id="board" class="chess-board" aria-label="Board"></div>
     </section>
 
-    <!-- CONTROL PANEL -->
+    <!-- PANEL -->
     <section class="panel" aria-label="Kontrol Permainan">
       <div class="controls">
         <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
@@ -45,23 +45,23 @@
       </div>
     </section>
 
-    <!-- FOOTER SHORTCUTS -->
+    <!-- FOOTER -->
     <footer class="footer">
-      <button id="btnBoardOnly" class="btn dark">Board Only</button>
-      <button id="btnBack" class="btn dark">Kembali</button>
+      <div class="left-btn">
+        <button id="btnBoardOnly" class="btn dark">Board Only</button>
+      </div>
+      <div class="right-btn">
+        <button id="btnBack" class="btn dark">Kembali</button>
+      </div>
     </footer>
 
-    <!-- LISENSI / PORTOFOLIO -->
-    <section class="license">
-      <p>Lisensi MIT • © 2025 <b>Azbry-MD</b></p>
-      <p class="credit">Dikelola oleh <b>FebryWesker</b></p>
-      <a class="cta" href="https://github.com/vandebry10-star" target="_blank" rel="noopener">↗ Portofolio</a>
-    </section>
+    <!-- TOAST HASIL -->
+    <div id="resultModal" class="az-toast" aria-live="polite"></div>
   </main>
 
-  <!-- JS (URUTAN WAJIB) -->
-  <script type="module" src="assets/js/chess-engine.js"></script>
-  <script type="module" src="assets/js/chess-ui.js"></script>
-  <script type="module" src="assets/js/main.js"></script>
+  <!-- URUTAN SCRIPT WAJIB & NON-MODULE -->
+  <script src="assets/js/chess-engine.js?v=fix1"></script>
+  <script src="assets/js/chess-ui.js?v=fix1"></script>
+  <script src="assets/js/main.js?v=fix1"></script>
 </body>
 </html>
