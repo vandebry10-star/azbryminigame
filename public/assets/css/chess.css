@@ -155,3 +155,38 @@ body.board-only .board-wrap {
 .board.flipped .sq > *{ transform: rotate(180deg); }
 .board.flipped .sq::before,
 .board.flipped .sq::after{ transform: rotate(180deg); }
+
+/* === Label angka & huruf pojok papan === */
+.sq[data-rank="1"]::after,
+.sq[data-file="a"]::before {
+  position: absolute;
+  font: 600 12px/1.1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  pointer-events: none;
+  text-shadow: 0 1px 0 rgba(0,0,0,.08);
+  z-index: 3;
+}
+
+.sq[data-rank="1"]::after {
+  content: attr(data-file);
+  bottom: 6px;
+  right: 8px;
+  color: rgba(0,0,0,.65);
+}
+.sq.dark[data-rank="1"]::after {
+  color: rgba(255,255,255,.85);
+}
+
+.sq[data-file="a"]::before {
+  content: attr(data-rank);
+  top: 6px;
+  left: 8px;
+  color: rgba(0,0,0,.65);
+}
+.sq.dark[data-file="a"]::before {
+  color: rgba(255,255,255,.85);
+}
+
+/* biar koordinat gak ketiban bidak/dot */
+.sq { position: relative; }
+.piece { position: relative; z-index: 2; }
+.dot { position: absolute; z-index: 1; }
