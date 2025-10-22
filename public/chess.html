@@ -1,342 +1,137 @@
-// /assets/js/main.js — ELO 3000 + animasi gerak + check highlight + tray capture + popup
-(function () {
-  if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
-    console.error('Chess / ChessUI tidak ditemukan.');
-    return;
-  }
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azbry Chess.com</title>
 
-  // ==================== AI CONFIG ====================
-  const AI_PROFILE = { name: 'ELO3000', timeMs: 2000, maxDepth: 7, useQuiescence: true };
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=20" />
+  <link rel="stylesheet" href="assets/css/chess.css?v=20" />
 
-  // ===== algebra helpers =====
-  const filesStr = 'abcdefgh';
-  function idx(a){ return (8 - parseInt(a[1],10)) * 8 + filesStr.indexOf(a[0]); }
-  function alg(i){ return filesStr[i % 8] + (8 - ((i/8)|0)); }
-
-  // ==================== BOOTSTRAP ====================
-  const G  = new Chess();
-  const boardEl = document.getElementById('board');
-  const ui = new ChessUI(boardEl, onSquareClick);
-  const $hist = document.getElementById('moveHistory');
-  const $capBlack = document.getElementById('capBlack');
-  const $capWhite = document.getElementById('capWhite');
-
-  let selected = null;
-  let lastMove = null;
-  let vsAI = false;
-
-  // koordinat a–h / 8–1
-  (function stampCoordinates(){
-    const cells = boardEl.querySelectorAll('.sq');
-    for (let i = 0; i < cells.length; i++) {
-      const f = i % 8, r = (i/8)|0;
-      cells[i].setAttribute('data-file', filesStr[f]);
-      cells[i].setAttribute('data-rank', String(8 - r));
+  <style>
+    /* layout ringan biar rapi */
+    body{max-width:980px;margin:0 auto;padding:16px}
+    .hero-title{text-align:center;margin:8px 0 10px}
+    .hero-title h1{margin:0;font-weight:900;font-size:clamp(26px,6vw,40px)}
+    .toolbar{
+      max-width:920px;margin:8px auto 14px;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center
     }
-  })();
-
-  // ==================== CAPTURE TRAYS ====================
-  const capturedBlack = []; // korban hitam
-  const capturedWhite = []; // korban putih
-  function glyph(p){
-    const W={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔'};
-    const B={P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚'};
-    return p.color==='w'?W[p.piece]:B[p.piece];
-  }
-  function renderCaptures(){
-    if ($capBlack){ $capBlack.innerHTML=''; for(const p of capturedBlack){ const s=document.createElement('span'); s.className='cap-piece'; s.textContent=glyph(p); $capBlack.appendChild(s);} }
-    if ($capWhite){ $capWhite.innerHTML=''; for(const p of capturedWhite){ const s=document.createElement('span'); s.className='cap-piece'; s.textContent=glyph(p); $capWhite.appendChild(s);} }
-  }
-
-  // ==================== RENDER ====================
-  function legalTargetsFrom(a){ return G.moves({square:a}).map(m=>m.to); }
-  function clearCheckHighlight(){ if (!ui || !ui.cells) return; for (const c of ui.cells) c.classList.remove('check'); }
-  function markCheckIfAny(){
-    clearCheckHighlight();
-    let sideChecked = null;
-    if (G.inCheck('w')) sideChecked = 'w';
-    else if (G.inCheck('b')) sideChecked = 'b';
-    if (!sideChecked) return;
-    const k = G._kingIndex(sideChecked);
-    const cell = ui.cells[ui.flip ? (63 - k) : k];
-    if (cell) cell.classList.add('check');
-  }
-  function render(highlights=[]){
-    ui.render(G.board(), { legal:highlights, lastMove });
-    markCheckIfAny();
-    const h=G.history(); let out='';
-    for (let i=0;i<h.length;i+=2) out+=`${(i/2)+1}. ${h[i]??''} ${h[i+1]??''}\n`;
-    if ($hist) $hist.textContent = out || '_';
-  }
-
-  // ==================== CAPTURE DETECTOR ====================
-  function detectCapture(prevBoard, nextBoard, fromAlg, toAlg){
-    const fromIdx = idx(fromAlg), toIdx = idx(toAlg);
-    const mover   = prevBoard[fromIdx];
-    const prevTo = prevBoard[toIdx], nowTo = nextBoard[toIdx];
-    if (prevTo && nowTo && prevTo.color !== nowTo.color) return prevTo;        // normal
-    if (mover && mover.piece === 'P' && prevTo == null) {                      // en-passant
-      const fromFile = fromIdx % 8, toFile = toIdx % 8;
-      if (fromFile !== toFile) {
-        const capSq = toIdx + (mover.color === 'w' ? 8 : -8);
-        return prevBoard[capSq] || null;
-      }
+    .btn{
+      padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer;
+      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#e8f0fb
     }
-    return null;
-  }
+    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent,#b8ff9a),var(--azbry-accent-2,#a3f07f));color:#0b0f12;border-color:transparent}
+    .panel{max-width:920px;margin:0 auto}
+    .board-wrap{max-width:820px;margin:0 auto 12px}
+    .move-log pre{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:10px;border-radius:12px;min-height:36px}
+    .captured.panel{margin-top:10px}
+    .cap-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0}
+    .cap-tray{
+      display:flex;gap:6px;flex-wrap:wrap;min-height:28px;
+      padding:8px 10px;border-radius:12px;
+      background:var(--panel-bg-1, rgba(255,255,255,.04));border:1px solid var(--panel-bd, rgba(255,255,255,.08));
+    }
+    .cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
+    /* Result modal gaya sederhana */
+    #resultModal{
+      position:fixed;inset:0;z-index:10000;background:rgba(11,13,16,.92);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;transition:opacity .25s
+    }
+    #resultModal.show{opacity:1;pointer-events:auto}
+    .result-card{
+      width:min(92vw,560px);padding:22px;border-radius:16px;text-align:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)
+    }
+    .result-card h2{
+      margin:4px 0 8px;color:var(--azbry-accent,#b8ff9a);font-weight:900;
+      text-shadow:0 0 18px rgba(184,255,154,.35);
+      font-size:clamp(22px,4.4vw,34px)
+    }
+    .result-sub{color:#cfd8e6;opacity:.9;margin-bottom:14px}
+    .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  </style>
+</head>
 
-  // ==================== ANIMASI GERAK ====================
-  function cellForAlg(a){
-    const i = idx(a);
-    const mapped = ui.flip ? (63 - i) : i;
-    return ui.cells[mapped];
-  }
-  function centerOf(el, within){
-    const br = el.getBoundingClientRect();
-    const bw = within.getBoundingClientRect();
-    return { x: br.left - bw.left + br.width/2, y: br.top - bw.top + br.height/2 };
-  }
-  function glyphAtPrev(prevBoard, fromAlg){
-    const p = prevBoard[idx(fromAlg)];
-    if (!p) return null;
-    return glyph(p);
-  }
-  function animateMove(fromAlg, toAlg, pieceChar, done){
-    try{
-      const srcCell = cellForAlg(fromAlg);
-      const dstCell = cellForAlg(toAlg);
-      if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
+<body>
+  <main id="chess-app">
+    <div class="hero-title"><h1>Azbry Chess.com</h1></div>
 
-      const ghost = document.createElement('span');
-      ghost.className = 'anim-piece';
-      ghost.textContent = pieceChar;
-      boardEl.appendChild(ghost);
+    <!-- BOARD -->
+    <section class="board-wrap">
+      <div id="board" class="board" aria-label="board"></div>
+    </section>
 
-      // sembunyikan piece asal biar ga dobel
-      const srcPiece = srcCell.querySelector('.piece');
-      if (srcPiece) srcPiece.style.opacity = '0';
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <!-- mode: gunakan ID ini karena di main.js didengar langsung -->
+      <button id="modeHuman" class="btn">VS Player</button>
+      <button id="modeAI" class="btn">VS Azbry-MD (ELO 3000)</button>
 
-      const c1 = centerOf(srcCell, boardEl);
-      const c2 = centerOf(dstCell, boardEl);
-      ghost.style.left = `${c1.x}px`;
-      ghost.style.top  = `${c1.y}px`;
+      <button id="btnReset" class="btn accent">Muat Ulang</button>
+      <button id="btnUndo" class="btn">Undo</button>
+      <button id="btnRedo" class="btn">Redo</button>
+      <button id="btnFlip" class="btn">Flip Board</button>
+    </div>
 
-      // trigger layout, lalu animasikan
-      requestAnimationFrame(()=>{
-        ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
+    <!-- CAPTURED PIECES / GRAVEYARD -->
+    <section class="captured panel">
+      <div class="cap-row">
+        <strong>Putih Modar:</strong>
+        <div id="capBlack" class="cap-tray" aria-label="captured black"></div>
+      </div>
+      <div class="cap-row">
+        <strong>HITAM Modar:</strong>
+        <div id="capWhite" class="cap-tray" aria-label="captured white"></div>
+      </div>
+    </section>
+
+    <!-- LOG -->
+    <section class="panel move-log">
+      <h4>Riwayat Langkah</h4>
+      <pre id="moveHistory">_</pre>
+    </section>
+
+    <!-- RESULT MODAL -->
+    <div id="resultModal">
+      <div class="result-card">
+        <h2 id="resultText">Putih Menang!</h2>
+        <div id="resultSub" class="result-sub"></div>
+        <div class="result-actions">
+          <button id="btnPlayAgain" class="btn accent">Main Lagi</button>
+          <button id="btnCloseResult" class="btn">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Scripts (URUTAN WAJIB) -->
+  <script src="assets/js/chess-engine.js?v=20"></script>
+  <!-- Tidak perlu chess-ui.js terpisah; ChessUI sudah ada di engine yang kita pakai -->
+  <script src="assets/js/main.js?v=20"></script>
+
+  <!-- Modal glue -->
+  <script>
+    (function(){
+      const modal = document.getElementById('resultModal');
+      const txt = document.getElementById('resultText');
+      const sub = document.getElementById('resultSub');
+      document.getElementById('btnCloseResult').addEventListener('click', ()=> modal.classList.remove('show'));
+      document.getElementById('btnPlayAgain').addEventListener('click', ()=>{
+        modal.classList.remove('show');
+        document.getElementById('btnReset')?.click();
       });
-
-      const cleanup = () => {
-        ghost.remove();
-        if (srcPiece) srcPiece.style.opacity = ''; // balikin
-        done?.();
+      // global untuk dipanggil main.js
+      window.__azbrySetResult = function({text, subText}){
+        txt.textContent = text || '';
+        sub.textContent = subText || '';
+        modal.classList.add('show');
       };
-      ghost.addEventListener('transitionend', cleanup, { once:true });
-      // fallback kalau transition gak kebaca
-      setTimeout(cleanup, 220);
-    }catch(e){ console.warn('anim error', e); done?.(); }
-  }
-
-  // ==================== AI: EVAL & SEARCH ====================
-  const VAL = { P:100, N:320, B:330, R:500, Q:900, K:0 };
-  const PST = {
-    P:[0,0,0,0,0,0,0,0,50,50,50,50,50,50,50,50,10,10,20,30,30,20,10,10,5,5,10,27,27,10,5,5,2,2,5,25,25,5,2,2,0,0,0,20,20,0,0,0,5,-5,-10,0,0,-10,-5,5,0,0,0,0,0,0,0,0],
-    N:[-50,-40,-30,-30,-30,-30,-40,-50,-40,-20,0,5,5,0,-20,-40,-30,5,10,15,15,10,5,-30,-30,0,15,20,20,15,0,-30,-30,5,15,20,20,15,5,-30,-30,0,10,15,15,10,0,-30,-40,-20,0,0,0,0,-20,-40,-50,-40,-30,-30,-30,-30,-40,-50],
-    B:[-20,-10,-10,-10,-10,-10,-10,-20,-10,5,0,0,0,0,5,-10,-10,10,10,10,10,10,10,-10,-10,0,10,10,10,10,0,-10,-10,5,5,10,10,5,5,-10,-10,0,5,10,10,5,0,-10,-10,0,0,0,0,0,0,-10,-20,-10,-10,-10,-10,-10,-10,-20],
-    R:[0,0,5,10,10,5,0,0,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,5,10,10,10,10,10,10,5,0,0,0,0,0,0,0,0],
-    Q:[-20,-10,-10,-5,-5,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,5,5,5,0,-10,-5,0,5,5,5,5,0,-5,0,0,5,5,5,5,0,-5,-10,5,5,5,5,5,0,-10,-10,0,0,0,0,0,0,-10,-20,-10,-10,-5,-5,-10,-10,-20],
-    K:[-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-20,-30,-30,-40,-40,-30,-30,-20,-10,-20,-20,-20,-20,-20,-20,-10,20,20,0,0,0,0,20,20,20,30,10,0,0,10,30,20]
-  };
-  function mirror(i){ return (7 - ((i/8)|0))*8 + (i%8); }
-  function evaluate(){
-    const B = G.board(); let score = 0;
-    for (let i=0;i<64;i++){
-      const p = B[i]; if(!p) continue;
-      const sign = (p.color==='w') ? 1 : -1;
-      const base = VAL[p.piece];
-      const pst  = PST[p.piece][ p.color==='w' ? i : mirror(i) ];
-      score += sign * (base + pst);
-    }
-    return (G.turn()==='w') ? score : -score;
-  }
-  function scoreMove(m){
-    const B = G.board();
-    const toPiece = B[idx(m.to)];
-    const fromPiece = B[idx(m.from)];
-    let s = 0;
-    if (toPiece) s += 10*VAL[toPiece.piece] - VAL[fromPiece.piece];
-    if (m.promotion) s += 800;
-    return s;
-  }
-  let nodes = 0;
-  function qsearch(alpha, beta, endTime){
-    nodes++;
-    const stand = evaluate();
-    if (stand >= beta) return beta;
-    if (alpha < stand) alpha = stand;
-
-    const moves = G.moves();
-    const caps = [];
-    for (const m of moves) {
-      if (performance.now() > endTime) break;
-      const target = G.board()[idx(m.to)];
-      if (target) caps.push(m);
-    }
-    caps.sort((a,b)=>scoreMove(b)-scoreMove(a));
-    for (const m of caps){
-      if (performance.now() > endTime) break;
-      if (!G.move(m)) continue;
-      const score = -qsearch(-beta, -alpha, endTime);
-      G.undo();
-      if (score >= beta) return beta;
-      if (score > alpha) alpha = score;
-    }
-    return alpha;
-  }
-  function negamax(depth, alpha, beta, endTime){
-    if (performance.now() > endTime) return evaluate();
-    if (depth === 0) return AI_PROFILE.useQuiescence ? qsearch(alpha, beta, endTime) : evaluate();
-    nodes++;
-    let best = -1e9, legalFound = false;
-    let moves = G.moves();
-    moves.sort((a,b)=>scoreMove(b)-scoreMove(a));
-    for (const m of moves){
-      if (performance.now() > endTime) break;
-      if (!G.move(m)) continue;
-      legalFound = true;
-      const score = -negamax(depth-1, -beta, -alpha, endTime);
-      G.undo();
-      if (score > best) best = score;
-      if (score > alpha) alpha = score;
-      if (alpha >= beta) break;
-    }
-    if (!legalFound) {
-      const status = G.gameStatus();
-      if (status === 'checkmate') return -999999 + (AI_PROFILE.maxDepth-depth);
-      return 0;
-    }
-    return best;
-  }
-  function bestMoveWithTime(timeMs, maxDepth){
-    const endTime = performance.now() + timeMs;
-    let best = null; nodes = 0;
-    let rootMoves = G.moves();
-    rootMoves.sort((a,b)=>scoreMove(b)-scoreMove(a));
-    for (let depth=1; depth<=maxDepth; depth++){
-      if (performance.now() > endTime) break;
-      let localBest=null, localBestScore=-1e9;
-      for (const m of rootMoves){
-        if (performance.now() > endTime) break;
-        if (!G.move(m)) continue;
-        const sc = -negamax(depth-1, -1e9, 1e9, endTime);
-        G.undo();
-        if (sc > localBestScore) { localBestScore = sc; localBest = m; }
-      }
-      if (localBest) best = localBest;
-      if (best){
-        rootMoves.sort((a,b)=>{
-          if (a.from===best.from && a.to===best.to) return -1;
-          if (b.from===best.from && b.to===best.to) return 1;
-          return scoreMove(b)-scoreMove(a);
-        });
-      }
-    }
-    return best || rootMoves[0] || null;
-  }
-
-  // ==================== FLOW + ANIM INTEGRATION ====================
-  function afterMoveCommon(prevBoard, from, to){
-    // tray korban
-    const cap = detectCapture(prevBoard, G.board(), from, to);
-    if (cap) { (cap.color==='b'?capturedBlack:capturedWhite).push(cap); renderCaptures(); }
-    lastMove = { from, to };
-    selected = null;
-    render([]);
-
-    const status=G.gameStatus();
-    if(status==='checkmate'){
-      const winner=(G.turn()==='w')?'Hitam':'Putih';
-      window.__azbrySetResult?.({ text:`${winner} Menang!`, subText:'Skakmat ⚔️' });
-      return true;
-    }else if(status==='stalemate'){
-      window.__azbrySetResult?.({ text:'Seri 🤝', subText:'Stalemate — tidak ada langkah sah' });
-      return true;
-    }
-    return false;
-  }
-
-  function tryMove(from,to){
-    const prev = JSON.parse(JSON.stringify(G.board()));
-    const pieceChar = glyphAtPrev(prev, from);
-
-    // jalankan engine dulu (DOM belum di-render ulang → posisi lama masih terlihat)
-    const moved = G.move({from,to}) || G.move({from,to,promotion:'Q'});
-    if(!moved) return false;
-
-    // animasi ghost dari posisi lama ke baru, lalu render final
-    animateMove(from, to, pieceChar, () => {
-      const done = afterMoveCommon(prev, from, to);
-      if (done) return;
-
-      // giliran AI
-      if (vsAI){
-        setTimeout(()=> {
-          const prev2 = JSON.parse(JSON.stringify(G.board()));
-          const m = bestMoveWithTime(AI_PROFILE.timeMs, AI_PROFILE.maxDepth);
-          if (!m) return;
-          const pChar = glyphAtPrev(prev2, m.from);
-          // jalankan dulu
-          G.move(m);
-          // animasikan
-          animateMove(m.from, m.to, pChar, () => {
-            afterMoveCommon(prev2, m.from, m.to);
-          });
-        }, 10);
-      }
-    });
-
-    return true;
-  }
-
-  function onSquareClick(a){
-    if(!selected){
-      const targets=legalTargetsFrom(a);
-      if(!targets.length){render([]);return;}
-      selected=a;render(targets);return;
-    }
-    if(a===selected){selected=null;render([]);return;}
-    const ok=tryMove(selected,a);
-    if(!ok){
-      const maybe=legalTargetsFrom(a);
-      if(maybe.length){selected=a;render(maybe);} else {selected=null;render([]);}
-    }
-  }
-
-  // toolbar
-  document.getElementById('btnReset')?.addEventListener('click',()=>{
-    G.reset(); lastMove=null; selected=null;
-    capturedBlack.length=0; capturedWhite.length=0;
-    renderCaptures(); render([]);
-  });
-  document.getElementById('btnUndo')?.addEventListener('click',()=>{
-    if(G.undo()){ lastMove=null; render([]); }
-  });
-  document.getElementById('btnRedo')?.addEventListener('click',()=>{
-    if(G.redo()){ lastMove=null; render([]); }
-  });
-  document.getElementById('btnFlip')?.addEventListener('click',()=>{
-    ui.toggleFlip(); render(selected?legalTargetsFrom(selected):[]);
-  });
-  document.getElementById('modeHuman')?.addEventListener('click',()=>{
-    vsAI=false; G.reset(); lastMove=null; selected=null;
-    capturedBlack.length=0; capturedWhite.length=0;
-    renderCaptures(); render([]);
-  });
-  document.getElementById('modeAI')?.addEventListener('click',()=>{
-    vsAI=true;  G.reset(); lastMove=null; selected=null;
-    capturedBlack.length=0; capturedWhite.length=0;
-    renderCaptures(); render([]);
-  });
-
-  render([]); renderCaptures();
-})();
+    })();
+  </script>
+</body>
+</html>
