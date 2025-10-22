@@ -102,7 +102,7 @@ function renderCaptures(){
   }
 }
 
-/* -------------------- animation -------------------- */
+/* -------------------- animation (FIX: callback sekali) -------------------- */
 function animateMove(fromAlg, toAlg, done){
   try{
     const src = cellForAlg(fromAlg), dst = cellForAlg(toAlg);
@@ -118,13 +118,32 @@ function animateMove(fromAlg, toAlg, done){
     if (srcPiece) srcPiece.style.opacity = '0';
 
     const c1 = centerOf(src, boardEl), c2 = centerOf(dst, boardEl);
-    ghost.style.left = `${c1.x}px`; ghost.style.top = `${c1.y}px`;
-    requestAnimationFrame(()=>{ ghost.style.transform = `translate(${c2.x-c1.x}px, ${c2.y-c1.y}px)`; });
+    ghost.style.left = `${c1.x}px`; 
+    ghost.style.top  = `${c1.y}px`;
 
-    const cleanup = () => { ghost.remove(); if (srcPiece) srcPiece.style.opacity=''; done?.(); };
-    ghost.addEventListener('transitionend', cleanup, { once:true });
-    setTimeout(cleanup, 300);
-  }catch{ done?.(); }
+    requestAnimationFrame(()=>{
+      ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
+    });
+
+    // ✅ guard supaya callback cuma sekali
+    let finished = false;
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      try { ghost.remove(); if (srcPiece) srcPiece.style.opacity=''; } catch {}
+      done?.();
+    };
+
+    const timer = setTimeout(cleanup, 320);  // fallback
+    ghost.addEventListener('transitionend', () => {
+      clearTimeout(timer);
+      cleanup();
+    }, { once:true });
+
+  }catch(e){
+    console.warn('anim err', e);
+    done?.();
+  }
 }
 
 /* -------------------- capture detect -------------------- */
