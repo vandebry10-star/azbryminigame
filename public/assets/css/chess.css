@@ -156,37 +156,40 @@ body.board-only .board-wrap {
 .board.flipped .sq::before,
 .board.flipped .sq::after{ transform: rotate(180deg); }
 
-/* === Label angka & huruf pojok papan === */
-.sq[data-rank="1"]::after,
-.sq[data-file="a"]::before {
+/* === Koordinat papan via .files & .ranks (tanpa ubah JS) === */
+.board { position: relative; }
+
+/* Huruf a–h di bawah */
+.board .files{
   position: absolute;
-  font: 600 12px/1.1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  left: 0; right: 0; bottom: 6px;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  padding: 0 8px;
   pointer-events: none;
-  text-shadow: 0 1px 0 rgba(0,0,0,.08);
-  z-index: 3;
+  z-index: 5;
+  font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+}
+.board .files span{
+  justify-self: end;  /* pojok kanan bawah tiap kotak */
+  color: rgba(255,255,255,.92);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
 }
 
-.sq[data-rank="1"]::after {
-  content: attr(data-file);
-  bottom: 6px;
-  right: 8px;
-  color: rgba(0,0,0,.65);
+/* Angka 8–1 di kiri */
+.board .ranks{
+  position: absolute;
+  top: 8px; bottom: 8px; left: 6px;
+  display: grid;
+  grid-template-rows: repeat(8, 1fr);
+  pointer-events: none;
+  z-index: 5;
+  font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+  text-shadow: 0 1px 0 rgba(0,0,0,.25);
 }
-.sq.dark[data-rank="1"]::after {
-  color: rgba(255,255,255,.85);
+.board .ranks span{
+  align-self: start;   /* pojok kiri atas tiap kotak */
+  color: rgba(255,255,255,.92);
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
 }
-
-.sq[data-file="a"]::before {
-  content: attr(data-rank);
-  top: 6px;
-  left: 8px;
-  color: rgba(0,0,0,.65);
-}
-.sq.dark[data-file="a"]::before {
-  color: rgba(255,255,255,.85);
-}
-
-/* biar koordinat gak ketiban bidak/dot */
-.sq { position: relative; }
-.piece { position: relative; z-index: 2; }
-.dot { position: absolute; z-index: 1; }
