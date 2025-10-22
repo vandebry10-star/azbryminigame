@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=22" />
-  <link rel="stylesheet" href="assets/css/chess.css?v=22" />
+  <link rel="stylesheet" href="assets/css/azbry.css?v=23" />
+  <link rel="stylesheet" href="assets/css/chess.css?v=23" />
 
   <style>
     body{
@@ -35,7 +35,7 @@
     /* header di atas papan */
     .board-header{
       max-width:820px;
-      margin:10px auto 8px;
+      margin:10px auto 6px;
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -97,17 +97,6 @@
       margin:6px auto;
       padding:0 6px;
     }
-
-    /* atas meja (hitam) */
-    .cap-top{
-      justify-content:flex-start;
-    }
-    /* bawah meja (putih) */
-    .cap-bottom{
-      justify-content:flex-end;
-    }
-
-    /* tray bidak mati */
     .cap-tray{
       display:flex;
       gap:4px;
@@ -145,7 +134,7 @@
       justify-content:center;
     }
 
-    /* Result modal gaya sederhana */
+    /* Result modal */
     #resultModal{
       position:fixed;inset:0;z-index:10000;background:rgba(11,13,16,.92);
       display:flex;align-items:center;justify-content:center;
@@ -177,11 +166,6 @@
   <main id="chess-app">
     <div class="hero-title"><h1>Azbry Chess.com</h1></div>
 
-    <!-- BIDAK MATI ATAS (HITAM) -->
-    <div class="captured cap-top">
-      <div id="capBlack" class="cap-tray"></div>
-    </div>
-
     <!-- HEADER ATAS BOARD -->
     <div class="board-header">
       <div class="left">
@@ -193,12 +177,17 @@
       </div>
     </div>
 
+    <!-- BIDAK MATI (HITAM) DI BAWAH TOMBOL -->
+    <div class="captured cap-top">
+      <div id="capBlack" class="cap-tray"></div>
+    </div>
+
     <!-- BOARD -->
     <section class="board-wrap">
       <div id="board" class="board" aria-label="board"></div>
     </section>
 
-    <!-- BIDAK MATI BAWAH (PUTIH) -->
+    <!-- BIDAK MATI (PUTIH) DI BAWAH MEJA -->
     <div class="captured cap-bottom">
       <div id="capWhite" class="cap-tray"></div>
     </div>
@@ -231,8 +220,8 @@
   </main>
 
   <!-- Scripts -->
-  <script src="assets/js/chess-engine.js?v=22"></script>
-  <script src="assets/js/main.js?v=22"></script>
+  <script src="assets/js/chess-engine.js?v=23"></script>
+  <script src="assets/js/main.js?v=23"></script>
 
   <script>
   (function(){
@@ -266,7 +255,6 @@
       modal.classList.add('show');
     };
 
-    // tombol kembali ke menu
     document.getElementById('btnMenu')?.addEventListener('click', ()=>{
       window.location.href = "https://azbryminigamess.vercel.app/";
     });
