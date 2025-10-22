@@ -45,12 +45,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (modeAI)    modeAI.addEventListener('click',    () => setMode('ai'));
 
   // Controls
-  if (btnReset)  btnReset.addEventListener('click',  () => { hardReset(); });
+  if (btnReset)  btnReset.addEventListener('click',  () => hardReset());
   if (btnUndo)   btnUndo.addEventListener('click',   () => { game.undo(); selected=null; lastMove=null; sync(); });
   if (btnRedo)   btnRedo.addEventListener('click',   () => { game.redo(); selected=null; lastMove=null; sync(); });
   if (btnFlip)   btnFlip.addEventListener('click',   () => { ui.toggleFlip(); sync(); });
 
-  // Board Only
+  // Board Only mode
   if (btnOnly && btnBack) {
     btnOnly.addEventListener('click', () => {
       document.body.classList.add('board-only');
@@ -71,10 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Result popup
   if (btnRestart) btnRestart.addEventListener('click', () => {
     hideResult();
-    // Balik ke menu awal
     if (startMenu) startMenu.classList.add('show');
     hardReset();
   });
+
+  // --- Functions --------------------------------------------------------
 
   function startGame(m) {
     setMode(m);
@@ -97,14 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Board click handler
+  // Klik papan
   function onSquare(squareAlg) {
     // kalau mode AI: player = putih, AI = hitam
     if (mode === 'ai' && game.turn() === 'b') return;
 
     const movesFromSel = selected ? game.moves({ square: selected }) : [];
 
-    // klik tujuan legal dari selected
+    // klik langkah legal
     if (selected && movesFromSel.some(m => m.to === squareAlg)) {
       const promo = needsPromotion(selected, squareAlg) ? 'Q' : null;
       const note = game.move({ from: selected, to: squareAlg, promotion: promo });
@@ -117,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // pilih bidak milik side yg jalan
+    // pilih bidak
     const idx = toIdx(squareAlg);
     const P = game.board()[idx];
     if (P && P.color === game.turn()) {
@@ -128,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Promotion need?
+  // Cek promosi
   function needsPromotion(fromAlg, toAlg) {
     const fromR = 8 - parseInt(fromAlg[1], 10);
     const toR   = 8 - parseInt(toAlg[1], 10);
@@ -137,10 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return (piece.color === 'w' && toR === 0) || (piece.color === 'b' && toR === 7);
   }
 
-  // Simple AI (greedy capture > random)
+  // AI move sederhana
   function aiMove() {
     if (mode !== 'ai' || game.turn() !== 'b') return;
-
     const legal = game.moves();
     if (!legal.length) { sync(); return; }
 
@@ -156,12 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const pick = bestScore > 0 ? best : legal[Math.floor(Math.random() * legal.length)];
     const promo = needsPromotion(pick.from, pick.to) ? 'Q' : null;
     const note = game.move({ from: pick.from, to: pick.to, promotion: promo });
-    if (note) { lastMove = { from: pick.from, to: pick.to }; }
+    if (note) lastMove = { from: pick.from, to: pick.to };
     sync();
   }
 
+  // Render ulang papan
   function sync() {
-    // highlight langkah legal dari selected
     const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
     ui.render(game.board(), { lastMove, legal: legalTargets });
 
@@ -170,10 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
       moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
     }
 
-    // Status akhir game
     const status = game.gameStatus(); // 'ok'|'check'|'checkmate'|'stalemate'
     if (status === 'checkmate') {
-      const winner = (game.turn() === 'w') ? 'Hitam Menang!' : 'Putih Menang!'; // side yg tak bergerak = skakmat
+      const winner = (game.turn() === 'w') ? 'Hitam Menang!' : 'Putih Menang!';
       showResult(`Checkmate — ${winner}`);
     } else if (status === 'stalemate') {
       showResult('Seri 🤝');
@@ -195,5 +194,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // boot: tampilkan menu
   if (startMenu) startMenu.classList.add('show');
-  setMode('human'); // default, akan ke-replace saat pilih di menu
+  setMode('human'); // default
 });
