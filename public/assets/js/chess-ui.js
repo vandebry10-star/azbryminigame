@@ -1,6 +1,7 @@
-// assets/js/chess-ui.js — ChessUI v2.2 (defensive clear)
+// assets/js/chess-ui.js — ChessUI v2.3 (pointer-safe + defensive clear)
 // Grid 8x8 (.sq), render dari array/FEN, flip, legal dots, last move, in-check.
-// Tambahan: hard-clear per kotak untuk cegah bidak ganda.
+// Perbaikan: piece punya pointer-events:none (klik ke kotak tetap tembus).
+//            hard-clear per kotak cegah bidak dobel.
 
 ;(function (global) {
   'use strict';
@@ -78,12 +79,25 @@
 
   function putPiece(target, char, isWhite){
     if (!target) return;
-    // hard clear: jaga-jaga kalau ada “sisa” node di kotak ini
+    // hard clear: hilangkan semua piece lama di kotak ini
     target.querySelectorAll('.piece').forEach(n => n.remove());
     const el = document.createElement('div');
     el.className = 'piece ' + (isWhite ? 'white' : 'black');
     el.textContent = char;
+    // <<<<< FIX PENTING: jangan blokir klik ke .sq
+    el.style.pointerEvents = 'none';
+    el.style.zIndex = '2';
     target.appendChild(el);
+  }
+
+  function putDot(target){
+    if (!target) return;
+    const dot = document.createElement('div');
+    dot.className = 'dot enter';
+    // safety: dot juga tidak blokir klik (kalau CSS belum override)
+    dot.style.pointerEvents = 'none';
+    target.appendChild(dot);
+    requestAnimationFrame(()=> dot.classList.remove('enter'));
   }
 
   // =============== Render: dari array 64 ===============
@@ -114,10 +128,7 @@
       for (const to of opts.legal) {
         const c = this.board.querySelector(`[data-square="${this._map(to)}"]`);
         if (!c) continue;
-        const dot = document.createElement('div');
-        dot.className = 'dot enter';
-        c.appendChild(dot);
-        requestAnimationFrame(()=> dot.classList.remove('enter'));
+        putDot(c);
       }
     }
 
@@ -176,10 +187,7 @@
       for (const to of opts.legal) {
         const c = this.board.querySelector(`[data-square="${this._map(to)}"]`);
         if (!c) continue;
-        const dot = document.createElement('div');
-        dot.className = 'dot enter';
-        c.appendChild(dot);
-        requestAnimationFrame(()=> dot.classList.remove('enter'));
+        putDot(c);
       }
     }
 
