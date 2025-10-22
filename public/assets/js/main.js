@@ -1,27 +1,41 @@
-// /assets/js/main.js — Capture fix + clean check highlight + result modal
+// /assets/js/main.js — capture mapping fix + board coordinates + check/popup
 (function () {
   if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
     console.error('Chess / ChessUI tidak ditemukan.');
     return;
   }
 
-  const G  = new Chess();                                   // engine
+  const G  = new Chess();
   const boardEl = document.getElementById('board');
-  const ui = new ChessUI(boardEl, onSquareClick);           // UI klik handler
+  const ui = new ChessUI(boardEl, onSquareClick);
   const $hist = document.getElementById('moveHistory');
 
-  const $capWhite = document.getElementById('capWhite');
+  // trays di HTML: "Hitam tertangkap" = capBlack, "Putih tertangkap" = capWhite
   const $capBlack = document.getElementById('capBlack');
+  const $capWhite = document.getElementById('capWhite');
 
   let selected = null;
   let lastMove = null;
   let vsAI = false;
 
-  // trays (tidak di-undo/redo untuk simple UX)
-  const capturedWhite = [];
-  const capturedBlack = [];
+  // ===== coordinates (a–h & 8–1) =====
+  function stampCoordinates() {
+    // index engine 0..63 = a8..h1 ; urutan cell di UI sama
+    const files = 'abcdefgh';
+    const cells = boardEl.querySelectorAll('.sq');
+    for (let i = 0; i < cells.length; i++) {
+      const f = i % 8;                 // file 0..7
+      const r = (i / 8) | 0;           // rank 0..7 (0=8, 7=1)
+      cells[i].setAttribute('data-file', files[f]);
+      cells[i].setAttribute('data-rank', String(8 - r));
+    }
+  }
+  stampCoordinates();
 
-  // --- helpers ---
+  // ===== captured trays =====
+  const capturedBlack = []; // bidak hitam yang tertangkap
+  const capturedWhite = []; // bidak putih yang tertangkap
+
   function glyph(p){
     const W={P:'♙',N:'♘',B:'♗',R:'♖',Q:'♕',K:'♔'};
     const B={P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚'};
@@ -29,41 +43,30 @@
   }
 
   function renderCaptures(){
-    if ($capWhite){
-      $capWhite.innerHTML='';
-      for(const p of capturedWhite){
-        const s=document.createElement('span');
-        s.className='cap-piece'; s.textContent=glyph(p);
-        $capWhite.appendChild(s);
-      }
-    }
     if ($capBlack){
       $capBlack.innerHTML='';
-      for(const p of capturedBlack){
-        const s=document.createElement('span');
-        s.className='cap-piece'; s.textContent=glyph(p);
-        $capBlack.appendChild(s);
-      }
+      for(const p of capturedBlack){ const s=document.createElement('span'); s.className='cap-piece'; s.textContent=glyph(p); $capBlack.appendChild(s); }
+    }
+    if ($capWhite){
+      $capWhite.innerHTML='';
+      for(const p of capturedWhite){ const s=document.createElement('span'); s.className='cap-piece'; s.textContent=glyph(p); $capWhite.appendChild(s); }
     }
   }
 
   function algToIdx(a){ return (8 - parseInt(a[1],10))*8 + 'abcdefgh'.indexOf(a[0]); }
 
-  // FIX: deteksi bidak tertangkap (capture biasa & en-passant)
+  // deteksi bidak tertangkap (normal + en-passant)
   function detectCapture(prevBoard, nextBoard, fromAlg, toAlg){
     const fromIdx = algToIdx(fromAlg);
     const toIdx   = algToIdx(toAlg);
-    const mover   = prevBoard[fromIdx];          // {color, piece}
+    const mover   = prevBoard[fromIdx];
 
-    // 1) capture normal: sebelum di 'to' ada bidak lawan, sekarang diganti bidak kita
+    // normal capture
     const prevTo = prevBoard[toIdx];
     const nowTo  = nextBoard[toIdx];
-    if (prevTo && nowTo && prevTo.color !== nowTo.color) {
-      return prevTo; // yang hilang adalah prevTo
-    }
+    if (prevTo && nowTo && prevTo.color !== nowTo.color) return prevTo;
 
-    // 2) en-passant: pion bergerak diagonal ke petak kosong (prevTo==null)
-    //    maka bidak lawan hilang di belakang 'to'
+    // en-passant
     if (mover && mover.piece === 'P' && prevTo == null) {
       const fromFile = fromIdx % 8;
       const toFile   = toIdx % 8;
@@ -73,50 +76,38 @@
         if (victim) return victim;
       }
     }
-
-    // default: tidak ada capture
     return null;
   }
 
   function legalTargetsFrom(a){ return G.moves({square:a}).map(m=>m.to); }
-
-  function clearCheckHighlight(){
-    if (!ui || !ui.cells) return;
-    for (const cell of ui.cells) cell.classList.remove('check');
-  }
+  function clearCheckHighlight(){ if (ui && ui.cells) for (const c of ui.cells) c.classList.remove('check'); }
 
   function render(highlights=[]){
     ui.render(G.board(),{legal:highlights,lastMove});
 
-    // bersihkan lalu set highlight check (biar gak nempel)
+    // outline merah saat check
     clearCheckHighlight();
-    if(G.inCheck(G.turn())){
-      const kingIdx=G._kingIndex(G.turn());
-      const cell=ui.cells[ui.flip?(63-kingIdx):kingIdx];
-      if(cell)cell.classList.add('check');
+    if (G.inCheck(G.turn())) {
+      const k = G._kingIndex(G.turn());
+      const cell = ui.cells[ui.flip ? (63 - k) : k];
+      if (cell) cell.classList.add('check');
     }
 
-    // history -> <pre>
+    // history
     const h=G.history();
-    let out='';
-    for(let i=0;i<h.length;i+=2){
-      out+=`${(i/2)+1}. ${h[i]??''} ${h[i+1]??''}\n`;
-    }
-    if($hist)$hist.textContent=out||'_';
+    let out=''; for(let i=0;i<h.length;i+=2){ out+=`${(i/2)+1}. ${h[i]??''} ${h[i+1]??''}\n`; }
+    if ($hist) $hist.textContent = out || '_';
   }
 
-  // eksekusi langkah satu sisi
   function tryMove(from,to){
     const prev=JSON.parse(JSON.stringify(G.board()));
+    const moved = G.move({from,to}) || G.move({from,to,promotion:'Q'});
+    if(!moved) return false;
 
-    // jalankan (pakai promosi default 'Q' bila perlu)
-    const played = G.move({from,to}) || G.move({from,to,promotion:'Q'});
-    if(!played)return false;
-
-    // deteksi & simpan capture
-    const cap=detectCapture(prev,G.board(),from,to);
-    if(cap){
-      (cap.color==='w'?capturedWhite:capturedBlack).push(cap);
+    // simpan korban ke tray YANG BENAR (warna korban)
+    const cap = detectCapture(prev, G.board(), from, to);
+    if (cap) {
+      if (cap.color === 'b') capturedBlack.push(cap); else capturedWhite.push(cap);
       renderCaptures();
     }
 
@@ -124,30 +115,24 @@
     selected=null;
     render([]);
 
-    // cek status game & tampilkan modal
+    // status game
     const status=G.gameStatus();
     if(status==='checkmate'){
       const winner=(G.turn()==='w')?'Hitam':'Putih';
-      window.__azbrySetResult?.({
-        text:`${winner} Menang!`,
-        subText:'Skakmat ⚔️'
-      });
+      window.__azbrySetResult?.({ text:`${winner} Menang!`, subText:'Skakmat ⚔️' });
     }else if(status==='stalemate'){
-      window.__azbrySetResult?.({
-        text:'Seri 🤝',
-        subText:'Stalemate — tidak ada langkah sah'
-      });
+      window.__azbrySetResult?.({ text:'Seri 🤝', subText:'Stalemate — tidak ada langkah sah' });
     }
 
-    // AI sederhana (opsional)
-    if(vsAI && !['checkmate','stalemate'].includes(status)){
+    // AI sederhana
+    if (vsAI && !['checkmate','stalemate'].includes(status)) {
       const moves=G.moves();
-      if(moves.length){
+      if (moves.length) {
         const m=moves[Math.floor(Math.random()*moves.length)];
         const prev2=JSON.parse(JSON.stringify(G.board()));
         G.move(m);
-        const cap2=detectCapture(prev2,G.board(),m.from,m.to);
-        if(cap2){(cap2.color==='w'?capturedWhite:capturedBlack).push(cap2);renderCaptures();}
+        const cap2=detectCapture(prev2, G.board(), m.from, m.to);
+        if (cap2) { if (cap2.color==='b') capturedBlack.push(cap2); else capturedWhite.push(cap2); renderCaptures(); }
         lastMove={from:m.from,to:m.to};
         render([]);
       }
@@ -165,37 +150,27 @@
     const ok=tryMove(selected,a);
     if(!ok){
       const maybe=legalTargetsFrom(a);
-      if(maybe.length){selected=a;render(maybe);}
-      else{selected=null;render([]);}
+      if(maybe.length){selected=a;render(maybe);} else {selected=null;render([]);}
     }
   }
 
   // toolbar
   document.getElementById('btnReset')?.addEventListener('click',()=>{
-    G.reset();lastMove=null;selected=null;
-    capturedWhite.length=0;capturedBlack.length=0;
-    renderCaptures();render([]);
+    G.reset(); lastMove=null; selected=null;
+    capturedBlack.length=0; capturedWhite.length=0;
+    renderCaptures(); render([]);
   });
-  document.getElementById('btnUndo')?.addEventListener('click',()=>{
-    if(G.undo()){lastMove=null;render([]);}
-  });
-  document.getElementById('btnRedo')?.addEventListener('click',()=>{
-    if(G.redo()){lastMove=null;render([]);}
-  });
-  document.getElementById('btnFlip')?.addEventListener('click',()=>{
-    ui.toggleFlip();render(selected?legalTargetsFrom(selected):[]);
-  });
+  document.getElementById('btnUndo')?.addEventListener('click',()=>{ if(G.undo()){ lastMove=null; render([]);} });
+  document.getElementById('btnRedo')?.addEventListener('click',()=>{ if(G.redo()){ lastMove=null; render([]);} });
+  document.getElementById('btnFlip')?.addEventListener('click',()=>{ ui.toggleFlip(); render(selected?legalTargetsFrom(selected):[]); });
   document.getElementById('modeHuman')?.addEventListener('click',()=>{
-    vsAI=false;G.reset();lastMove=null;selected=null;
-    capturedWhite.length=0;capturedBlack.length=0;
-    renderCaptures();render([]);
+    vsAI=false; G.reset(); lastMove=null; selected=null;
+    capturedBlack.length=0; capturedWhite.length=0; renderCaptures(); render([]);
   });
   document.getElementById('modeAI')?.addEventListener('click',()=>{
-    vsAI=true;G.reset();lastMove=null;selected=null;
-    capturedWhite.length=0;capturedBlack.length=0;
-    renderCaptures();render([]);
+    vsAI=true; G.reset(); lastMove=null; selected=null;
+    capturedBlack.length=0; capturedWhite.length=0; renderCaptures(); render([]);
   });
 
-  // first paint
-  render([]);renderCaptures();
+  render([]); renderCaptures();
 })();
