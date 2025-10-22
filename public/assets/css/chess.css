@@ -142,3 +142,33 @@ body.board-only .board-wrap{ max-width: min(98vw, 1100px); }
 .cap-b{ color:#222; text-shadow:0 0 2px rgba(255,255,255,.35); }
 .cap.new{ transform:scale(.8); opacity:.8; animation:pop .18s forwards; }
 @keyframes pop{ to{ transform:scale(1); opacity:1; } }
+
+/* ====== BOARD COORDINATES ====== */
+#board{ position:relative; display:grid; grid-template-columns:repeat(8,1fr); aspect-ratio:1/1; gap:2px; }
+#board .sq{ position:relative; display:flex; align-items:center; justify-content:center; }
+#board .sq.light{ background:rgba(255,255,255,.06); }
+#board .sq.dark{  background:rgba(0,0,0,.38); }
+
+/* rank (1–8) di sisi kiri: elemen kolom pertama */
+#board .sq:nth-child(8n+1)::before{
+  content: attr(data-rank);
+  position:absolute; left:6px; top:6px;
+  font-size:11px; opacity:.7; letter-spacing:.2px;
+}
+
+/* file (a–h) di baris paling bawah: elemen 57..64 */
+#board .sq:nth-child(n+57)::after{
+  content: attr(data-file);
+  position:absolute; right:6px; bottom:6px;
+  font-size:11px; opacity:.7; letter-spacing:.2px;
+}
+
+/* ====== CAPTURED TRAYS ====== */
+.captured{max-width:820px;margin:12px auto 0;display:grid;gap:8px}
+.cap-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.cap-tray{
+  display:flex;gap:6px;flex-wrap:wrap;min-height:28px;
+  padding:8px 10px;border-radius:12px;
+  background:var(--panel-bg-1);border:1px solid var(--panel-bd);
+}
+.cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
