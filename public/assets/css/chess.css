@@ -130,3 +130,29 @@
 body.board-only .board-wrap {
   max-width: min(98vw, 1100px);
 }
+/* *** CRITICAL FIX: setiap kotak jadi konteks posisi *** */
+.sq {
+  position: relative !important;   /* <— BIAR .dot nempel ke kotaknya */
+}
+
+/* Dot legal-move: kecil, di tengah kotak, tidak blokir klik */
+.dot {
+  position: absolute !important;
+  width: 22% !important;
+  height: 22% !important;
+  border-radius: 50% !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: rgba(102, 204, 255, 0.55) !important;
+  outline: 2px solid rgba(102, 204, 255, 0.35) !important;
+  box-shadow: 0 0 6px rgba(102, 204, 255, 0.35) !important;
+  pointer-events: none !important;   /* klik tembus ke .sq */
+  z-index: 1 !important;
+}
+
+/* Biar klik ke kotak tidak ketahan oleh elemen bidak */
+.piece {
+  pointer-events: none !important;
+  z-index: 2;
+}
