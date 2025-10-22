@@ -1,65 +1,72 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess.com</title>
 
-  <!-- Style -->
-  <link rel="stylesheet" href="assets/css/chess.css">
-  <link rel="icon" href="assets/img/icon.png">
+  <!-- 1) Theme dulu -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=7" />
+
+  <!-- 2) Khusus board chess -->
+  <link rel="stylesheet" href="assets/css/chess.css?v=7" />
 </head>
 <body>
-
-  <header>
-    <div class="tag">AZBRY-MD • BOARD</div>
-    <h1>Azbry Chess.com</h1>
-  </header>
-
-  <!-- BOARD -->
-  <section class="board-container">
-    <div id="board" class="board"></div>
-  </section>
-
-  <!-- Kontrol -->
-  <section class="controls">
-    <div class="btn-group">
-      <button id="modeHuman" class="btn active">VS Player</button>
-      <button id="modeAI" class="btn">VS Azbry-MD</button>
-      <button id="btnReset" class="btn">Muat Ulang</button>
+  <main class="container">
+    <div class="top-header">
+      <div class="title">
+        <div class="tag">AZBRY-MD • BOARD</div>
+        <h1>Azbry Chess.com</h1>
+      </div>
     </div>
-    <div class="btn-group">
-      <button id="btnUndo" class="btn">Undo</button>
-      <button id="btnRedo" class="btn">Redo</button>
-      <button id="btnFlip" class="btn">Flip Board</button>
-      <button id="btnBoardOnly" class="btn">Board Only</button>
-      <button id="btnBack" class="btn" style="display:none;">Kembali</button>
+
+    <!-- BOARD -->
+    <section class="board-wrap">
+      <div id="board" class="board"></div>
+    </section>
+
+    <!-- Kontrol -->
+    <section class="panel">
+      <div class="controls">
+        <button id="modeHuman" class="btn accent">VS Player</button>
+        <button id="modeAI" class="btn">VS Azbry-MD</button>
+        <button id="btnReset" class="btn">Muat Ulang</button>
+      </div>
+      <div class="controls">
+        <button id="btnUndo" class="btn">Undo</button>
+        <button id="btnRedo" class="btn">Redo</button>
+        <button id="btnFlip" class="btn">Flip Board</button>
+        <button id="btnBoardOnly" class="btn">Board Only</button>
+        <button id="btnBack" class="btn" style="display:none">Kembali</button>
+      </div>
+    </section>
+
+    <!-- Log -->
+    <section class="move-log">
+      <h4>Riwayat Langkah</h4>
+      <pre id="moveHistory">—</pre>
+    </section>
+
+    <div class="license">
+      Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker
+      <br />
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank" rel="noopener">↗ Portofolio</a>
     </div>
-  </section>
+  </main>
 
-  <!-- Riwayat langkah -->
-  <section class="move-log">
-    <h3>Riwayat Langkah</h3>
-    <pre id="moveHistory">_</pre>
-  </section>
+  <!-- SCRIPT: URUTAN WAJIB -->
+  <script src="assets/js/chess-engine.js?v=7"></script>
+  <script src="assets/js/chess-ui.js?v=7"></script>
+  <script src="assets/js/main.js?v=7"></script>
 
-  <!-- Footer -->
-  <footer class="license">
-    <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
-    <a class="cta" href="https://azbry-portofolio.vercel.app" target="_blank">↗ Portofolio</a>
-  </footer>
-
-  <!-- SCRIPT -->
-  <!-- Engine (offline or CDN, bebas salah satu) -->
-  <!-- opsi 1: pakai file lokal -->
-  <script src="assets/js/chess-engine.js"></script>
-
-  <!-- opsi 2 (backup): kalau lokal error, bisa pakai CDN -->
-  <!-- <script src="https://cdn.jsdelivr.net/npm/chess.js"></script> -->
-
-  <!-- UI dan logika utama -->
-  <script src="assets/js/chess-ui.js?v=5"></script>
-  <script src="assets/js/main.js?v=5"></script>
-
+  <!-- Guard kecil biar ketahuan kalau engine/JS gagal ke-load -->
+  <script>
+    (function(){
+      const okBoard = document.getElementById('board');
+      const okEngine = typeof window.Chess === 'function';
+      if (!okBoard) alert('DIV #board tidak ketemu.');
+      if (!okEngine) console.error('chess-engine.js tidak ter-load. Cek path/404.');
+    })();
+  </script>
 </body>
 </html>
