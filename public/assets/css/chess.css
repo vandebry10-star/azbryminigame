@@ -266,3 +266,28 @@ body.board-only .board-wrap {
   .cap{ width:24px; height:24px; font-size:16px; border-radius:6px; }
   .captured-wrap{ gap:8px; padding: 4px 8px; }
 }
+/* === Raja sedang di-check (kotaknya merah) === */
+.sq.in-check {
+  box-shadow:
+    inset 0 0 0 4px rgba(255,0,0,.45),
+    0 0 20px rgba(255,0,0,.45);
+  animation: check-pulse 1s ease-in-out infinite alternate;
+}
+@keyframes check-pulse {
+  from { box-shadow: inset 0 0 0 4px rgba(255,0,0,.4), 0 0 10px rgba(255,0,0,.3); }
+  to   { box-shadow: inset 0 0 0 4px rgba(255,0,0,.8), 0 0 25px rgba(255,0,0,.6); }
+}
+
+/* === Popup hasil menang === */
+.overlay h2 {
+  color: var(--azbry-accent);
+  font-weight: 800;
+  font-size: 2.4rem;
+  text-shadow: 0 0 20px var(--azbry-ring);
+  margin-bottom: 18px;
+  animation: result-pop .4s ease-out;
+}
+@keyframes result-pop {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
