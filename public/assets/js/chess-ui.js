@@ -1,7 +1,8 @@
-// assets/js/chess-ui.js — ChessUI v2.3 (pointer-safe + defensive clear)
-// Grid 8x8 (.sq), render dari array/FEN, flip, legal dots, last move, in-check.
-// Perbaikan: piece punya pointer-events:none (klik ke kotak tetap tembus).
-//            hard-clear per kotak cegah bidak dobel.
+// assets/js/chess-ui.js — ChessUI v2.4 (delegation + pointer-safe + defensive clear)
+// - Event delegation di .board (klik selalu ketemu .sq terdekat, aman di mobile)
+// - piece & dot pointer-events:none (klik tembus)
+// - hard-clear per kotak cegah bidak dobel
+// - in-check, last-move, legal dots
 
 ;(function (global) {
   'use strict';
@@ -29,6 +30,7 @@
     this._lastFEN   = null;
     this._opts      = {};
     this._buildGrid();
+    this._bindDelegatedClicks();  // <<— penting
   }
 
   // ================= Grid =================
@@ -46,11 +48,26 @@
         d.dataset.square = sqAlg;
         d.dataset.file   = FILES[f];
         d.dataset.rank   = r;
-        d.addEventListener('click', () => this.onSquareClick(this._map(sqAlg)));
         this.squares.push(d);
         b.appendChild(d);
       }
     }
+  };
+
+  // ================= Delegation =================
+  ChessUI.prototype._bindDelegatedClicks = function(){
+    // Hapus listener lama kalau ada (hindari double-bind saat rebuild)
+    this.board._azbryDelegated && this.board.removeEventListener('click', this.board._azbryDelegated);
+    const handler = (ev) => {
+      // Cari .sq terdekat dari target
+      const cell = ev.target.closest('.sq');
+      if (!cell || !this.board.contains(cell)) return;
+      const sqAlg = cell.dataset.square;
+      if (!sqAlg) return;
+      this.onSquareClick(this._map(sqAlg));
+    };
+    this.board.addEventListener('click', handler, { passive: true });
+    this.board._azbryDelegated = handler;
   };
 
   // ================= Flip =================
@@ -84,7 +101,7 @@
     const el = document.createElement('div');
     el.className = 'piece ' + (isWhite ? 'white' : 'black');
     el.textContent = char;
-    // <<<<< FIX PENTING: jangan blokir klik ke .sq
+    // jangan blokir klik ke .sq
     el.style.pointerEvents = 'none';
     el.style.zIndex = '2';
     target.appendChild(el);
@@ -94,7 +111,6 @@
     if (!target) return;
     const dot = document.createElement('div');
     dot.className = 'dot enter';
-    // safety: dot juga tidak blokir klik (kalau CSS belum override)
     dot.style.pointerEvents = 'none';
     target.appendChild(dot);
     requestAnimationFrame(()=> dot.classList.remove('enter'));
