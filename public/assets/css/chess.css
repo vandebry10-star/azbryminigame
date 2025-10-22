@@ -76,6 +76,18 @@
   -webkit-text-stroke: 0;
 }
 .piece.white { color: #ffffff; text-shadow: 0 0 3px rgba(0,0,0,.25); }
+/* Outline hitam untuk bidak putih */
+.piece.white {
+  color: #ffffff;
+  text-shadow:
+    0 0 2px #000,          /* bayangan halus */
+    0 0 1px #000,
+    0 1px 0 #000,
+    1px 0 0 #000,
+    -1px 0 0 #000,
+    0 -1px 0 #000;         /* garis tepi hitam di semua sisi */
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.6));
+}
 /* Jangan diputar biar gaya chess.com */
 .piece.black { color: #262626; text-shadow: 0 0 3px rgba(255,255,255,.25); }
 
