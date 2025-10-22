@@ -172,3 +172,33 @@ body.board-only .board-wrap{ max-width: min(98vw, 1100px); }
   background:var(--panel-bg-1);border:1px solid var(--panel-bd);
 }
 .cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
+
+/* ====== CLASSIC GREEN BOARD ====== */
+#board .sq.light {
+  background: #f0f8d2;        /* hijau muda */
+}
+
+#board .sq.dark {
+  background: #6b8e23;        /* hijau tua zaitun */
+}
+
+#board .sq.light .piece.white,
+#board .sq.dark .piece.white {
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(255,255,255,.2);
+}
+
+#board .sq.light .piece.black,
+#board .sq.dark .piece.black {
+  color: #000000;
+  text-shadow: 0 0 6px rgba(0,0,0,.3);
+}
+
+/* Highlight titik langkah */
+#board .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.6);
+  box-shadow: 0 0 8px rgba(255,255,255,.8);
+}
