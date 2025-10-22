@@ -248,24 +248,36 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Sinkronisasi tampilan
+  // === Sinkronisasi tampilan ============================================
   function sync() {
     const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
-    ui.render(game.board(), { lastMove, legal: legalTargets });
 
-    injectBoardLabels();        // koordinat
-    injectCapturedContainers(); // area captured
-    renderCapturedFromBoard(game.board()); // render captured
+    const status = game.gameStatus(); // 'ok'|'check'|'checkmate'|'stalemate'
+    const sideToMove = game.turn();   // 'w'|'b'
 
+    // Saat CHECK: minta ChessUI kasih class .check ke kotak raja (auto handle flip)
+    const inCheckOpt = (status === 'check') ? sideToMove : undefined;
+
+    ui.render(game.board(), { lastMove, legal: legalTargets, inCheck: inCheckOpt });
+
+    // Pastikan class yang dipakai CSS-mu juga ada (.in-check)
+    mirrorCheckClass();
+
+    // koordinat + captured bar
+    injectBoardLabels();
+    injectCapturedContainers();
+    renderCapturedFromBoard(game.board());
+
+    // log langkah
     if (moveLog) {
       const h = game.history();
       moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
     }
 
-    const status = game.gameStatus();
+    // end state
     if (status === 'checkmate') {
-      const winner = (game.turn() === 'w') ? 'Hitam Menang!' : 'Putih Menang!';
-      showResult(`Checkmate — ${winner}`);
+      const winner = (sideToMove === 'w') ? 'Hitam' : 'Putih'; // sideToMove sedang MAT, lawannya menang
+      showResult(`${winner} Menang!`);
     } else if (status === 'stalemate') {
       showResult('Seri 🤝');
     }
@@ -289,6 +301,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       boardEl.appendChild(ranks);
     }
+  }
+
+  // Samakan class .check (dari ChessUI) dengan .in-check (CSS anim merah)
+  function mirrorCheckClass(){
+    // buang dulu semua .in-check
+    boardEl.querySelectorAll('.sq.in-check').forEach(el => el.classList.remove('in-check'));
+    // ambil semua kotak yang diberi .check oleh ChessUI, tambahkan .in-check
+    boardEl.querySelectorAll('.sq.check').forEach(el => el.classList.add('in-check'));
   }
 
   function showResult(text) {
