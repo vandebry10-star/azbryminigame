@@ -1,60 +1,65 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Azbry Chess.com</title>
 
-  <!-- Tema global Azbry -->
-  <link rel="stylesheet" href="assets/css/azbry.css" />
-  <link rel="stylesheet" href="assets/css/chess.css" />
+  <!-- Style -->
+  <link rel="stylesheet" href="assets/css/chess.css">
+  <link rel="icon" href="assets/img/icon.png">
 </head>
-
 <body>
-  <main class="game-container">
-    <header class="game-header">
-      <span class="badge">AZBRY-MD • BOARD</span>
-      <h1 class="title">Azbry Chess.com</h1>
-    </header>
 
-    <section class="board-section">
-      <div id="board" class="board"></div>
-    </section>
+  <header>
+    <div class="tag">AZBRY-MD • BOARD</div>
+    <h1>Azbry Chess.com</h1>
+  </header>
 
-    <section class="controls">
-      <div class="btn-group mode">
-        <button id="modeHuman" class="btn active">VS Player</button>
-        <button id="modeAI" class="btn">VS Azbry-MD</button>
-        <button id="btnReset" class="btn">Muat Ulang</button>
-      </div>
+  <!-- BOARD -->
+  <section class="board-container">
+    <div id="board" class="board"></div>
+  </section>
 
-      <div class="btn-group actions">
-        <button id="btnUndo" class="btn">Undo</button>
-        <button id="btnRedo" class="btn">Redo</button>
-        <button id="btnFlip" class="btn">Flip Board</button>
-        <button id="btnBoardOnly" class="btn">Board Only</button>
-        <button id="btnBack" class="btn" style="display:none;">Kembali</button>
-      </div>
+  <!-- Kontrol -->
+  <section class="controls">
+    <div class="btn-group">
+      <button id="modeHuman" class="btn active">VS Player</button>
+      <button id="modeAI" class="btn">VS Azbry-MD</button>
+      <button id="btnReset" class="btn">Muat Ulang</button>
+    </div>
+    <div class="btn-group">
+      <button id="btnUndo" class="btn">Undo</button>
+      <button id="btnRedo" class="btn">Redo</button>
+      <button id="btnFlip" class="btn">Flip Board</button>
+      <button id="btnBoardOnly" class="btn">Board Only</button>
+      <button id="btnBack" class="btn" style="display:none;">Kembali</button>
+    </div>
+  </section>
 
-      <div class="move-log">
-        <h3>Riwayat Langkah</h3>
-        <pre id="moveHistory">—</pre>
-      </div>
-    </section>
+  <!-- Riwayat langkah -->
+  <section class="move-log">
+    <h3>Riwayat Langkah</h3>
+    <pre id="moveHistory">_</pre>
+  </section>
 
-    <footer class="license">
-      <div>
-        Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker
-      </div>
-      <a href="https://azbry-portfolio.vercel.app" class="cta">↗ Portofolio</a>
-    </footer>
-  </main>
+  <!-- Footer -->
+  <footer class="license">
+    <div>Lisensi MIT • © 2025 Azbry-MD • Dikelola oleh FebryWesker</div>
+    <a class="cta" href="https://azbry-portofolio.vercel.app" target="_blank">↗ Portofolio</a>
+  </footer>
 
-  <!-- Engine catur bawaan dari CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chess.js@1.0.0/dist/chess.min.js"></script>
+  <!-- SCRIPT -->
+  <!-- Engine (offline or CDN, bebas salah satu) -->
+  <!-- opsi 1: pakai file lokal -->
+  <script src="assets/js/chess-engine.js"></script>
 
-  <!-- Logika dan tampilan -->
+  <!-- opsi 2 (backup): kalau lokal error, bisa pakai CDN -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/chess.js"></script> -->
+
+  <!-- UI dan logika utama -->
   <script src="assets/js/chess-ui.js?v=5"></script>
   <script src="assets/js/main.js?v=5"></script>
+
 </body>
 </html>
