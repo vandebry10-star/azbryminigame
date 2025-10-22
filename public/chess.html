@@ -55,5 +55,13 @@
   <script src="/assets/js/chess-engine.js"></script>
   <!-- Controller/renderer -->
   <script src="/assets/js/main.js"></script>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (!document.querySelector('#board .square')) {
+    console.warn('Rebuild papan (safety fallback)');
+    if (typeof buildGrid === 'function') buildGrid();
+  }
+});
+  </script>
 </body>
 </html>
