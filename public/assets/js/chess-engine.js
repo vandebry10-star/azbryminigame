@@ -8,7 +8,7 @@
      G.reset(), G.history(), G.gameStatus() -> 'ok'|'check'|'checkmate'|'stalemate'
    ========================================================= */
 (function (global) {
-  // ---- constants (aman, tidak bentrok) ----
+  // ---- constants ----
   var EMPTY = null;
   var C_WHITE = 'w';
   var C_BLACK = 'b';
@@ -49,8 +49,8 @@
     };
     this.ep = (ep==='-'? null : idx(ep));
     this.half = 0;
-    this.hist = [];   // stack moves { ... , snap }
-    this.redo = [];   // redo stack
+    this.hist = [];        // stack moves { ... , snap }
+    this._redoStack = [];  // <— rename untuk hindari bentrok dengan method redo()
   };
 
   Chess.prototype.reset   = function(){ this.load(START_FEN); };
@@ -94,7 +94,9 @@
       for(var k=0;k<KN.length;k++){
         var s=i+KN[k];
         if (!inBoard(s)) continue;
-        if (Math.max(Math.abs(file(s)-file(i)), Math.abs(rank(s)-rank(i)))<=2) res.push(s);
+        var dx = Math.abs(file(s)-file(i));
+        var dy = Math.abs(rank(s)-rank(i));
+        if ((dx===1 && dy===2) || (dx===2 && dy===1)) res.push(s); // <— fix pola L
       }
     }
 
@@ -165,7 +167,9 @@
         for (var kn=0;kn<KN.length;kn++){
           var t2=i+KN[kn];
           if (!inBoard(t2)) continue;
-          if (Math.max(Math.abs(file(t2)-f), Math.abs(rank(t2)-rnk))>2) continue;
+          var dx = Math.abs(file(t2)-f);
+          var dy = Math.abs(rank(t2)-rnk);
+          if (!((dx===1 && dy===2) || (dx===2 && dy===1))) continue; // <— fix pola L
           var q2=this.get(t2); if (!q2 || q2.color!==c) this._push(M,i,t2);
         }
         continue;
@@ -287,7 +291,7 @@
 
   Chess.prototype._unmake = function(snap){
     var move=snap.move, cast=snap.cast, ep=snap.ep, half=snap.half, cap=snap.cap;
-    var from=move.from, to=move.to, piece=move.piece, enPassant=move.enPassant, castle=move.castle;
+    var from=move.from, to=move.to, piece=move.piece, enPassant=move.enPassant, castle=move.castle, promotion=move.promotion;
 
     // balikin rook kalau rokade
     if (castle==='K'){ this.set(63,{color:C_WHITE,piece:R}); this.set(61,EMPTY); }
@@ -360,7 +364,7 @@
     var snap=this._make(ok);
     var note=alg(ok.from)+" → "+alg(ok.to)+(ok.promotion?("="+ok.promotion):"");
     this.hist.push({ from:ok.from,to:ok.to,piece:ok.piece,promotion:ok.promotion,snap:snap,note:note });
-    this.redo.length=0;
+    this._redoStack.length=0;            // <— clear redo saat ada move baru
     this.side = enemy(this.side);
     return note;
   };
@@ -370,12 +374,12 @@
     if (!last) return null;
     this._unmake(last.snap);
     this.side = enemy(this.side);
-    this.redo.push(last);
+    this._redoStack.push(last);          // <— pakai _redoStack
     return last.note;
   };
 
   Chess.prototype.redo = function(){
-    var next=this.redo.pop();
+    var next=this._redoStack.pop();      // <— pakai _redoStack
     if (!next) return null;
     var snap=this._make(next);
     this.hist.push({ from:next.from,to:next.to,piece:next.piece,promotion:next.promotion,snap:snap,note:next.note });
