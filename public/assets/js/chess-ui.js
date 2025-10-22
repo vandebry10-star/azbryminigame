@@ -1,8 +1,6 @@
-// assets/js/chess-ui.js — ChessUI v2.5 (delegation + fallback grid + pointer-safe)
-// - Click delegation di .board, aman di mobile
-// - Fallback: kalau target bukan .sq, hitung file/rank dari posisi tap
-// - piece/dot pointer-events:none
-// - defensive clear per kotak
+// assets/js/chess-ui.js — ChessUI FINAL (delegation + fallback + pointer-safe)
+// CUKUP ganti file ini saja. Tidak perlu utak-atik CSS lagi.
+
 ;(function (global) {
   'use strict';
 
@@ -29,7 +27,7 @@
     this._lastFEN   = null;
     this._opts      = {};
     this._buildGrid();
-    this._bindDelegatedClicks(); // penting
+    this._bindDelegatedClicks(); // <<— satu handler untuk semua klik (aman di HP)
   }
 
   // ================= Grid =================
@@ -47,6 +45,7 @@
         d.dataset.square = sqAlg;
         d.dataset.file   = FILES[f];
         d.dataset.rank   = r;
+        // NOTE: tidak pasang listener di sini lagi (biar tidak bentrok di mobile)
         this.squares.push(d);
         b.appendChild(d);
       }
@@ -56,13 +55,18 @@
   // ================= Delegation + Fallback =================
   ChessUI.prototype._bindDelegatedClicks = function(){
     const handler = (ev) => {
-      // 1) coba target terdekat .sq
-      let cell = ev.target.closest && ev.target.closest('.sq');
+      // 1) cari .sq terdekat dari target klik/tap
+      const target = ev.target;
+      let cell = target && target.closest ? target.closest('.sq') : null;
+
       if (!cell || !this.board.contains(cell)) {
-        // 2) fallback: hitung kolom/baris dari posisi tap
+        // 2) fallback: hitung kotak dari posisi tap
         const rect = this.board.getBoundingClientRect();
-        const cx = (ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.clientX);
-        const cy = (ev.touches && ev.touches[0] ? ev.touches[0].clientY : ev.clientY);
+        const touch = ev.touches && ev.touches[0];
+        const cx = touch ? touch.clientX : ev.clientX;
+        const cy = touch ? touch.clientY : ev.clientY;
+        if (typeof cx !== 'number' || typeof cy !== 'number') return;
+
         const x = Math.min(Math.max(cx - rect.left, 0), rect.width  - 0.01);
         const y = Math.min(Math.max(cy - rect.top,  0), rect.height - 0.01);
         const col = Math.floor((x / rect.width)  * 8); // 0..7
@@ -70,16 +74,16 @@
         const file = FILES[col];
         const rank = 8 - row;
         const sqAlg = file + rank;
-        // map sesuai flip lalu kirim
         this.onSquareClick(this._map(sqAlg));
         return;
       }
+
       const sqAlg = cell.dataset.square;
       if (!sqAlg) return;
       this.onSquareClick(this._map(sqAlg));
     };
 
-    // hapus bind lama bila ada
+    // bersihin bind lama biar nggak dobel
     if (this._delegatedHandler) {
       this.board.removeEventListener('click', this._delegatedHandler);
       this.board.removeEventListener('touchstart', this._delegatedHandler);
@@ -115,12 +119,12 @@
 
   function putPiece(target, char, isWhite){
     if (!target) return;
-    // hard clear: hilangkan semua piece lama di kotak ini
+    // bersih2 dulu: cegah bidak dobel
     target.querySelectorAll('.piece').forEach(n => n.remove());
     const el = document.createElement('div');
     el.className = 'piece ' + (isWhite ? 'white' : 'black');
     el.textContent = char;
-    // jangan blokir klik ke .sq
+    // jangan blokir klik
     el.style.pointerEvents = 'none';
     el.style.zIndex = '2';
     target.appendChild(el);
