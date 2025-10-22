@@ -1,11 +1,12 @@
-// assets/js/main.js — Controller + Renderer (Azbry Chess Final)
-// Support: check highlight (raja merah) + popup menang + koordinat + captured bar
+// assets/js/main.js — Azbry Chess (robust)
+// Fitur: koordinat, captured bar, check merah, popup menang
 
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
 
+  // -----------------------------------------------------------------------
   // Root UI
-  let boardEl      = $('board');
+  let boardEl = $('board');
   const modeHuman  = $('modeHuman');
   const modeAI     = $('modeAI');
   const btnReset   = $('btnReset');
@@ -20,64 +21,67 @@ document.addEventListener('DOMContentLoaded', () => {
   const startMenu     = $('startMenu');
   const btnStartHuman = $('btnStartHuman');
   const btnStartAI    = $('btnStartAI');
+  const resultPopup   = $('resultPopup');
+  const resultText    = $('resultText');
+  const btnRestart    = $('btnRestart');
 
-  const resultPopup = $('resultPopup');
-  const resultText  = $('resultText');
-  const btnRestart  = $('btnRestart');
-
-  // Fallback: kalau board belum ada
+  // Pastikan board ada
   if (!boardEl) {
     boardEl = document.createElement('div');
     boardEl.id = 'board';
     boardEl.className = 'board';
-    document.body.appendChild(boardEl);
+    document.body.prepend(boardEl);
   }
 
+  // -----------------------------------------------------------------------
   // Game state
-  const game = new Chess();                 // engine
+  const game = new Chess();
   const ui   = new ChessUI(boardEl, onSquare);
-  let mode   = 'human';                     // 'human' | 'ai'
+
+  // safety: kalau entah kenapa grid belum kebangun, force build
+  try {
+    if (!ui.squares || ui.squares.length !== 64) ui._buildGrid();
+  } catch(_) {/* noop */}
+
+  let mode     = 'human';
   let selected = null;
   let lastMove = null;
 
-  // === Captured pieces (graveyard) =======================================
-
-  // unicode pieces (biar sama dengan UI)
+  // -----------------------------------------------------------------------
+  // Captured bar utils
   const PIECE_CHAR = {
     k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟',
     K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙'
   };
-
-  // jumlah awal tiap jenis per warna
   const INITIAL_COUNTS = {
     w: { P:8, R:2, N:2, B:2, Q:1, K:1 },
     b: { P:8, R:2, N:2, B:2, Q:1, K:1 },
   };
 
-  // buat container captured di bawah papan (sekali)
   function injectCapturedContainers(){
-    if (document.querySelector('.captured-wrap')) return;
-    const capWrap = document.createElement('div');
-    capWrap.className = 'captured-wrap';
+    try{
+      if (document.querySelector('.captured-wrap')) return;
+      const capWrap = document.createElement('div');
+      capWrap.className = 'captured-wrap';
 
-    const capWhite = document.createElement('div');
-    capWhite.id = 'capturedWhite';
-    capWhite.className = 'captured captured-white';
+      const capWhite = document.createElement('div');
+      capWhite.id = 'capturedWhite';
+      capWhite.className = 'captured captured-white';
 
-    const spacer = document.createElement('div');
-    spacer.className = 'captured-spacer';
-    spacer.style.flex = '1';
+      const spacer = document.createElement('div');
+      spacer.className = 'captured-spacer';
+      spacer.style.flex = '1';
 
-    const capBlack = document.createElement('div');
-    capBlack.id = 'capturedBlack';
-    capBlack.className = 'captured captured-black';
+      const capBlack = document.createElement('div');
+      capBlack.id = 'capturedBlack';
+      capBlack.className = 'captured captured-black';
 
-    capWrap.appendChild(capWhite);
-    capWrap.appendChild(spacer);
-    capWrap.appendChild(capBlack);
+      capWrap.appendChild(capWhite);
+      capWrap.appendChild(spacer);
+      capWrap.appendChild(capBlack);
 
-    // taruh setelah elemen board
-    boardEl.insertAdjacentElement('afterend', capWrap);
+      boardEl.insertAdjacentElement('afterend', capWrap);
+    }catch(_){}
   }
 
   function computeCapturedFromBoard(boardArray){
@@ -89,10 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const p = c.piece.toUpperCase();
       if (remain[clr][p] != null) remain[clr][p] += 1;
     }
-
     const captured = { w: [], b: [] };
     for (const clr of ['w','b']){
-      for (const p of ['Q','R','B','N','P']){ // tampilkan mayor dulu
+      for (const p of ['Q','R','B','N','P']){
         const dead = Math.max(0, (INITIAL_COUNTS[clr][p] || 0) - (remain[clr][p] || 0));
         for (let k=0;k<dead;k++) captured[clr].push(p);
       }
@@ -101,47 +104,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCapturedFromBoard(boardArray){
-    const capW = document.getElementById('capturedWhite');
-    const capB = document.getElementById('capturedBlack');
-    if (!capW || !capB) return;
+    try{
+      const capW = document.getElementById('capturedWhite');
+      const capB = document.getElementById('capturedBlack');
+      if (!capW || !capB) return;
 
-    const caps = computeCapturedFromBoard(boardArray);
+      const caps = computeCapturedFromBoard(boardArray);
 
-    // putih yang hilang (tertangkap oleh hitam)
-    capW.innerHTML = '';
-    caps.w.forEach(p => {
-      const el = document.createElement('span');
-      el.className = 'cap cap-w new';
-      el.textContent = PIECE_CHAR[p];
-      capW.appendChild(el);
-      requestAnimationFrame(()=> el.classList.remove('new'));
-    });
+      capW.innerHTML = '';
+      caps.w.forEach(p => {
+        const el = document.createElement('span');
+        el.className = 'cap cap-w new';
+        el.textContent = PIECE_CHAR[p];
+        capW.appendChild(el);
+        requestAnimationFrame(()=> el.classList.remove('new'));
+      });
 
-    // hitam yang hilang (tertangkap oleh putih)
-    capB.innerHTML = '';
-    caps.b.forEach(p => {
-      const el = document.createElement('span');
-      el.className = 'cap cap-b new';
-      const key = p.toLowerCase();
-      el.textContent = PIECE_CHAR[key] || PIECE_CHAR[p];
-      capB.appendChild(el);
-      requestAnimationFrame(()=> el.classList.remove('new'));
-    });
+      capB.innerHTML = '';
+      caps.b.forEach(p => {
+        const el = document.createElement('span');
+        el.className = 'cap cap-b new';
+        const key = p.toLowerCase();
+        el.textContent = PIECE_CHAR[key] || PIECE_CHAR[p];
+        capB.appendChild(el);
+        requestAnimationFrame(()=> el.classList.remove('new'));
+      });
+    }catch(_){}
   }
 
-  // === Controls & Mode ====================================================
-
-  // Mode picker
+  // -----------------------------------------------------------------------
+  // Mode & Buttons
   if (modeHuman) modeHuman.addEventListener('click', () => setMode('human'));
   if (modeAI)    modeAI.addEventListener('click',    () => setMode('ai'));
 
-  // Buttons
   if (btnReset)  btnReset.addEventListener('click',  () => hardReset());
   if (btnUndo)   btnUndo.addEventListener('click',   () => { game.undo(); selected=null; lastMove=null; sync(); });
   if (btnRedo)   btnRedo.addEventListener('click',   () => { game.redo(); selected=null; lastMove=null; sync(); });
   if (btnFlip)   btnFlip.addEventListener('click',   () => { ui.toggleFlip(); sync(); });
 
-  // Board Only toggle
   if (btnOnly && btnBack) {
     btnOnly.addEventListener('click', () => {
       document.body.classList.add('board-only');
@@ -155,11 +155,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Start menu
   if (btnStartHuman) btnStartHuman.addEventListener('click', () => startGame('human'));
   if (btnStartAI)    btnStartAI.addEventListener('click',    () => startGame('ai'));
 
-  // Result popup
   if (btnRestart) btnRestart.addEventListener('click', () => {
     hideResult();
     if (startMenu) startMenu.classList.add('show');
@@ -187,13 +185,13 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Klik papan
+  // -----------------------------------------------------------------------
+  // Interaksi papan
   function onSquare(squareAlg) {
-    if (mode === 'ai' && game.turn() === 'b') return; // giliran AI
+    if (mode === 'ai' && game.turn() === 'b') return;
 
     const movesFromSel = selected ? game.moves({ square: selected }) : [];
 
-    // Klik tujuan legal
     if (selected && movesFromSel.some(m => m.to === squareAlg)) {
       const promo = needsPromotion(selected, squareAlg) ? 'Q' : null;
       const note = game.move({ from: selected, to: squareAlg, promotion: promo });
@@ -206,18 +204,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Pilih bidak
     const idx = toIdx(squareAlg);
     const P = game.board()[idx];
-    if (P && P.color === game.turn()) {
-      selected = squareAlg;
-    } else {
-      selected = null;
-    }
+    if (P && P.color === game.turn()) selected = squareAlg;
+    else selected = null;
+
     sync();
   }
 
-  // Promotion check
   function needsPromotion(fromAlg, toAlg) {
     const toR   = 8 - parseInt(toAlg[1], 10);
     const piece = game.board()[toIdx(fromAlg)];
@@ -225,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return (piece.color === 'w' && toR === 0) || (piece.color === 'b' && toR === 7);
   }
 
-  // AI move (greedy)
+  // AI
   function aiMove() {
     if (mode !== 'ai' || game.turn() !== 'b') return;
     const legal = game.moves();
@@ -233,13 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const value = { P:1, N:3, B:3, R:5, Q:9, K:100 };
     let best = null, bestScore = -1;
-
     for (const m of legal) {
       const target = game.board()[toIdx(m.to)];
       const s = target ? value[target.piece] : 0;
       if (s > bestScore) { best = m; bestScore = s; }
     }
-
     const pick = bestScore > 0 ? best : legal[Math.floor(Math.random() * legal.length)];
     const promo = needsPromotion(pick.from, pick.to) ? 'Q' : null;
     const note = game.move({ from: pick.from, to: pick.to, promotion: promo });
@@ -247,78 +239,88 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // ================== 🔥 SYNC — logika update tampilan ==================
+  // -----------------------------------------------------------------------
+  // SYNC — render & status
   function sync() {
+    // safety: kalau grid hilang, rebuild
+    try { if (!ui.squares || ui.squares.length !== 64) ui._buildGrid(); } catch(_){}
+
     const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
 
-    // --- deteksi status ---
+    // deteksi status
     let status = 'ok';
-    if (typeof game.gameStatus === 'function') {
-      status = game.gameStatus();                       // 'ok'|'check'|'checkmate'|'stalemate'
-    } else {
-      // fallback kalau engine pakai API lain
-      const hasMoves = (game.moves().length > 0);
-      const inCheckNow = typeof game.inCheck === 'function' ? game.inCheck() : false;
-      status = !hasMoves && inCheckNow ? 'checkmate'
-            : !hasMoves && !inCheckNow ? 'stalemate'
-            : inCheckNow ? 'check'
-            : 'ok';
-    }
-    const sideToMove = game.turn();                     // 'w'|'b'
+    try {
+      status = typeof game.gameStatus === 'function'
+        ? game.gameStatus()
+        : (() => {
+            const hasMoves = (game.moves().length > 0);
+            const inChk = typeof game.inCheck === 'function' ? game.inCheck() : false;
+            return !hasMoves && inChk ? 'checkmate'
+                 : !hasMoves && !inChk ? 'stalemate'
+                 : inChk ? 'check' : 'ok';
+          })();
+    } catch(_) {}
 
-    // --- kirim ke UI (aktifkan marker king) ---
+    const sideToMove = game.turn(); // 'w'|'b'
     const inCheckOpt = (status === 'check') ? sideToMove : undefined;
+
+    // render board
     ui.render(game.board(), { lastMove, legal: legalTargets, inCheck: inCheckOpt });
 
-    // salin .check → .in-check supaya CSS merah kamu aktif
+    // salin .check → .in-check (CSS merah)
     mirrorCheckClass();
 
-    // koordinat + captured bar
+    // UI tambahan
     injectBoardLabels();
     injectCapturedContainers();
     renderCapturedFromBoard(game.board());
 
-    // log langkah
+    // log
     if (moveLog) {
       const h = game.history();
       moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
     }
 
-    // --- hasil akhir ---
+    // hasil akhir
     if (status === 'checkmate') {
-      const winner = (sideToMove === 'w') ? 'Hitam' : 'Putih'; // sideToMove lagi MAT → lawannya menang
+      const winner = (sideToMove === 'w') ? 'Hitam' : 'Putih';
       showResult(`${winner} Menang!`);
     } else if (status === 'stalemate') {
       showResult('Seri 🤝');
     }
   }
 
-  // Tambah koordinat a–h & 1–8 kalau belum ada
+  // koordinat
   function injectBoardLabels(){
-    if (!boardEl.querySelector('.files')) {
-      const files = document.createElement('div');
-      files.className = 'files';
-      'abcdefgh'.split('').forEach(ch => {
-        const s = document.createElement('span'); s.textContent = ch; files.appendChild(s);
-      });
-      boardEl.appendChild(files);
-    }
-    if (!boardEl.querySelector('.ranks')) {
-      const ranks = document.createElement('div');
-      ranks.className = 'ranks';
-      for (let i = 8; i >= 1; i--) {
-        const s = document.createElement('span'); s.textContent = i; ranks.appendChild(s);
-      });
-      boardEl.appendChild(ranks);
-    }
+    try{
+      if (!boardEl.querySelector('.files')) {
+        const files = document.createElement('div');
+        files.className = 'files';
+        'abcdefgh'.split('').forEach(ch => {
+          const s = document.createElement('span'); s.textContent = ch; files.appendChild(s);
+        });
+        boardEl.appendChild(files);
+      }
+      if (!boardEl.querySelector('.ranks')) {
+        const ranks = document.createElement('div');
+        ranks.className = 'ranks';
+        for (let i = 8; i >= 1; i--) {
+          const s = document.createElement('span'); s.textContent = i; ranks.appendChild(s);
+        }
+        boardEl.appendChild(ranks);
+      }
+    }catch(_){}
   }
 
-  // Convert class .check (dari ChessUI) → .in-check (CSS merah)
+  // convert .check → .in-check
   function mirrorCheckClass(){
-    boardEl.querySelectorAll('.sq.in-check').forEach(el => el.classList.remove('in-check'));
-    boardEl.querySelectorAll('.sq.check').forEach(el => el.classList.add('in-check'));
+    try{
+      boardEl.querySelectorAll('.sq.in-check').forEach(el => el.classList.remove('in-check'));
+      boardEl.querySelectorAll('.sq.check').forEach(el => el.classList.add('in-check'));
+    }catch(_){}
   }
 
+  // overlay result
   function showResult(text) {
     if (!resultPopup || !resultText) return;
     resultText.textContent = text;
@@ -329,13 +331,14 @@ document.addEventListener('DOMContentLoaded', () => {
     resultPopup.classList.remove('show');
   }
 
-  function toIdx(a) {
-    return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]);
-  }
+  // utils
+  function toIdx(a) { return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]); }
 
-  // Init
-  injectBoardLabels();
+  // -----------------------------------------------------------------------
+  // Boot
   injectCapturedContainers();
+  injectBoardLabels();
   if (startMenu) startMenu.classList.add('show');
-  setMode('human'); // default mode
+  // render awal
+  sync();
 });
