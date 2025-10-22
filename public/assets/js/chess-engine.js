@@ -173,3 +173,5 @@
 
   global.Chess = Chess;
 })(typeof window !== 'undefined' ? window : globalThis);
+
+if (fenStr) load(fenStr); else reset();
