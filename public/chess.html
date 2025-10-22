@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess.com</title>
 
+  <!-- Google Font untuk JUDUL saja -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
+
   <!-- Styles -->
   <link rel="stylesheet" href="assets/css/azbry.css?v=20" />
   <link rel="stylesheet" href="assets/css/chess.css?v=20" />
@@ -12,7 +15,16 @@
   <style>
     body{max-width:980px;margin:0 auto;padding:16px;background:#0b0f12;color:#e8f0fb;font-family:system-ui,sans-serif}
     .hero-title{text-align:center;margin:8px 0 10px}
-    .hero-title h1{margin:0;font-weight:900;font-size:clamp(26px,6vw,40px);color:var(--azbry-accent,#b8ff9a);text-shadow:0 0 16px rgba(184,255,154,.3)}
+    /* ⬇️ HANYA judul yang ganti font ke Poppins (jelas & tebal) */
+    .hero-title h1{
+      margin:0;
+      font-family:"Poppins", system-ui, sans-serif;
+      font-weight:800;                               /* tebal tapi tetap enak dibaca */
+      letter-spacing:.5px;
+      font-size:clamp(26px,6vw,40px);
+      color:var(--azbry-accent,#b8ff9a);
+      text-shadow:0 0 16px rgba(184,255,154,.3)
+    }
     .toolbar{
       max-width:920px;margin:8px auto 14px;
       display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center
