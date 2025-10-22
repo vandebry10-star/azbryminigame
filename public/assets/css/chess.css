@@ -1,150 +1,105 @@
-/* ===========================
-   AZBRY CHESS BOARD STYLE FIX
-   =========================== */
+/* ===================== Azbry Chess — Visual Clarity+ ===================== */
 
 .board {
-  position: relative;
-  width: 100%;
-  max-width: 420px;
-  aspect-ratio: 1/1;
-  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  border-radius: 1rem;
+  width: 100%;
+  aspect-ratio: 1/1;
+  margin: 0 auto;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 0 20px rgba(0,255,100,0.2);
-  background: #101010;
+  box-shadow: 0 0 40px rgba(184,255,154,.15),
+              inset 0 0 0 1px rgba(255,255,255,.04);
 }
 
-/* Kotak */
-.square {
+/* 🎨 Warna papan — biar dua bidak keliatan jelas */
+.sq.light {
+  background: #C6E5B1; /* hijau muda lembut */
+}
+.sq.dark {
+  background: #27323E; /* biru-abu gelap */
+}
+
+.sq {
   position: relative;
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(24px, 5vw, 38px);
   user-select: none;
-  cursor: pointer;
-  transition: background 0.1s ease;
+  -webkit-user-select: none;
+  font-size: clamp(42px, 9vw, 76px);
 }
 
-.square.light { background: #dfffdc; }  /* Hijau muda */
-.square.dark  { background: #222b22; }  /* Hijau tua */
-.square.sel   { outline: 3px solid #00ff88; }
-.square.src   { box-shadow: inset 0 0 8px #00ff88; }
-.square.dst   { box-shadow: inset 0 0 8px #88ffcc; }
-.square.check { outline: 3px solid #ff3a3a; }
-
-/* Bidak */
+/* ♟ Bidak klasik, tapi dikasih shadow biar jelas */
 .piece {
+  line-height: 1;
+  filter: none;
+  -webkit-text-stroke: 0;
+}
+
+.piece.white {
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(0,0,0,.3);
+}
+
+.piece.black {
+  color: #000000;
+  text-shadow: 0 0 5px rgba(255,255,255,.3);
+  transform: rotate(180deg);
+}
+
+/* ✨ Highlight langkah terakhir */
+.sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
+.sq.last { box-shadow: inset 0 0 0 4px rgba(184,255,154,.3); }
+
+/* Titik langkah legal */
+.dot {
   position: absolute;
+  width: 36%;
+  height: 36%;
+  border-radius: 50%;
+  background: rgba(184,255,154,.45);
+  outline: 3px solid rgba(184,255,154,.2);
+}
+
+/* Responsif board-only */
+body.board-only .board-wrap {
+  max-width: min(98vw, 1100px);
+}
+
+/* ===================== Overlay (menu & hasil) ===================== */
+.overlay {
+  position: fixed;
   inset: 0;
+  background: rgba(11,13,16,.92);
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: center;
-  z-index: 3;
-  font-size: clamp(22px, 5vw, 36px);
+  opacity: 0;
   pointer-events: none;
-  text-shadow: 0 0 3px rgba(0,0,0,0.4);
+  transition: opacity .25s ease;
+  z-index: 9999;
 }
-
-.piece.white { color: #fff; filter: drop-shadow(0 0 2px #00ff88); }
-.piece.black { color: #111; filter: drop-shadow(0 0 2px #00ff88); }
-
-/* Label koordinat (tidak ganggu klik) */
-.labels {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 2;
-  font-size: 0.65rem;
-  color: rgba(0,255,100,0.6);
-  font-family: monospace;
+.overlay.show {
+  opacity: 1;
+  pointer-events: auto;
 }
-
-.rank {
-  position: absolute;
-  left: 3px;
-  transform: translateY(-50%);
+.overlay h2 {
+  color: var(--azbry-accent);
+  font-weight: 800;
+  font-size: 2.4rem;
+  text-shadow: 0 0 20px var(--azbry-ring);
+  margin-bottom: 18px;
 }
-
-.file {
-  position: absolute;
-  bottom: 2px;
-  transform: translateX(-50%);
-}
-
-/* Tombol & Panel */
-.panel {
-  background: #0c0c0c;
-  border-radius: 1rem;
-  padding: 1rem;
-  margin-top: 1rem;
-  box-shadow: inset 0 0 20px rgba(0,255,100,0.1);
-}
-
-.controls {
+.overlay .overlay-actions {
   display: flex;
+  gap: 14px;
   flex-wrap: wrap;
-  gap: 0.5rem;
   justify-content: center;
 }
-
-.btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #00ff88;
-  border-radius: 0.75rem;
-  background: transparent;
-  color: #00ff88;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn:hover { background: rgba(0,255,100,0.1); }
-.btn.accent { background: #00ff88; color: #0a0a0a; }
-.btn.accent:hover { background: #22ffaa; }
-
-.btn.dark {
-  border-color: #333;
-  color: #888;
-}
-
-.btn.active {
-  background: #00ff88;
-  color: #0a0a0a;
-}
-
-/* Log Langkah */
-.move-log {
-  margin-top: 1rem;
-  background: #0b0b0b;
-  border-radius: 1rem;
-  padding: 0.75rem 1rem;
-  color: #b0ffbf;
-  font-family: monospace;
-  white-space: pre-wrap;
-  box-shadow: inset 0 0 10px rgba(0,255,100,0.05);
-}
-
-/* Mode board-only */
-body.board-only .panel,
-body.board-only .license,
-body.board-only .top-header { display: none; }
-
-/* Flip board */
-.board.flipped { transform: rotate(180deg); }
-.board.flipped .piece { transform: rotate(180deg); }
-.board.flipped .labels { transform: rotate(180deg); }
-
-/* Responsif */
-@media (max-width: 480px) {
-  .board { max-width: 95vw; }
-  .btn { font-size: 0.85rem; }
+.overlay .btn {
+  font-size: 1rem;
+  padding: 10px 22px;
 }
