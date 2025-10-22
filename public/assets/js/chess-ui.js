@@ -1,9 +1,8 @@
-// assets/js/chess-ui.js — ChessUI v2.4 (delegation + pointer-safe + defensive clear)
-// - Event delegation di .board (klik selalu ketemu .sq terdekat, aman di mobile)
-// - piece & dot pointer-events:none (klik tembus)
-// - hard-clear per kotak cegah bidak dobel
-// - in-check, last-move, legal dots
-
+// assets/js/chess-ui.js — ChessUI v2.5 (delegation + fallback grid + pointer-safe)
+// - Click delegation di .board, aman di mobile
+// - Fallback: kalau target bukan .sq, hitung file/rank dari posisi tap
+// - piece/dot pointer-events:none
+// - defensive clear per kotak
 ;(function (global) {
   'use strict';
 
@@ -30,7 +29,7 @@
     this._lastFEN   = null;
     this._opts      = {};
     this._buildGrid();
-    this._bindDelegatedClicks();  // <<— penting
+    this._bindDelegatedClicks(); // penting
   }
 
   // ================= Grid =================
@@ -54,20 +53,40 @@
     }
   };
 
-  // ================= Delegation =================
+  // ================= Delegation + Fallback =================
   ChessUI.prototype._bindDelegatedClicks = function(){
-    // Hapus listener lama kalau ada (hindari double-bind saat rebuild)
-    this.board._azbryDelegated && this.board.removeEventListener('click', this.board._azbryDelegated);
     const handler = (ev) => {
-      // Cari .sq terdekat dari target
-      const cell = ev.target.closest('.sq');
-      if (!cell || !this.board.contains(cell)) return;
+      // 1) coba target terdekat .sq
+      let cell = ev.target.closest && ev.target.closest('.sq');
+      if (!cell || !this.board.contains(cell)) {
+        // 2) fallback: hitung kolom/baris dari posisi tap
+        const rect = this.board.getBoundingClientRect();
+        const cx = (ev.touches && ev.touches[0] ? ev.touches[0].clientX : ev.clientX);
+        const cy = (ev.touches && ev.touches[0] ? ev.touches[0].clientY : ev.clientY);
+        const x = Math.min(Math.max(cx - rect.left, 0), rect.width  - 0.01);
+        const y = Math.min(Math.max(cy - rect.top,  0), rect.height - 0.01);
+        const col = Math.floor((x / rect.width)  * 8); // 0..7
+        const row = Math.floor((y / rect.height) * 8); // 0..7 dari atas
+        const file = FILES[col];
+        const rank = 8 - row;
+        const sqAlg = file + rank;
+        // map sesuai flip lalu kirim
+        this.onSquareClick(this._map(sqAlg));
+        return;
+      }
       const sqAlg = cell.dataset.square;
       if (!sqAlg) return;
       this.onSquareClick(this._map(sqAlg));
     };
+
+    // hapus bind lama bila ada
+    if (this._delegatedHandler) {
+      this.board.removeEventListener('click', this._delegatedHandler);
+      this.board.removeEventListener('touchstart', this._delegatedHandler);
+    }
     this.board.addEventListener('click', handler, { passive: true });
-    this.board._azbryDelegated = handler;
+    this.board.addEventListener('touchstart', handler, { passive: true });
+    this._delegatedHandler = handler;
   };
 
   // ================= Flip =================
