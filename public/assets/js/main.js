@@ -157,30 +157,7 @@ function detectCapture(prev, now, fromAlg, toAlg){
   return null;
 }
 
-/* -------------------- click handling -------------------- */
-boardEl.addEventListener('click', (e)=>{
-  if (busy) return;
-  const sq = e.target.closest('.sq'); if(!sq) return;
-  const a = sq.dataset.alg;
 
-  // pilih
-  if (!selected){
-    const P = G.get(idx(a));
-    if(!P || P.color !== G.turn()) return;
-    // kalau VS AI, player hanya boleh gerakkan warna human
-    if (vsAI && P.color !== humanColor) return;
-    selected = a; render(a); return;
-  }
-
-  // batal
-  if (a === selected){ selected = null; render(); return; }
-
-  // eksekusi
-  makeMove(selected, a, ()=> {
-    selected = null; render();
-    if (vsAI) aiTurn();
-  });
-});
 
 function makeMove(fromAlg, toAlg, after){
   // giliran valid?
@@ -191,7 +168,49 @@ function makeMove(fromAlg, toAlg, after){
   const ok = G.move({from:fromAlg, to:toAlg}) || G.move({from:fromAlg, to:toAlg, promotion:'Q'});
   if (!ok) { render(selected); return; }
 
-  lastMove = { from: idx(fromAlg), to: idx(toAlg) };
+/* -------------------- click handling (FIX: bisa ganti pilihan bidak) -------------------- */
+boardEl.addEventListener('click', (e)=>{
+  if (busy) return;
+  const sq = e.target.closest('.sq'); 
+  if (!sq) return;
+
+  const a = sq.dataset.alg;
+  const piece = G.get(idx(a));
+  const sideToMove = G.turn();
+
+  // MODE AI: player cuma bisa interaksi saat gilirannya dan untuk bidaknya sendiri
+  if (vsAI && sideToMove !== humanColor) return;
+
+  // belum ada yang dipilih -> pilih kalau bidak milik sideToMove
+  if (!selected) {
+    if (!piece || piece.color !== sideToMove) return;
+    selected = a;
+    render(a);            // highlight legal dari bidak yang dipilih
+    return;
+  }
+
+  // klik petak yang sama -> batal
+  if (a === selected) {
+    selected = null;
+    render();
+    return;
+  }
+
+  // ⬇️ FIX: kalau klik bidak lain yang sewarna, ganti pilihan (bukan coba jalan)
+  if (piece && piece.color === sideToMove) {
+    selected = a;
+    render(a);
+    return;
+  }
+
+  // selain itu: coba jalankan langkah dari selected -> a
+  makeMove(selected, a, ()=> {
+    selected = null;
+    render();
+    if (vsAI) aiTurn();
+  });
+});
+   lastMove = { from: idx(fromAlg), to: idx(toAlg) };
   // animasi dari state LAMA → ke state BARU (papan sudah berubah)
   busy = true;
   animateMove(fromAlg, toAlg, ()=>{
