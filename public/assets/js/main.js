@@ -102,11 +102,40 @@
     return glyph(p);
   }
   function animateMove(fromAlg, toAlg, pieceChar, done){
-    try{
-      const srcCell = cellForAlg(fromAlg);
-      const dstCell = cellForAlg(toAlg);
-      if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
+  try {
+    const srcCell = cellForAlg(fromAlg);
+    const dstCell = cellForAlg(toAlg);
+    if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
 
+    const pData = G.board()[idx(toAlg)] || null;
+    const colorClass = (pData && pData.color === 'b') ? 'anim-piece black' : 'anim-piece white';
+
+    const ghost = document.createElement('span');
+    ghost.className = colorClass;
+    ghost.textContent = pieceChar;
+    boardEl.appendChild(ghost);
+
+    const srcPiece = srcCell.querySelector('.piece');
+    if (srcPiece) srcPiece.style.opacity = '0';
+
+    const c1 = centerOf(srcCell, boardEl);
+    const c2 = centerOf(dstCell, boardEl);
+    ghost.style.left = `${c1.x}px`;
+    ghost.style.top  = `${c1.y}px`;
+
+    requestAnimationFrame(()=>{
+      ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
+    });
+
+    const cleanup = () => {
+      ghost.remove();
+      if (srcPiece) srcPiece.style.opacity = '';
+      done?.();
+    };
+    ghost.addEventListener('transitionend', cleanup, { once:true });
+    setTimeout(cleanup, 220);
+  } catch(e){ console.warn('anim error', e); done?.(); }
+  }
       const ghost = document.createElement('span');
       ghost.className = 'anim-piece';
       ghost.textContent = pieceChar;
