@@ -1,5 +1,5 @@
-// assets/js/main.js — Controller + Renderer (final + menu & result overlay)
-// Cocok dengan engine v3 (Chess, ChessUI).
+// assets/js/main.js — Controller + Renderer (Azbry Chess Final)
+// Cocok dengan ChessEngine v3 dan ChessUI Azbry (dengan data-rank/file)
 
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultText  = $('resultText');
   const btnRestart  = $('btnRestart');
 
-  // Board fallback if missing
+  // Fallback: kalau board belum ada
   if (!boardEl) {
     boardEl = document.createElement('div');
     boardEl.id = 'board';
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let selected = null;
   let lastMove = null;
 
-  // Mode picker (in-page)
+  // Mode picker
   if (modeHuman) modeHuman.addEventListener('click', () => setMode('human'));
   if (modeAI)    modeAI.addEventListener('click',    () => setMode('ai'));
 
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnRedo)   btnRedo.addEventListener('click',   () => { game.redo(); selected=null; lastMove=null; sync(); });
   if (btnFlip)   btnFlip.addEventListener('click',   () => { ui.toggleFlip(); sync(); });
 
-  // Board Only mode
+  // Board Only toggle
   if (btnOnly && btnBack) {
     btnOnly.addEventListener('click', () => {
       document.body.classList.add('board-only');
@@ -75,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     hardReset();
   });
 
-  // --- Functions --------------------------------------------------------
-
+  // Start game
   function startGame(m) {
     setMode(m);
     if (startMenu) startMenu.classList.remove('show');
@@ -100,12 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Klik papan
   function onSquare(squareAlg) {
-    // kalau mode AI: player = putih, AI = hitam
-    if (mode === 'ai' && game.turn() === 'b') return;
+    if (mode === 'ai' && game.turn() === 'b') return; // giliran AI
 
     const movesFromSel = selected ? game.moves({ square: selected }) : [];
 
-    // klik langkah legal
+    // Klik tujuan legal
     if (selected && movesFromSel.some(m => m.to === squareAlg)) {
       const promo = needsPromotion(selected, squareAlg) ? 'Q' : null;
       const note = game.move({ from: selected, to: squareAlg, promotion: promo });
@@ -113,12 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
         lastMove = { from: selected, to: squareAlg };
         selected = null;
         sync();
-        if (mode === 'ai') setTimeout(aiMove, 140);
+        if (mode === 'ai') setTimeout(aiMove, 150);
       }
       return;
     }
 
-    // pilih bidak
+    // Pilih bidak
     const idx = toIdx(squareAlg);
     const P = game.board()[idx];
     if (P && P.color === game.turn()) {
@@ -129,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Cek promosi
+  // Promotion check
   function needsPromotion(fromAlg, toAlg) {
     const fromR = 8 - parseInt(fromAlg[1], 10);
     const toR   = 8 - parseInt(toAlg[1], 10);
@@ -138,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return (piece.color === 'w' && toR === 0) || (piece.color === 'b' && toR === 7);
   }
 
-  // AI move sederhana
+  // AI move (greedy)
   function aiMove() {
     if (mode !== 'ai' || game.turn() !== 'b') return;
     const legal = game.moves();
@@ -148,8 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let best = null, bestScore = -1;
 
     for (const m of legal) {
-      const targetPiece = game.board()[toIdx(m.to)];
-      const s = targetPiece ? value[targetPiece.piece] : 0;
+      const target = game.board()[toIdx(m.to)];
+      const s = target ? value[target.piece] : 0;
       if (s > bestScore) { best = m; bestScore = s; }
     }
 
@@ -160,22 +158,44 @@ document.addEventListener('DOMContentLoaded', () => {
     sync();
   }
 
-  // Render ulang papan
+  // Sinkronisasi tampilan
   function sync() {
     const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
     ui.render(game.board(), { lastMove, legal: legalTargets });
+
+    injectBoardLabels(); // <<=== injektor koordinat
 
     if (moveLog) {
       const h = game.history();
       moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
     }
 
-    const status = game.gameStatus(); // 'ok'|'check'|'checkmate'|'stalemate'
+    const status = game.gameStatus();
     if (status === 'checkmate') {
       const winner = (game.turn() === 'w') ? 'Hitam Menang!' : 'Putih Menang!';
       showResult(`Checkmate — ${winner}`);
     } else if (status === 'stalemate') {
       showResult('Seri 🤝');
+    }
+  }
+
+  // Tambah koordinat a–h & 1–8 kalau belum ada
+  function injectBoardLabels(){
+    if (!boardEl.querySelector('.files')) {
+      const files = document.createElement('div');
+      files.className = 'files';
+      'abcdefgh'.split('').forEach(ch => {
+        const s = document.createElement('span'); s.textContent = ch; files.appendChild(s);
+      });
+      boardEl.appendChild(files);
+    }
+    if (!boardEl.querySelector('.ranks')) {
+      const ranks = document.createElement('div');
+      ranks.className = 'ranks';
+      for (let i = 8; i >= 1; i--) {
+        const s = document.createElement('span'); s.textContent = i; ranks.appendChild(s);
+      }
+      boardEl.appendChild(ranks);
     }
   }
 
@@ -189,10 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
     resultPopup.classList.remove('show');
   }
 
-  // utils
   function toIdx(a) { return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]); }
 
-  // boot: tampilkan menu
+  // Init
+  injectBoardLabels();
   if (startMenu) startMenu.classList.add('show');
-  setMode('human'); // default
+  setMode('human');
 });
