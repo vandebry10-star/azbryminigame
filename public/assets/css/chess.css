@@ -173,32 +173,40 @@ body.board-only .board-wrap{ max-width: min(98vw, 1100px); }
 }
 .cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
 
-/* ====== CLASSIC GREEN BOARD ====== */
+/* ======== CLASSIC GREEN BOARD (tanpa outline hitam) ======== */
+#board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  aspect-ratio: 1 / 1;
+  /* hilangin jarak antar kotak supaya nyatu */
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 20px rgba(0,0,0,.35);
+}
+
+/* warna petak — persis kayak contoh kedua */
 #board .sq.light {
-  background: #f0f8d2;        /* hijau muda */
+  background-color: #eeeed2; /* hijau muda */
 }
-
 #board .sq.dark {
-  background: #6b8e23;        /* hijau tua zaitun */
+  background-color: #769656; /* hijau tua klasik */
 }
 
-#board .sq.light .piece.white,
-#board .sq.dark .piece.white {
-  color: #ffffff;
-  text-shadow: 0 0 6px rgba(255,255,255,.2);
-}
+/* bidak */
+#board .piece.white { color: #fff; text-shadow: 0 0 6px rgba(255,255,255,.2); }
+#board .piece.black { color: #000; text-shadow: 0 0 6px rgba(0,0,0,.3); }
 
-#board .sq.light .piece.black,
-#board .sq.dark .piece.black {
-  color: #000000;
-  text-shadow: 0 0 6px rgba(0,0,0,.3);
-}
-
-/* Highlight titik langkah */
+/* titik langkah legal */
 #board .dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: rgba(255,255,255,.6);
-  box-shadow: 0 0 8px rgba(255,255,255,.8);
+  background: rgba(0,0,0,.25);
+  box-shadow: 0 0 6px rgba(0,0,0,.4);
+}
+
+/* hilangkan border default kalau ada */
+#board .sq {
+  border: none;
 }
