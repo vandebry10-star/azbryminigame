@@ -2,79 +2,108 @@
 <html lang="id">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Azbry Drift</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<title>Azbry Drift — Mobile</title>
 <style>
   :root{
     --bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;
     --panel:rgba(255,255,255,.06);--bd:rgba(255,255,255,.12)
   }
-  html,body{margin:0;background:var(--bg);color:var(--ink);font:500 14px/1.3 system-ui,Segoe UI,Roboto,Arial}
-  .wrap{max-width:1100px;margin:0 auto;padding:10px}
-  .topbar{display:flex;align-items:center;gap:12px;justify-content:space-between;margin:6px 0 10px}
-  .title{font-weight:900;letter-spacing:.4px}
-  .title b{color:var(--accent);text-shadow:0 0 16px rgba(184,255,154,.35)}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .btn{padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--bd);color:var(--ink);cursor:pointer}
-  .btn.accent{background:linear-gradient(180deg,var(--accent),#a3f07f);color:#111;border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.25)}
-  .hud{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
-  .pill{padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--bd)}
-  .canvas-wrap{position:relative;aspect-ratio:16/9;background:#0e141a;border-radius:14px;overflow:hidden;border:1px solid var(--bd);box-shadow:0 12px 40px rgba(0,0,0,.35)}
-  canvas{width:100%;height:100%;display:block;background:
-    radial-gradient(1200px 600px at 50% 120%, rgba(0,0,0,.6), transparent 60%),
-    repeating-linear-gradient(0deg,#111 0 2px,#0f1216 2px 4px);}
-  .help{opacity:.8}
-  /* mobile controls */
-  .mobile{display:none}
-  @media (max-width:820px){
-    .mobile{display:flex;gap:10px;justify-content:space-between;margin-top:8px}
-    .pad{display:grid;grid-template-columns:repeat(3,56px);gap:8px}
-    .mb-btn{width:56px;height:56px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid var(--bd);color:var(--ink);display:grid;place-items:center;font-weight:800}
-    .mb-big{width:120px}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:500 14px/1.3 system-ui,Segoe UI,Roboto,Arial;touch-action:manipulation}
+  .app{position:fixed;inset:0;display:flex;flex-direction:column}
+  .stage{position:relative;flex:1;min-height:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:
+    radial-gradient(1400px 700px at 50% 120%, rgba(0,0,0,.6), transparent 60%),
+    repeating-linear-gradient(0deg,#101419 0 2px,#0e1216 2px 4px);}
+  /* HUD top */
+  .hud-top{position:absolute;left:12px;right:12px;top:env(safe-area-inset-top,12px);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;pointer-events:none;z-index:3}
+  .pills{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{pointer-events:auto;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--bd)}
+  .top-btns{display:flex;gap:8px}
+  .btn{pointer-events:auto;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--bd);color:var(--ink);font-weight:700}
+  /* Mobile controls bottom */
+  .controls{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;justify-content:space-between;align-items:flex-end;gap:12px;z-index:3}
+  .steer{display:flex;gap:10px}
+  .big{width:74px;height:74px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid var(--bd);display:grid;place-items:center;color:var(--ink);font-weight:900;user-select:none}
+  .big:active{transform:scale(.98)}
+  .padR{display:flex;gap:10px}
+  .wide{width:120px;height:74px;border-radius:18px;background:linear-gradient(180deg,var(--accent),#a3f07f);color:#101;border:none;font-weight:900;box-shadow:0 0 18px rgba(184,255,154,.25)}
+  .hb{width:120px;height:74px;border-radius:18px;background:#ff3760;color:#fff;border:1px solid rgba(255,255,255,.2);font-weight:900}
+  /* Rotate hint (portrait) */
+  .rotate{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(11,13,16,.9);z-index:4;text-align:center;padding:20px}
+  .rotate.show{display:flex}
+  .rotate .box{padding:16px 18px;border:1px solid var(--bd);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03))}
+  .rotate h3{margin:0 0 8px;font-weight:900;color:var(--accent)}
+  /* Desktop tweaks */
+  @media (min-width:900px){
+    .big{width:64px;height:64px}
+    .wide,.hb{width:110px;height:64px}
   }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">Azbry <b>Drift</b></div>
-      <div class="controls">
-        <button id="btnReset" class="btn">Reset Mobil (R)</button>
-        <button id="btnRestart" class="btn">Restart Lap (Enter)</button>
-        <a href="./index.html" class="btn">← Menu</a>
-      </div>
-    </div>
-    <div class="hud">
-      <div class="pill">Lap: <span id="lap">0</span></div>
-      <div class="pill">Lap Time: <span id="lapTime">0.000</span>s</div>
-      <div class="pill">Best: <span id="best">—</span></div>
-      <div class="pill">Speed: <span id="speed">0</span> km/h</div>
-      <div class="pill">FPS: <span id="fps">60</span></div>
-    </div>
-    <div class="canvas-wrap">
-      <canvas id="game" width="1280" height="720"></canvas>
-    </div>
-    <p class="help">Kontrol: <b>W/S</b> gas-rem, <b>A/D</b> steer, <b>Spasi</b> handbrake, <b>R</b> reset mobil, <b>Enter</b> restart lap.</p>
+<div class="app">
+  <div class="stage">
+    <canvas id="game"></canvas>
 
-    <!-- mobile controls -->
-    <div class="mobile">
-      <div class="pad">
-        <div></div><button class="mb-btn" data-k="KeyW">W</button><div></div>
-        <button class="mb-btn" data-k="KeyA">A</button><button class="mb-btn" data-k="Space">HB</button><button class="mb-btn" data-k="KeyD">D</button>
-        <div></div><button class="mb-btn" data-k="KeyS">S</button><div></div>
+    <!-- HUD -->
+    <div class="hud-top">
+      <div class="pills">
+        <div class="pill">Lap: <span id="lap">0</span></div>
+        <div class="pill">Lap Time: <span id="lapTime">0.000</span>s</div>
+        <div class="pill">Best: <span id="best">—</span></div>
+        <div class="pill">Speed: <span id="speed">0</span> km/h</div>
+        <div class="pill">FPS: <span id="fps">60</span></div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button class="mb-btn mb-big" data-k="KeyR">Reset</button>
-        <button class="mb-btn mb-big" data-k="Enter">Restart Lap</button>
+      <div class="top-btns">
+        <button id="btnReset" class="btn">Reset</button>
+        <button id="btnRestart" class="btn">Restart</button>
+        <a href="./index.html" class="btn">Menu</a>
       </div>
     </div>
+
+    <!-- Mobile Controls -->
+    <div class="controls">
+      <div class="steer">
+        <div class="big" data-hold="KeyA">⟵</div>
+        <div class="big" data-hold="KeyD">⟶</div>
+      </div>
+      <div class="padR">
+        <div class="wide" data-hold="KeyW">GAS</div>
+        <div class="big hb" data-hold="Space">HB</div>
+        <div class="wide" data-hold="KeyS">REM</div>
+      </div>
+    </div>
+
+    <!-- Rotate Hint -->
+    <div id="rotate" class="rotate"><div class="box">
+      <h3>Putar ke Landscape</h3>
+      <div>Game ini lebih enak dimainkan dalam posisi layar <b>mendatar</b>.</div>
+    </div></div>
   </div>
+</div>
 
 <script>
 (()=>{
-// ===== canvas =====
+// ===== Canvas + DPR scaling =====
 const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { alpha:false });
+function resizeCanvas(){
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const w = Math.floor(canvas.clientWidth * dpr);
+  const h = Math.floor(canvas.clientHeight * dpr);
+  if (canvas.width!==w || canvas.height!==h){
+    canvas.width = w; canvas.height = h;
+  }
+}
+const rot = document.getElementById('rotate');
+function updateRotateHint(){
+  const isPortrait = window.innerHeight > window.innerWidth;
+  rot.classList.toggle('show', isPortrait);
+}
+window.addEventListener('resize', ()=>{ resizeCanvas(); updateRotateHint(); });
+updateRotateHint();
+resizeCanvas();
 
 // ===== HUD =====
 const $lap = document.getElementById('lap');
@@ -84,35 +113,44 @@ const $speed = document.getElementById('speed');
 const $fps = document.getElementById('fps');
 
 // ===== world / track =====
-const W = canvas.width, H = canvas.height;
-// Track = 3 checkpoint gates; arah: gate 0 -> 1 -> 2 -> 0 ...
-const gates = [
-  {x: W*0.20, y:H*0.75, nx: 0, ny:-1, w:140}, // start/finish
-  {x: W*0.80, y:H*0.70, nx:-1, ny: 0, w:160},
-  {x: W*0.50, y:H*0.20, nx: 0, ny: 1, w:160},
-];
+function W(){ return canvas.width; }
+function H(){ return canvas.height; }
+// 3 gate (start + 2 checkpoint)
+function mkGates(){
+  const w=W(), h=H();
+  return [
+    {x: w*0.20, y:h*0.75, nx: 0, ny:-1, w:Math.max(120, w*0.10)},
+    {x: w*0.82, y:h*0.70, nx:-1, ny: 0, w:Math.max(120, w*0.12)},
+    {x: w*0.52, y:h*0.22, nx: 0, ny: 1, w:Math.max(120, w*0.12)},
+  ];
+}
+let gates = mkGates();
+window.addEventListener('resize', ()=>{ gates = mkGates(); resetCar(); });
 
 // ===== car state =====
 const car = {
-  x: gates[0].x, y: gates[0].y + 60, // spawn dekat start, di luar garis
+  x: 0, y: 0,
   angle: -Math.PI/2,
   vx:0, vy:0,
   angVel:0,
   steer:0,
   throttle:0,
-  brake:false,
   hb:false,
   length: 54,
   width: 28,
   mass: 1200,
   inertia: 2500
 };
-
+function spawnPoint(){
+  const g = gates[0];
+  return { x:g.x, y:g.y + Math.max(40, H()*0.06) };
+}
 function resetCar(){
+  const s = spawnPoint();
   Object.assign(car, {
-    x: gates[0].x, y: gates[0].y + 60,
+    x: s.x, y: s.y,
     angle: -Math.PI/2,
-    vx:0, vy:0, angVel:0, steer:0, throttle:0, brake:false, hb:false
+    vx:0, vy:0, angVel:0, steer:0, throttle:0, hb:false
   });
   lastCheckpoint = 0;
 }
@@ -120,75 +158,74 @@ resetCar();
 
 // ===== lap timer =====
 let currentLap = 0;
-let lastCheckpoint = 0; // gate index terakhir yang valid
+let lastCheckpoint = 0;
 let lapStart = performance.now();
 let bestLap = null;
-
 function restartLap(){
   currentLap = 0;
-  bestLap = bestLap; // keep best
   lapStart = performance.now();
   lastCheckpoint = 0;
   resetCar();
 }
 
-// ===== input =====
-const keys = {};
+// ===== input (keyboard + touch hold) =====
+const keys = Object.create(null);
 window.addEventListener('keydown', e=>{
   keys[e.code]=true;
-  if (e.code==='KeyR'){ resetCar(); }
-  if (e.code==='Enter'){ restartLap(); }
+  if (e.code==='KeyR') resetCar();
+  if (e.code==='Enter') restartLap();
 });
 window.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
-// mobile buttons
-document.querySelectorAll('.mb-btn').forEach(btn=>{
-  const code = btn.dataset.k;
-  btn.addEventListener('touchstart', e=>{ e.preventDefault(); keys[code]=true; }, {passive:false});
-  btn.addEventListener('touchend',   e=>{ e.preventDefault(); keys[code]=false; }, {passive:false});
-});
+function bindHold(el){
+  const code = el.dataset.hold;
+  const on = e=>{ e.preventDefault(); keys[code]=true; };
+  const off= e=>{ e.preventDefault(); keys[code]=false; };
+  el.addEventListener('touchstart', on, {passive:false});
+  el.addEventListener('touchend',   off, {passive:false});
+  el.addEventListener('touchcancel',off, {passive:false});
+  // mouse fallback
+  el.addEventListener('mousedown', on);
+  window.addEventListener('mouseup', off);
+}
+document.querySelectorAll('[data-hold]').forEach(bindHold);
 
-// ===== physics params =====
+// ===== physics params (sedikit lebih santai buat mobile) =====
 const params = {
-  engineForce: 9500,
-  brakeForce: 9000,
-  hbForce: 12000,
-  airDrag: 0.9,          // base linear damping
-  rotDrag: 0.985,        // rotational damping
-  cornerStiffnessFront: 8.0,
-  cornerStiffnessRear:  6.2,
-  grip: 0.92,            // overall tire grip
-  hbRearGrip: 0.45,      // rear grip saat handbrake
-  maxSteer: 0.72,        // ~41°
-  steerSpeed: 4.2,       // how fast steer changes
-  maxSpeed: 68           // m/s ~ 245 km/h (game feel)
+  engineForce: 8800,
+  brakeForce:  8200,
+  airDrag: 0.905,
+  rotDrag: 0.985,
+  cornerStiffnessFront: 7.6,
+  cornerStiffnessRear:  5.9,
+  grip: 0.92,
+  hbRearGrip: 0.45,
+  maxSteer: 0.72,
+  steerSpeed: 4.0,
+  maxSpeed: 62 // m/s ~ 223 km/h
 };
 
 // ===== skid particles =====
 const skid = [];
 function addSkid(x,y,alpha){
   skid.push({x,y,a:alpha,t:0});
-  if (skid.length>250) skid.shift();
+  if (skid.length>220) skid.shift();
 }
 
-// ===== checkpoint / lap detection =====
+// ===== gates / lap =====
 function dot(ax,ay,bx,by){return ax*bx+ay*by;}
-function length(x,y){return Math.hypot(x,y);}
-
 function passedGate(i, px,py){
   const g = gates[i];
-  // proyeksi titik ke normal gate, lalu cek jarak lateral <= w/2 dan posisi sisi “depan” (normal positive)
   const dx=px-g.x, dy=py-g.y;
   const side = dot(dx,dy,g.nx,g.ny);
-  const lateral = Math.abs(dot(dx,dy,-g.ny,g.nx)); // perpendicular
+  const lateral = Math.abs(dot(dx,dy,-g.ny,g.nx));
   return (side>0 && lateral <= g.w/2);
 }
-
 function updateLap(px,py){
   const next = (lastCheckpoint+1)%gates.length;
   if (passedGate(next,px,py)){
     lastCheckpoint = next;
-    if (next===0){ // finish
+    if (next===0){
       currentLap++;
       const now = performance.now();
       const lapT = (now - lapStart)/1000;
@@ -198,97 +235,81 @@ function updateLap(px,py){
   }
 }
 
-// ===== integrate physics =====
+// ===== physics step =====
 function step(dt){
-  // input → steer/throttle
   const t = (keys.KeyW?1:0) - (keys.KeyS?1:0);
   const steerDir = (keys.KeyD?1:0) - (keys.KeyA?1:0);
   car.throttle = t;
   car.hb = !!keys.Space;
-  // steering smoothing
+
   car.steer += steerDir * params.steerSpeed * dt;
   car.steer = Math.max(-1, Math.min(1, car.steer));
   const steerAngle = car.steer * params.maxSteer;
 
-  // transform ke lokal
   const cos = Math.cos(car.angle), sin = Math.sin(car.angle);
-  const localVx =  cos*car.vx + sin*car.vy;  // forward
-  const localVy = -sin*car.vx + cos*car.vy;  // lateral (drift)
+  const localVx =  cos*car.vx + sin*car.vy;
+  const localVy = -sin*car.vx + cos*car.vy;
 
-  // gaya longitudinal
   let Fx = car.throttle * params.engineForce;
-  // brake (S)
   if (keys.KeyS && localVx>0) Fx -= params.brakeForce;
-  // batasi speed
-  const speed = Math.hypot(car.vx, car.vy);
-  const speedLimiter = Math.min(1, Math.max(0, 1 - (speed/params.maxSpeed-0.9)));
-  if (speedLimiter<1 && Fx>0) Fx*=speedLimiter;
 
-  // gaya lateral ban depan & belakang (model sederhana)
+  const speed = Math.hypot(car.vx, car.vy);
+  const limiter = Math.min(1, Math.max(0, 1 - (speed/params.maxSpeed-0.9)));
+  if (limiter<1 && Fx>0) Fx*=limiter;
+
   const frontSlip = localVy + car.angVel*car.length*0.5;
   const rearSlip  = localVy - car.angVel*car.length*0.5;
-
   const gripRear = car.hb ? params.hbRearGrip : params.grip;
 
   const FyFront = -params.cornerStiffnessFront * frontSlip * params.grip;
   const FyRear  = -params.cornerStiffnessRear  * rearSlip  * gripRear;
 
-  // rotasi dari steer: gaya depan diputar oleh steerAngle → proyeksi ke sumbu mobil
-  // (sederhana: efek steer mengubah arah gaya lateral & sedikit longitudinal)
-  const sC = Math.cos(steerAngle), sS = Math.sin(steerAngle);
-  const Ffx = 0;                 // longitudinal front (abaikan)
-  const Ffy = FyFront;           // pure lateral front
-  const Frx = Fx;                // longitudinal rear = mesin
-  const Fry = FyRear;            // lateral rear
+  const Ffx = 0, Ffy = FyFront; // depan: lateral saja
+  const Frx = Fx, Fry = FyRear; // belakang: mesin + lateral
 
-  // gabung ke world
-  const Fx_world = cos*(Ffx+Frx) - sin*(Ffy+Fry);
-  const Fy_world = sin*(Ffx+Frx) + cos*(Ffy+Fry);
+  const Fxw = cos*(Ffx+Frx) - sin*(Ffy+Fry);
+  const Fyw = sin*(Ffx+Frx) + cos*(Ffy+Fry);
 
-  // torque (momen) dari gaya lateral terhadap CG
   const torque = (Ffy * car.length*0.5) - (Fry * car.length*0.5);
 
-  // integrasi
-  car.vx += (Fx_world / car.mass) * dt;
-  car.vy += (Fy_world / car.mass) * dt;
+  car.vx += (Fxw / car.mass) * dt;
+  car.vy += (Fyw / car.mass) * dt;
   car.angVel += (torque / car.inertia) * dt;
 
-  // drag / damper
   car.vx *= Math.pow(params.airDrag, dt*60);
   car.vy *= Math.pow(params.airDrag, dt*60);
-  car.angVel *= Math.pow(params.rotDrag, dt*60);
+  car.angVel *= Math.pow(0.985, dt*60);
 
   car.x += car.vx * dt;
   car.y += car.vy * dt;
   car.angle += car.angVel * dt;
 
-  // skidmark saat slip besar
+  // skid
   const slipMag = Math.abs(localVy);
-  if (slipMag>2.5 && speed>2){
-    const rearX = car.x - Math.cos(car.angle)*car.length*0.25 + Math.sin(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);
-    const rearY = car.y - Math.sin(car.angle)*car.length*0.25 - Math.cos(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);
-    addSkid(rearX, rearY, Math.min(0.35 + (slipMag/10), 0.8));
+  if (slipMag>2.4 && speed>2){
+    const rx = car.x - Math.cos(car.angle)*car.length*0.25 + Math.sin(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);
+    const ry = car.y - Math.sin(car.angle)*car.length*0.25 - Math.cos(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);
+    addSkid(rx, ry, Math.min(0.35 + (slipMag/10), 0.8));
   }
 
-  // checkpoint / lap
   updateLap(car.x,car.y);
 }
 
 // ===== draw =====
 function draw(){
-  ctx.clearRect(0,0,W,H);
+  const w=W(), h=H();
+  ctx.clearRect(0,0,w,h);
 
-  // track: aspal & garis
+  // racing line
   ctx.save();
-  // outer vignette sudah via CSS background; gambar lintasan “racing line” tipis
-  ctx.strokeStyle = 'rgba(184,255,154,.20)';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(184,255,154,.22)';
+  ctx.lineWidth = Math.max(2, w*0.002);
   ctx.setLineDash([8,10]);
   ctx.beginPath();
   ctx.moveTo(gates[0].x, gates[0].y);
-  ctx.quadraticCurveTo(W*0.65,H*0.86, gates[1].x, gates[1].y);
-  ctx.quadraticCurveTo(W*0.56,H*0.35, gates[2].x, gates[2].y);
-  ctx.quadraticCurveTo(W*0.28,H*0.35, gates[0].x, gates[0].y);
+  ctx.quadraticCurveTo(w*0.66,h*0.86, gates[1].x, gates[1].y);
+  ctx.quadraticCurveTo(w*0.56,h*0.35, gates[2].x, gates[2].y);
+  ctx.quadraticCurveTo(w*0.28,h*0.35, gates[0].x, gates[0].y);
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.restore();
@@ -299,13 +320,12 @@ function draw(){
     ctx.translate(g.x,g.y);
     const ang = Math.atan2(g.ny,g.nx);
     ctx.rotate(ang);
-    // garis gate
-    ctx.fillStyle = i===0 ? 'rgba(255,255,255,.7)' : 'rgba(184,255,154,.5)';
+    ctx.fillStyle = i===0 ? 'rgba(255,255,255,.75)' : 'rgba(184,255,154,.55)';
     ctx.fillRect(-g.w/2,-2, g.w, 4);
     ctx.restore();
   });
 
-  // skid
+  // skid dots
   for (let s of skid){
     s.t += 1;
     ctx.fillStyle = `rgba(0,0,0,${s.a*(1 - s.t/240)})`;
@@ -314,36 +334,33 @@ function draw(){
     ctx.fill();
   }
 
-  // car shadow
+  // shadow
   ctx.save();
   ctx.translate(car.x,car.y);
   ctx.rotate(car.angle);
   ctx.fillStyle='rgba(0,0,0,.35)';
-  roundedRect(-car.length/2,-car.width/2,car.length,car.width,6);
+  rrect(-car.length/2,-car.width/2,car.length,car.width,6);
   ctx.fill();
   ctx.restore();
 
-  // car body
+  // car
   ctx.save();
   ctx.translate(car.x,car.y);
   ctx.rotate(car.angle);
-  // body
   ctx.fillStyle='#1b90ff';
-  roundedRect(-car.length/2,-car.width/2,car.length,car.width,6);
+  rrect(-car.length/2,-car.width/2,car.length,car.width,6);
   ctx.fill();
-  // roof stripe
   ctx.fillStyle='#fff';
   ctx.fillRect(-6,-car.width/2+6,12,car.width-12);
   // wheels
   ctx.fillStyle='#111';
-  drawWheel(+car.length*0.28, -car.width*0.55, keys.KeyA||keys.KeyD ? 1:0.6);
-  drawWheel(+car.length*0.28, +car.width*0.55, keys.KeyA||keys.KeyD ? 1:0.6);
-  drawWheel(-car.length*0.28, -car.width*0.55, 0.8);
-  drawWheel(-car.length*0.28, +car.width*0.55, 0.8);
+  wheel(+car.length*0.28, -car.width*0.55, 1);
+  wheel(+car.length*0.28, +car.width*0.55, 1);
+  wheel(-car.length*0.28, -car.width*0.55, .85);
+  wheel(-car.length*0.28, +car.width*0.55, .85);
   ctx.restore();
 }
-
-function roundedRect(x,y,w,h,r){
+function rrect(x,y,w,h,r){
   const rr = Math.min(r, w/2, h/2);
   ctx.beginPath();
   ctx.moveTo(x+rr,y);
@@ -353,48 +370,41 @@ function roundedRect(x,y,w,h,r){
   ctx.arcTo(x,y,x+w,y,rr);
   ctx.closePath();
 }
-function drawWheel(x,y,alpha=1){
+function wheel(x,y,a=1){
   ctx.save();
   ctx.translate(x,y);
-  ctx.fillStyle=`rgba(17,17,17,${alpha})`;
-  roundedRect(-10,-4,20,8,2);
+  ctx.fillStyle=`rgba(17,17,17,${a})`;
+  rrect(-10,-4,20,8,2);
   ctx.fill();
   ctx.restore();
 }
 
-// ===== game loop =====
-let last = performance.now(), fpsS=60, fpsT=last;
+// ===== loop =====
+let last = performance.now();
 function loop(now){
   const dt = Math.min(0.033, Math.max(0.001, (now-last)/1000));
   last = now;
 
   step(dt);
   draw();
-  // hud
+
   const nowLap = (performance.now()-lapStart)/1000;
   $lap.textContent = currentLap;
   $lapTime.textContent = nowLap.toFixed(3);
   $best.textContent = bestLap ? bestLap.toFixed(3) : '—';
   $speed.textContent = Math.max(0, (Math.hypot(car.vx,car.vy)*3.6)|0);
+  $fps.textContent = (1/dt)|0;
 
-  // fps
-  if (now - fpsT > 300){
-    fpsS = (1000/dt/1000*1000); // trick to avoid TS lint; essentially 1/dt
-    $fps.textContent = (1/dt)|0;
-    fpsT = now;
-  }
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
 
-// ===== buttons =====
+// ===== top buttons =====
 document.getElementById('btnReset').onclick = resetCar;
 document.getElementById('btnRestart').onclick = restartLap;
 
-// ===== tab visibility save =====
-document.addEventListener('visibilitychange', ()=>{
-  last = performance.now(); // hindari dt meledak
-});
+// ===== keep dt sane when tab hidden =====
+document.addEventListener('visibilitychange', ()=>{ last = performance.now(); });
 })();
 </script>
 </body>
