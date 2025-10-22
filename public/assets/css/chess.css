@@ -92,3 +92,18 @@ body.board-only .board-wrap{ max-width:min(98vw,1100px); }
   background:var(--panel-bg-1);border:1px solid var(--panel-bd);
 }
 .cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
+
+/* Animasi bidak bergerak */
+.anim-piece{
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(0,0);
+  transition: transform .18s ease-in-out;
+  pointer-events: none;
+  line-height: 1;
+  font-size: clamp(42px, 9vw, 76px);
+  /* gaya warna mengikuti piece putih/hitam default */
+  color: #fff;
+  text-shadow: 0 0 2px #000, 0 0 1px #000, 0 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 -1px 0 #000;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
+}
