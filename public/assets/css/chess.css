@@ -1,293 +1,91 @@
-/* ===================== Azbry Chess — Visual Clarity+ (Green Board) ===================== */
+/* ==== FIX: koordinat rapi & ga nutup bidak, + anti-dobel label ==== */
 
-/* Palet & token */
-:root{
-  --sq-light: #EEEED2;         /* light square (chess.com-ish) */
-  --sq-dark:  #769656;         /* dark square (chess.com-ish)  */
-  --coord-dark: rgba(0,0,0,.65);
-  --coord-light: rgba(255,255,255,.85);
-  --board-shadow: 0 12px 40px rgba(0,0,0,.35);
-  --board-border: 1px solid rgba(0,0,0,.12);
-  --radius: 16px;
-
-  /* Dot biru terang */
-  --dot-fill: rgba(102, 204, 255, 0.45); /* #66CCFF @45% */
-  --dot-ring: rgba(102, 204, 255, 0.25);
+/* Kalau sebelumnya ada label via pseudo-element per kotak, matikan.
+   Kita udah pakai overlay .files & .ranks. */
+.sq[data-rank="1"]::after,
+.sq[data-file="a"]::before {
+  content: none !important;
 }
 
-/* Papan */
-.board {
-  position: relative;
+/* Overlay koordinat ada tapi di bawah bidak */
+.board .files,
+.board .ranks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1; /* di bawah bidak */
+  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+
+/* Huruf a–h di kanan-bawah tiap kolom */
+.board .files {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: repeat(8, 1fr);
-  width: 100%;
-  aspect-ratio: 1/1;
-  margin: 0 auto;
-  border-radius: var(--radius);
-  overflow: hidden;
-  box-shadow: var(--board-shadow);
-  outline: var(--board-border);
 }
+.board .files span {
+  align-self: end;
+  justify-self: end;
+  padding: 0 4px 4px 0;
+  color: rgba(0,0,0,.7);
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+/* di kotak gelap tetap kontras */
+.sq.dark ~ .files span { color: rgba(255,255,255,.9); }
 
-/* 🎨 Warna papan */
-.sq.light { background: var(--sq-light); }
-.sq.dark  { background: var(--sq-dark); }
-
-/* Kotak */
-.sq {
-  position: relative;
+/* Angka 8–1 di kiri-atas tiap baris */
+.board .ranks {
   display: grid;
-  place-items: center;
-  user-select: none;
-  -webkit-user-select: none;
-  font-size: clamp(42px, 9vw, 76px);
+  grid-template-rows: repeat(8, 1fr);
+}
+.board .ranks span {
+  align-self: start;
+  justify-self: start;
+  padding: 4px 0 0 4px;
+  color: rgba(0,0,0,.7);
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
 }
 
-/* Koordinat: huruf (files) & angka (ranks)
-   Muncul bila setiap .sq memiliki data-file="a..h" & data-rank="1..8" */
-.sq[data-rank="1"]::after,
-.sq[data-file="a"]::before{
-  position: absolute;
-  font: 600 11px/1.1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  letter-spacing: .2px;
-  text-shadow: 0 1px 0 rgba(0,0,0,.08);
-  pointer-events: none;
-}
-
-.sq[data-rank="1"]::after{            /* huruf di baris bawah */
-  content: attr(data-file);
-  bottom: 6px; right: 8px;
-  color: var(--coord-dark);
-}
-.sq.dark[data-rank="1"]::after{ color: var(--coord-light); }
-
-.sq[data-file="a"]::before{           /* angka di kolom kiri */
-  content: attr(data-rank);
-  top: 6px; left: 8px;
-  color: var(--coord-dark);
-}
-.sq.dark[data-file="a"]::before{ color: var(--coord-light); }
-
-/* ♟ Bidak (unicode/SVG) */
+/* Bidak selalu di atas koordinat */
 .piece {
-  line-height: 1;
-  filter: none;
-  -webkit-text-stroke: 0;
+  position: relative;
+  z-index: 2;
 }
-.piece.white { color: #ffffff; text-shadow: 0 0 3px rgba(0,0,0,.25); }
-/* Outline hitam untuk bidak putih */
-.piece.white {
-  color: #ffffff;
-  text-shadow:
-    0 0 2px #000,          /* bayangan halus */
-    0 0 1px #000,
-    0 1px 0 #000,
-    1px 0 0 #000,
-    -1px 0 0 #000,
-    0 -1px 0 #000;         /* garis tepi hitam di semua sisi */
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.6));
+
+/* ==== FIX: highlight check merah yang jelas ==== */
+.sq.check,
+.sq.in-check {
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 77, 77, .85),
+    inset 0 0 18px rgba(255, 77, 77, .45);
 }
-/* Jangan diputar biar gaya chess.com */
-.piece.black { color: #262626; text-shadow: 0 0 3px rgba(255,255,255,.25); }
 
-/* ✨ Highlight langkah terakhir */
-.sq.src  { box-shadow: inset 0 0 0 4px rgba(255,255,255,.25); }
-.sq.last { box-shadow: inset 0 0 0 4px rgba(0,0,0,.18); }
-
-/* Titik langkah legal — biru terang + glow */
+/* ==== Titik langkah legal (biru terang) ==== */
 .dot {
   position: absolute;
   width: 34%;
   height: 34%;
   border-radius: 999px;
-  background: var(--dot-fill) !important;
-  outline: 3px solid var(--dot-ring) !important;
-  box-shadow: 0 0 12px var(--dot-ring) inset, 0 0 10px var(--dot-ring);
+  background: rgba(102, 204, 255, 0.45) !important;
+  outline: 3px solid rgba(102, 204, 255, 0.25) !important;
+  box-shadow: 0 0 12px rgba(102, 204, 255, 0.25) inset, 0 0 10px rgba(102, 204, 255, 0.25);
   transition: transform .12s ease, opacity .12s ease;
   opacity: .95;
 }
 .dot.enter { transform: scale(1.05); }
 
-/* Responsif board-only */
-body.board-only .board-wrap {
-  max-width: min(98vw, 1100px);
-}
+/* ==== Last move ring lembut ==== */
+.sq.src  { box-shadow: inset 0 0 0 3px rgba(255,255,255,.28); }
+.sq.last { box-shadow: inset 0 0 0 3px rgba(0,0,0,.18); }
 
-/* ===================== Overlay (menu & hasil) ===================== */
-.overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(11,13,16,.92);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-  z-index: 9999;
-}
-.overlay.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-.overlay h2 {
-  color: var(--azbry-accent);
-  font-weight: 800;
-  font-size: 2.4rem;
-  text-shadow: 0 0 20px var(--azbry-ring);
-  margin-bottom: 18px;
-}
-.overlay .overlay-actions {
-  display: flex;
-  gap: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.overlay .btn {
-  font-size: 1rem;
-  padding: 10px 22px;
-}
-
-/* ===================== Opsional: Flip view untuk giliran hitam ===================== */
-.board.flipped{ transform: rotate(180deg); }
-.board.flipped .sq > *{ transform: rotate(180deg); }
-.board.flipped .sq::before,
-.board.flipped .sq::after{ transform: rotate(180deg); }
-
-/* === Koordinat pas di dalam sudut kotak =============================== */
-.board { position: relative; }
-
-/* Huruf a–h: di sudut kanan-bawah setiap kolom pada rank 1 */
-.board .files{
-  position: absolute;
-  inset: 0;                           /* overlay penuh selebar papan */
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-template-rows: 100%;
-  pointer-events: none;
-  z-index: 9;
-  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-}
-.board .files span{
-  align-self: end;                     /* baris bawah */
-  justify-self: end;                   /* tiap kolom di kanan */
-  padding: 0 4px 4px 0;                /* masuk ke dalam kotak */
-  color: rgba(255,255,255,.96);
-  text-shadow: 0 1px 1px rgba(0,0,0,.55);
-  /* kalau mau lebih rapat: kurangi padding bawah/kanan */
-}
-
-/* Angka 8–1: di sudut kiri-atas setiap baris pada file a */
-.board .ranks{
-  position: absolute;
-  inset: 0;
-  display: grid;
-  grid-template-rows: repeat(8, 1fr);
-  grid-template-columns: 100%;
-  pointer-events: none;
-  z-index: 9;
-  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-}
-.board .ranks span{
-  align-self: start;                   /* baris atas */
-  justify-self: start;                 /* kolom kiri */
-  padding: 4px 0 0 4px;                /* masuk ke dalam kotak */
-  color: rgba(255,255,255,.96);
-  text-shadow: 0 1px 1px rgba(0,0,0,.55);
-}
-/* ===================== Captured Pieces (graveyard) ===================== */
-/* wrap bar di bawah papan */
-.captured-wrap{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  max-width: min(96vw, 700px);
-  margin: 10px auto 0;
-  padding: 6px 12px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.02);
-  box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.06),
-    0 10px 30px rgba(0,0,0,.35),
-    0 0 40px color-mix(in srgb, var(--azbry-accent, #33FF88) 10%, transparent);
-}
-
-/* container kiri/kanan */
-.captured{
-  min-height: 28px;
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-
-/* satu “badge” bidak yang tertangkap */
-.cap{
-  display:inline-grid;
-  place-items:center;
-  width:28px;
-  height:28px;
-  font-size:18px;
-  border-radius:8px;
-  transition: transform .12s ease, opacity .12s ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,.35);
-}
-
-/* bidak putih yang tertangkap (ikon putih di latar gelap) */
-.cap.cap-w{
-  background: linear-gradient(180deg, rgba(0,0,0,.78), rgba(0,0,0,.62));
+/* ==== (Opsional) outline hitam bidak putih biar kebaca ==== */
+.piece.white {
   color: #fff;
-  border: 1px solid rgba(255,255,255,.06);
-}
-
-/* bidak hitam yang tertangkap (ikon hitam di latar terang) */
-.cap.cap-b{
-  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.78));
-  color: #111;
-  border: 1px solid rgba(0,0,0,.08);
-}
-
-/* anim kecil saat bidak baru masuk “kuburan” */
-.cap.new { animation: cap-pop .18s ease-out; }
-@keyframes cap-pop { from { transform: scale(.7); opacity:.2 } to { transform: scale(1); opacity:1 } }
-
-/* versi compact (opsional): kalau mau bar lebih tipis */
-.captured-wrap.compact{
-  margin-top: 6px;
-  padding: 4px 8px;
-  background: transparent;
-  box-shadow: none;
-}
-
-@media (max-width:560px){
-  .cap{ width:24px; height:24px; font-size:16px; border-radius:6px; }
-  .captured-wrap{ gap:8px; padding: 4px 8px; }
-}
-/* === Raja sedang di-check (kotaknya merah) === */
-.sq.in-check {
-  box-shadow:
-    inset 0 0 0 4px rgba(255,0,0,.45),
-    0 0 20px rgba(255,0,0,.45);
-  animation: check-pulse 1s ease-in-out infinite alternate;
-}
-@keyframes check-pulse {
-  from { box-shadow: inset 0 0 0 4px rgba(255,0,0,.4), 0 0 10px rgba(255,0,0,.3); }
-  to   { box-shadow: inset 0 0 0 4px rgba(255,0,0,.8), 0 0 25px rgba(255,0,0,.6); }
-}
-
-/* === Popup hasil menang === */
-.overlay h2 {
-  color: var(--azbry-accent);
-  font-weight: 800;
-  font-size: 2.4rem;
-  text-shadow: 0 0 20px var(--azbry-ring);
-  margin-bottom: 18px;
-  animation: result-pop .4s ease-out;
-}
-@keyframes result-pop {
-  from { transform: scale(0.8); opacity: 0; }
-  to   { transform: scale(1); opacity: 1; }
+  text-shadow:
+    0 0 2px #000,
+    0 0 1px #000,
+    0 1px 0 #000,
+    1px 0 0 #000,
+    -1px 0 0 #000,
+    0 -1px 0 #000;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
 }
