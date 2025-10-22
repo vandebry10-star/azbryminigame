@@ -1,5 +1,5 @@
-// assets/js/main.js — Azbry Chess (robust)
-// Fitur: koordinat, captured bar, check merah, popup menang
+// assets/js/main.js — Azbry Chess (vFinal)
+// Fitur: check merah, popup menang, koordinat, captured bar
 
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultText    = $('resultText');
   const btnRestart    = $('btnRestart');
 
-  // Pastikan board ada
   if (!boardEl) {
     boardEl = document.createElement('div');
     boardEl.id = 'board';
@@ -37,18 +36,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Game state
   const game = new Chess();
   const ui   = new ChessUI(boardEl, onSquare);
-
-  // safety: kalau entah kenapa grid belum kebangun, force build
-  try {
-    if (!ui.squares || ui.squares.length !== 64) ui._buildGrid();
-  } catch(_) {/* noop */}
+  if (!ui.squares || ui.squares.length !== 64) ui._buildGrid();
 
   let mode     = 'human';
   let selected = null;
   let lastMove = null;
 
   // -----------------------------------------------------------------------
-  // Captured bar utils
+  // Captured pieces
   const PIECE_CHAR = {
     k:'♚', q:'♛', r:'♜', b:'♝', n:'♞', p:'♟',
     K:'♔', Q:'♕', R:'♖', B:'♗', N:'♘', P:'♙'
@@ -59,29 +54,26 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function injectCapturedContainers(){
-    try{
-      if (document.querySelector('.captured-wrap')) return;
-      const capWrap = document.createElement('div');
-      capWrap.className = 'captured-wrap';
+    if (document.querySelector('.captured-wrap')) return;
+    const capWrap = document.createElement('div');
+    capWrap.className = 'captured-wrap';
 
-      const capWhite = document.createElement('div');
-      capWhite.id = 'capturedWhite';
-      capWhite.className = 'captured captured-white';
+    const capWhite = document.createElement('div');
+    capWhite.id = 'capturedWhite';
+    capWhite.className = 'captured captured-white';
 
-      const spacer = document.createElement('div');
-      spacer.className = 'captured-spacer';
-      spacer.style.flex = '1';
+    const spacer = document.createElement('div');
+    spacer.className = 'captured-spacer';
+    spacer.style.flex = '1';
 
-      const capBlack = document.createElement('div');
-      capBlack.id = 'capturedBlack';
-      capBlack.className = 'captured captured-black';
+    const capBlack = document.createElement('div');
+    capBlack.id = 'capturedBlack';
+    capBlack.className = 'captured captured-black';
 
-      capWrap.appendChild(capWhite);
-      capWrap.appendChild(spacer);
-      capWrap.appendChild(capBlack);
-
-      boardEl.insertAdjacentElement('afterend', capWrap);
-    }catch(_){}
+    capWrap.appendChild(capWhite);
+    capWrap.appendChild(spacer);
+    capWrap.appendChild(capBlack);
+    boardEl.insertAdjacentElement('afterend', capWrap);
   }
 
   function computeCapturedFromBoard(boardArray){
@@ -104,39 +96,36 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderCapturedFromBoard(boardArray){
-    try{
-      const capW = document.getElementById('capturedWhite');
-      const capB = document.getElementById('capturedBlack');
-      if (!capW || !capB) return;
+    const capW = document.getElementById('capturedWhite');
+    const capB = document.getElementById('capturedBlack');
+    if (!capW || !capB) return;
 
-      const caps = computeCapturedFromBoard(boardArray);
+    const caps = computeCapturedFromBoard(boardArray);
 
-      capW.innerHTML = '';
-      caps.w.forEach(p => {
-        const el = document.createElement('span');
-        el.className = 'cap cap-w new';
-        el.textContent = PIECE_CHAR[p];
-        capW.appendChild(el);
-        requestAnimationFrame(()=> el.classList.remove('new'));
-      });
+    capW.innerHTML = '';
+    caps.w.forEach(p => {
+      const el = document.createElement('span');
+      el.className = 'cap cap-w new';
+      el.textContent = PIECE_CHAR[p];
+      capW.appendChild(el);
+      requestAnimationFrame(()=> el.classList.remove('new'));
+    });
 
-      capB.innerHTML = '';
-      caps.b.forEach(p => {
-        const el = document.createElement('span');
-        el.className = 'cap cap-b new';
-        const key = p.toLowerCase();
-        el.textContent = PIECE_CHAR[key] || PIECE_CHAR[p];
-        capB.appendChild(el);
-        requestAnimationFrame(()=> el.classList.remove('new'));
-      });
-    }catch(_){}
+    capB.innerHTML = '';
+    caps.b.forEach(p => {
+      const el = document.createElement('span');
+      el.className = 'cap cap-b new';
+      const key = p.toLowerCase();
+      el.textContent = PIECE_CHAR[key] || PIECE_CHAR[p];
+      capB.appendChild(el);
+      requestAnimationFrame(()=> el.classList.remove('new'));
+    });
   }
 
   // -----------------------------------------------------------------------
   // Mode & Buttons
   if (modeHuman) modeHuman.addEventListener('click', () => setMode('human'));
   if (modeAI)    modeAI.addEventListener('click',    () => setMode('ai'));
-
   if (btnReset)  btnReset.addEventListener('click',  () => hardReset());
   if (btnUndo)   btnUndo.addEventListener('click',   () => { game.undo(); selected=null; lastMove=null; sync(); });
   if (btnRedo)   btnRedo.addEventListener('click',   () => { game.redo(); selected=null; lastMove=null; sync(); });
@@ -157,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnStartHuman) btnStartHuman.addEventListener('click', () => startGame('human'));
   if (btnStartAI)    btnStartAI.addEventListener('click',    () => startGame('ai'));
-
   if (btnRestart) btnRestart.addEventListener('click', () => {
     hideResult();
     if (startMenu) startMenu.classList.add('show');
@@ -186,12 +174,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------------------------------------------------
-  // Interaksi papan
+  // Klik papan
   function onSquare(squareAlg) {
     if (mode === 'ai' && game.turn() === 'b') return;
-
     const movesFromSel = selected ? game.moves({ square: selected }) : [];
-
     if (selected && movesFromSel.some(m => m.to === squareAlg)) {
       const promo = needsPromotion(selected, squareAlg) ? 'Q' : null;
       const note = game.move({ from: selected, to: squareAlg, promotion: promo });
@@ -203,12 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       return;
     }
-
     const idx = toIdx(squareAlg);
     const P = game.board()[idx];
     if (P && P.color === game.turn()) selected = squareAlg;
     else selected = null;
-
     sync();
   }
 
@@ -219,7 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return (piece.color === 'w' && toR === 0) || (piece.color === 'b' && toR === 7);
   }
 
-  // AI
+  // -----------------------------------------------------------------------
+  // AI move
   function aiMove() {
     if (mode !== 'ai' || game.turn() !== 'b') return;
     const legal = game.moves();
@@ -240,48 +225,55 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------------------------------------------------
-  // SYNC — render & status
-  function sync() {
-    // safety: kalau grid hilang, rebuild
-    try { if (!ui.squares || ui.squares.length !== 64) ui._buildGrid(); } catch(_){}
-
-    const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
-
-    // deteksi status
-    let status = 'ok';
+  // Universal status detector
+  function getStatus() {
+    let hasMoves = true;
+    try { hasMoves = (Array.isArray(game.moves()) ? game.moves().length > 0 : true); } catch {}
+    let inCheck = false;
     try {
-      status = typeof game.gameStatus === 'function'
-        ? game.gameStatus()
-        : (() => {
-            const hasMoves = (game.moves().length > 0);
-            const inChk = typeof game.inCheck === 'function' ? game.inCheck() : false;
-            return !hasMoves && inChk ? 'checkmate'
-                 : !hasMoves && !inChk ? 'stalemate'
-                 : inChk ? 'check' : 'ok';
-          })();
-    } catch(_) {}
+      if (typeof game.inCheck === 'function')      inCheck = !!game.inCheck();
+      else if (typeof game.in_check === 'function') inCheck = !!game.in_check();
+      else if (typeof game.isCheck === 'function')  inCheck = !!game.isCheck();
+      else if (typeof game.check === 'boolean')     inCheck = game.check;
+    } catch {}
+    let isMate = false;
+    try {
+      if (typeof game.inCheckmate === 'function')      isMate = !!game.inCheckmate();
+      else if (typeof game.in_checkmate === 'function') isMate = !!game.in_checkmate();
+      else if (!hasMoves && inCheck)                   isMate = true;
+    } catch {}
+    let isStale = false;
+    try {
+      if (typeof game.inStalemate === 'function')      isStale = !!game.inStalemate();
+      else if (typeof game.in_stalemate === 'function') isStale = !!game.in_stalemate();
+      else if (!hasMoves && !inCheck)                  isStale = true;
+    } catch {}
+    let status = 'ok';
+    if (isMate) status = 'checkmate';
+    else if (isStale) status = 'stalemate';
+    else if (inCheck) status = 'check';
+    return { status, inCheck, hasMoves };
+  }
 
-    const sideToMove = game.turn(); // 'w'|'b'
-    const inCheckOpt = (status === 'check') ? sideToMove : undefined;
+  // -----------------------------------------------------------------------
+  // SYNC
+  function sync() {
+    const legalTargets = selected ? game.moves({ square: selected }).map(m => m.to) : [];
+    const { status, inCheck } = getStatus();
+    const sideToMove = game.turn();
+    const inCheckOpt = inCheck ? sideToMove : undefined;
 
-    // render board
     ui.render(game.board(), { lastMove, legal: legalTargets, inCheck: inCheckOpt });
-
-    // salin .check → .in-check (CSS merah)
     mirrorCheckClass();
-
-    // UI tambahan
     injectBoardLabels();
     injectCapturedContainers();
     renderCapturedFromBoard(game.board());
 
-    // log
     if (moveLog) {
       const h = game.history();
       moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
     }
 
-    // hasil akhir
     if (status === 'checkmate') {
       const winner = (sideToMove === 'w') ? 'Hitam' : 'Putih';
       showResult(`${winner} Menang!`);
@@ -290,55 +282,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // koordinat
   function injectBoardLabels(){
-    try{
-      if (!boardEl.querySelector('.files')) {
-        const files = document.createElement('div');
-        files.className = 'files';
-        'abcdefgh'.split('').forEach(ch => {
-          const s = document.createElement('span'); s.textContent = ch; files.appendChild(s);
-        });
-        boardEl.appendChild(files);
+    if (!boardEl.querySelector('.files')) {
+      const files = document.createElement('div');
+      files.className = 'files';
+      'abcdefgh'.split('').forEach(ch => {
+        const s = document.createElement('span');
+        s.textContent = ch;
+        files.appendChild(s);
+      });
+      boardEl.appendChild(files);
+    }
+    if (!boardEl.querySelector('.ranks')) {
+      const ranks = document.createElement('div');
+      ranks.className = 'ranks';
+      for (let i = 8; i >= 1; i--) {
+        const s = document.createElement('span');
+        s.textContent = i;
+        ranks.appendChild(s);
       }
-      if (!boardEl.querySelector('.ranks')) {
-        const ranks = document.createElement('div');
-        ranks.className = 'ranks';
-        for (let i = 8; i >= 1; i--) {
-          const s = document.createElement('span'); s.textContent = i; ranks.appendChild(s);
-        }
-        boardEl.appendChild(ranks);
-      }
-    }catch(_){}
+      boardEl.appendChild(ranks);
+    }
   }
 
-  // convert .check → .in-check
   function mirrorCheckClass(){
-    try{
-      boardEl.querySelectorAll('.sq.in-check').forEach(el => el.classList.remove('in-check'));
-      boardEl.querySelectorAll('.sq.check').forEach(el => el.classList.add('in-check'));
-    }catch(_){}
+    boardEl.querySelectorAll('.sq.in-check').forEach(el => el.classList.remove('in-check'));
+    boardEl.querySelectorAll('.sq.check').forEach(el => el.classList.add('in-check'));
   }
 
-  // overlay result
   function showResult(text) {
     if (!resultPopup || !resultText) return;
     resultText.textContent = text;
     resultPopup.classList.add('show');
   }
+
   function hideResult() {
     if (!resultPopup) return;
     resultPopup.classList.remove('show');
   }
 
-  // utils
-  function toIdx(a) { return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]); }
+  function toIdx(a) {
+    return (8 - parseInt(a[1],10)) * 8 + 'abcdefgh'.indexOf(a[0]);
+  }
 
   // -----------------------------------------------------------------------
   // Boot
   injectCapturedContainers();
   injectBoardLabels();
   if (startMenu) startMenu.classList.add('show');
-  // render awal
   sync();
 });
