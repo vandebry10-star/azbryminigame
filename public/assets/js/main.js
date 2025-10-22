@@ -1,4 +1,4 @@
-// assets/js/main.js — FORCE-INIT + delegated click (bidak pasti muncul)
+// assets/js/main.js — Robust click + engine-compat
 document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
 
@@ -19,13 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Engine
   let engine = (typeof window.Chess === 'function') ? new window.Chess() : null;
-
-  // ❗Pukulin sampai pasti posisi awal
-  if (engine) {
-    // kalau constructor tidak auto-load, paksa reset
-    if (!engine.fen || !engine.fen() || EMPTY_FEN.test(engine.fen())) {
-      engine.reset?.();
-    }
+  if (engine && (!engine.fen || !engine.fen() || EMPTY_FEN.test(engine.fen()))) {
+    engine.reset?.();
   }
 
   let mode   = 'human';
@@ -33,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let last   = null;
   let flipped = false;
 
-  // --- Build board grid (64 kotak)
+  // === Utilities ===
   function buildGrid(){
     boardEl.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -50,10 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     buildLabels();
   }
 
-  // label koordinat
   function buildLabels(){
     const layer = document.createElement('div');
-    layer.className = 'labels';
+    layer.className = 'labels'; // pastikan di CSS: pointer-events:none
     for (let r=8; r>=1; r--){
       const lab = document.createElement('span');
       lab.className = 'rank';
@@ -98,20 +92,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function needsPromotion(from, to){
-    if (!engine) return false;
-    const p = engine.get(from);
-    if (!p || p.type!=='p') return false;
-    const rank = parseInt(to[1],10);
-    return (p.color==='w' && rank===8) || (p.color==='b' && rank===1);
-  }
   function hasColorPiece(sq, color){
     const p = engine?.get ? engine.get(sq) : null;
     return p && p.color === color;
   }
+  function needsPromotion(from, to){
+    const p = engine?.get ? engine.get(from) : null;
+    if (!p || p.type!=='p') return false;
+    const rank = parseInt(to[1],10);
+    return (p.color==='w' && rank===8) || (p.color==='b' && rank===1);
+  }
+
+  // === INTI FIX: ambil legal moves yang kompatibel ke berbagai engine ===
+  function legalMovesFrom(square) {
+    if (!engine?.moves) return [];
+    let list = [];
+    // 1) coba API modern
+    try { list = engine.moves({ square, verbose:true }) || []; } catch(_) { list = []; }
+    // 2) kalau kosong, ambil semua lalu filter
+    if (!list.length) {
+      let all;
+      try { all = engine.moves({ verbose:true }) || []; } catch(_) {
+        // 3) engine lama: mungkin return simple array SAN atau {from,to} tanpa verbose
+        try { all = engine.moves() || []; } catch(_) { all = []; }
+      }
+      // normalisasi ke bentuk {from,to}
+      list = all
+        .map(m => {
+          if (!m) return null;
+          if (typeof m === 'string') return null; // SAN tanpa info from/to -> skip
+          if (m.from && m.to) return m;
+          return null;
+        })
+        .filter(Boolean)
+        .filter(m => m.from === square);
+    }
+    // kembalikan hanya daftar tujuan
+    return list.map(m => m.to);
+  }
 
   function findKingSq(color){
-    if (!engine) return null;
+    if (!engine?.fen) return null;
     const fen = engine.fen().split(' ')[0];
     const rows = fen.split('/');
     for (let r=0;r<8;r++){
@@ -128,9 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderEngine(){
-    // kalau entah kenapa masih kosong, paksa reset lagi
-    if (EMPTY_FEN.test(engine.fen())) engine.reset?.();
-
+    if (engine && EMPTY_FEN.test(engine.fen())) engine.reset?.();
     renderFromFEN(engine.fen());
     if (last){
       findCell(last.from)?.classList.add('src');
@@ -140,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const king = findKingSq(engine.turn());
       if (king) findCell(king)?.classList.add('check');
     }
-    if (moveLog){
+    if (moveLog && engine.history){
       const h = engine.history({ verbose:true }) || [];
       if (!h.length){ moveLog.textContent = '—'; return; }
       let out = '', n=1;
@@ -155,7 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function aiMove(){
     if (!engine) return;
     if (engine.game_over && engine.game_over()) return;
-    const legal = engine.moves({ verbose:true });
+    let legal = [];
+    try { legal = engine.moves({ verbose:true }) || []; } catch(_) { legal = engine.moves() || []; }
     if (!legal.length) return;
     const mv = legal[Math.floor(Math.random()*legal.length)];
     engine.move(mv);
@@ -178,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (engine) renderEngine();
   }
 
-  // Delegated click
+  // === Delegated click (tetap tembus meski ada label layer)
   boardEl.addEventListener('click', (e) => {
     const sqEl = e.target.closest('.square');
     if (!sqEl || !boardEl.contains(sqEl)) return;
@@ -189,11 +209,11 @@ document.addEventListener('DOMContentLoaded', () => {
       sqEl.classList.add('sel'); sel = sq; return;
     }
 
-    if (mode==='ai' && engine.turn()==='b') return;
+    if (mode==='ai' && engine.turn && engine.turn()==='b') return;
 
     if (sel){
-      const legal = engine.moves({ square: sel, verbose:true }).map(m=>m.to);
-      if (legal.includes(sq)){
+      const legalTo = legalMovesFrom(sel);
+      if (legalTo.includes(sq)){
         const promo = needsPromotion(sel, sq) ? 'q' : undefined;
         const mv = engine.move({ from: sel, to: sq, promotion: promo });
         if (mv){
@@ -207,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    sel = hasColorPiece(sq, engine.turn()) ? sq : null;
+    sel = hasColorPiece(sq, engine.turn ? engine.turn() : 'w') ? sq : null;
     boardEl.querySelectorAll('.sel').forEach(n=>n.classList.remove('sel'));
     if (sel) findCell(sel)?.classList.add('sel');
   });
@@ -218,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnAI && (btnAI.onclick = ()=>{ mode='ai'; sel=null; last=null;
     btnAI.classList.add('active'); btnHuman?.classList.remove('active'); sync();
-    if (engine && engine.turn()==='b') setTimeout(aiMove, 250); });
+    if (engine && engine.turn && engine.turn()==='b') setTimeout(aiMove, 250); });
 
   btnReset && (btnReset.onclick = ()=>{ engine?.reset?.(); sel=null; last=null; sync(); });
   btnUndo  && (btnUndo.onclick  = ()=>{ if (engine?.undo){ engine.undo(); sel=null; last=null; sync(); } });
@@ -230,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnBack.onclick = ()=>{ document.body.classList.remove('board-only'); btnBack.style.display='none'; btnOnly.style.display='inline-block'; };
   }
 
-  // --- INIT (wajib urut)
+  // init
   buildGrid();
   sync();
 });
