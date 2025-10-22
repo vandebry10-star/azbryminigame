@@ -1,4 +1,4 @@
-// QUICK-BOOT: papan pasti muncul + klik selalu kena (delegated)
+// === AZBRY CHESS MAIN.JS (FIXED FULLY CLICKABLE) ===
 document.addEventListener('DOMContentLoaded', () => {
   const $ = id => document.getElementById(id);
 
@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let last   = null;
   let flipped = false;
 
-  // Build 64 squares (tanpa listener per-kotak)
+  // --- BUILD GRID ---
   function buildGrid(){
     boardEl.innerHTML = '';
     const frag = document.createDocumentFragment();
@@ -39,11 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
     buildLabels();
   }
 
-  // Labels koordinat (non-blocking)
+  // --- LABELS (koordinat papan) ---
   function buildLabels(){
     const layer = document.createElement('div');
     layer.className = 'labels';
-    // ranks (kiri)
     for (let r=8; r>=1; r--){
       const lab = document.createElement('span');
       lab.className = 'rank';
@@ -51,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
       lab.style.top = `${(8 - r) * 12.5}%`;
       layer.appendChild(lab);
     }
-    // files (bawah)
     for (let i=0; i<8; i++){
       const lab = document.createElement('span');
       lab.className = 'file';
@@ -89,6 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- UTILITIES ---
   function needsPromotion(from, to){
     if (!engine) return false;
     const p = engine.get(from);
@@ -96,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rank = parseInt(to[1],10);
     return (p.color==='w' && rank===8) || (p.color==='b' && rank===1);
   }
+
   function hasColorPiece(sq, color){
     const p = engine?.get ? engine.get(sq) : null;
     return p && p.color === color;
@@ -118,6 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
+  function legalTargetsFrom(square){
+    if (!engine || !square) return [];
+    return engine.moves().filter(m => m.from === square).map(m => m.to);
+  }
+
+  // --- RENDER ENGINE STATE ---
   function renderEngine(){
     renderFromFEN(engine.fen());
     if (last){
@@ -129,12 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (king) findCell(king)?.classList.add('check');
     }
     if (moveLog){
-      const h = engine.history({ verbose:true });
+      const h = engine.history();
       if (!h.length){ moveLog.textContent = '—'; return; }
       let out = '', n=1;
       for (let i=0; i<h.length; i+=2){
         const w=h[i], b=h[i+1];
-        out += `${n}. ${(w&&w.san)||''} ${(b&&b.san)||''}\n`; n++;
+        out += `${n}. ${w ? `${w.from}→${w.to}` : ''} ${b ? `${b.from}→${b.to}` : ''}\n`;
+        n++;
       }
       moveLog.textContent = out.trim();
     }
@@ -143,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function aiMove(){
     if (!engine) return;
     if (engine.game_over && engine.game_over()) return;
-    const legal = engine.moves({ verbose:true });
+    const legal = engine.moves();
     if (!legal.length) return;
     const mv = legal[Math.floor(Math.random()*legal.length)];
     engine.move(mv);
@@ -166,24 +173,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (engine) renderEngine();
   }
 
-  // === DELEGATED CLICK: nembus layer apapun ===
+  // --- CLICK HANDLER ---
   boardEl.addEventListener('click', (e) => {
     const sqEl = e.target.closest('.square');
     if (!sqEl || !boardEl.contains(sqEl)) return;
     const sq = sqEl.dataset.square;
 
     if (!engine){
-      // fallback highlight
       boardEl.querySelectorAll('.sel').forEach(n=>n.classList.remove('sel'));
       sqEl.classList.add('sel'); sel = sq; return;
     }
 
-    // vs AI: user = putih; giliran hitam (AI) blok input
     if (mode==='ai' && engine.turn()==='b') return;
 
-    // jika sudah pilih, cek legal
     if (sel){
-      const legal = engine.moves({ square: sel, verbose:true }).map(m=>m.to);
+      const legal = legalTargetsFrom(sel);
       if (legal.includes(sq)){
         const promo = needsPromotion(sel, sq) ? 'q' : undefined;
         const mv = engine.move({ from: sel, to: sq, promotion: promo });
@@ -198,13 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // pilih baru kalau ada bidak warna sendiri
     sel = hasColorPiece(sq, engine.turn()) ? sq : null;
     boardEl.querySelectorAll('.sel').forEach(n=>n.classList.remove('sel'));
     if (sel) findCell(sel)?.classList.add('sel');
   });
 
-  // === Kontrol ===
+  // --- CONTROL BUTTONS ---
   btnHuman && (btnHuman.onclick = ()=>{ mode='human'; sel=null; last=null;
     btnHuman.classList.add('active'); btnAI?.classList.remove('active'); sync(); });
 
@@ -213,19 +216,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (engine && engine.turn()==='b') setTimeout(aiMove, 250); });
 
   btnReset && (btnReset.onclick = ()=>{ engine?.reset?.(); sel=null; last=null; sync(); });
-
-  btnUndo && (btnUndo.onclick = ()=>{ if (engine?.undo){ engine.undo(); sel=null; last=null; sync(); } });
-
-  btnRedo && (btnRedo.onclick = ()=>{ if (engine?.redo){ engine.redo(); sync(); } });
-
-  btnFlip && (btnFlip.onclick = ()=>{ flipped=!flipped; boardEl.classList.toggle('flipped', flipped); });
+  btnUndo  && (btnUndo.onclick  = ()=>{ if (engine?.undo){ engine.undo(); sel=null; last=null; sync(); } });
+  btnRedo  && (btnRedo.onclick  = ()=>{ if (engine?.redo){ engine.redo(); sync(); } });
+  btnFlip  && (btnFlip.onclick  = ()=>{ flipped=!flipped; boardEl.classList.toggle('flipped', flipped); });
 
   if (btnOnly && btnBack){
     btnOnly.onclick = ()=>{ document.body.classList.add('board-only'); btnOnly.style.display='none'; btnBack.style.display='inline-block'; };
     btnBack.onclick = ()=>{ document.body.classList.remove('board-only'); btnBack.style.display='none'; btnOnly.style.display='inline-block'; };
   }
 
-  // init
+  // --- INIT ---
   buildGrid();
   if (engine) sync();
 });
