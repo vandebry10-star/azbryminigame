@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess.com</title>
 
-  <!-- Google Font untuk JUDUL saja -->
+  <!-- Google Font untuk Judul -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=21" />
-  <link rel="stylesheet" href="assets/css/chess.css?v=21" />
+  <link rel="stylesheet" href="assets/css/azbry.css?v=22" />
+  <link rel="stylesheet" href="assets/css/chess.css?v=22" />
 
   <style>
     body{
@@ -32,39 +32,6 @@
       text-shadow:0 0 16px rgba(184,255,154,.3);
     }
 
-    /* toolbar umum */
-    .toolbar{
-      max-width:920px;
-      margin:8px auto 14px;
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      justify-content:center;
-    }
-    .btn{
-      padding:9px 13px;
-      border-radius:12px;
-      font-weight:800;
-      cursor:pointer;
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(255,255,255,.05);
-      color:#e8f0fb;
-      transition:.2s;
-    }
-    .btn:hover{
-      background:rgba(255,255,255,.08);
-    }
-    .btn.accent{
-      background:linear-gradient(180deg,var(--azbry-accent,#b8ff9a),var(--azbry-accent-2,#a3f07f));
-      color:#0b0f12;
-      border-color:transparent;
-      box-shadow:0 0 12px rgba(184,255,154,.25);
-    }
-
-    .panel{max-width:920px;margin:0 auto}
-    .board-wrap{max-width:820px;margin:0 auto 12px;position:relative;}
-
     /* header di atas papan */
     .board-header{
       max-width:820px;
@@ -83,7 +50,24 @@
       flex-wrap:wrap;
     }
 
-    /* tombol kembali kecil dan netral */
+    /* tombol */
+    .btn{
+      padding:9px 13px;
+      border-radius:10px;
+      font-weight:800;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.05);
+      color:#e8f0fb;
+      transition:.2s;
+    }
+    .btn:hover{background:rgba(255,255,255,.08);}
+    .btn.accent{
+      background:linear-gradient(180deg,var(--azbry-accent,#b8ff9a),var(--azbry-accent-2,#a3f07f));
+      color:#0b0f12;
+      border-color:transparent;
+      box-shadow:0 0 12px rgba(184,255,154,.25);
+    }
     #btnMenu{
       font-size:14px;
       padding:7px 10px;
@@ -94,45 +78,71 @@
       box-shadow:none;
       transition:.15s;
     }
-    #btnMenu:hover{
-      background:rgba(255,255,255,.12);
-      color:#fff;
-    }
-
-    /* tombol Muat Ulang tampil netral (non accent) */
+    #btnMenu:hover{background:rgba(255,255,255,.12);color:#fff;}
     #btnReset{
       background:rgba(255,255,255,.05);
       color:#e8f0fb;
       border:1px solid rgba(255,255,255,.08);
       box-shadow:none;
     }
-    #btnReset:hover{
-      background:rgba(255,255,255,.08);
+
+    .board-wrap{max-width:820px;margin:0 auto 12px;position:relative;}
+
+    /* posisi bidak mati */
+    .captured{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      max-width:820px;
+      margin:6px auto;
+      padding:0 6px;
     }
 
-    /* captured lebih kecil */
-    .captured.panel{margin-top:8px}
-    .cap-row{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap:wrap;
-      margin:2px 0;
+    /* atas meja (hitam) */
+    .cap-top{
+      justify-content:flex-start;
     }
+    /* bawah meja (putih) */
+    .cap-bottom{
+      justify-content:flex-end;
+    }
+
+    /* tray bidak mati */
     .cap-tray{
       display:flex;
       gap:4px;
       flex-wrap:wrap;
-      min-height:22px;
-      padding:6px 8px;
-      border-radius:10px;
-      background:var(--panel-bg-1, rgba(255,255,255,.04));
-      border:1px solid var(--panel-bd, rgba(255,255,255,.08));
+      min-height:28px;
+      padding:4px 6px;
+      border-radius:8px;
+      background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.05);
     }
+
+    /* gaya bidak mati */
     .cap-piece{
-      font-size:18px;
+      font-size:28px;
       line-height:1;
-      filter:drop-shadow(0 0 6px rgba(0,0,0,.3));
+      filter:drop-shadow(0 1px 0 rgba(0,0,0,.4));
+    }
+    .cap-piece.white{
+      color:#fff;
+      text-shadow:0 0 2px #000,0 0 1px #000,0 1px 0 #000;
+    }
+    .cap-piece.black{
+      color:#000;
+      text-shadow:0 0 3px rgba(255,255,255,.25);
+    }
+
+    /* toolbar bawah */
+    .toolbar{
+      max-width:920px;
+      margin:8px auto 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
     }
 
     /* Result modal gaya sederhana */
@@ -167,6 +177,11 @@
   <main id="chess-app">
     <div class="hero-title"><h1>Azbry Chess.com</h1></div>
 
+    <!-- BIDAK MATI ATAS (HITAM) -->
+    <div class="captured cap-top">
+      <div id="capBlack" class="cap-tray"></div>
+    </div>
+
     <!-- HEADER ATAS BOARD -->
     <div class="board-header">
       <div class="left">
@@ -183,6 +198,11 @@
       <div id="board" class="board" aria-label="board"></div>
     </section>
 
+    <!-- BIDAK MATI BAWAH (PUTIH) -->
+    <div class="captured cap-bottom">
+      <div id="capWhite" class="cap-tray"></div>
+    </div>
+
     <!-- TOOLBAR BAWAH -->
     <div class="toolbar">
       <button id="btnReset" class="btn">Muat Ulang</button>
@@ -190,18 +210,6 @@
       <button id="btnRedo" class="btn">Redo</button>
       <button id="btnFlip" class="btn">Balik Meja</button>
     </div>
-
-    <!-- CAPTURED PIECES -->
-    <section class="captured panel">
-      <div class="cap-row">
-        <strong>HITAM Modar:</strong>
-        <div id="capBlack" class="cap-tray"></div>
-      </div>
-      <div class="cap-row">
-        <strong>Putih Modar:</strong>
-        <div id="capWhite" class="cap-tray"></div>
-      </div>
-    </section>
 
     <!-- LOG -->
     <section class="panel move-log">
@@ -222,11 +230,10 @@
     </div>
   </main>
 
-  <!-- Scripts (URUTAN WAJIB) -->
-  <script src="assets/js/chess-engine.js?v=21"></script>
-  <script src="assets/js/main.js?v=21"></script>
+  <!-- Scripts -->
+  <script src="assets/js/chess-engine.js?v=22"></script>
+  <script src="assets/js/main.js?v=22"></script>
 
-  <!-- Glue: tombol mode, menu & modal -->
   <script>
   (function(){
     const btnHuman = document.getElementById('modeHuman');
@@ -235,7 +242,6 @@
     const txt      = document.getElementById('resultText');
     const sub      = document.getElementById('resultSub');
 
-    // highlight mode aktif
     function setActive(which){
       if(which==='ai'){
         btnAI.classList.add('accent');
@@ -248,21 +254,19 @@
     btnHuman.addEventListener('click',()=>setActive('human'));
     btnAI.addEventListener('click',()=>setActive('ai'));
 
-    // result modal control
     document.getElementById('btnCloseResult').addEventListener('click',()=>modal.classList.remove('show'));
     document.getElementById('btnPlayAgain').addEventListener('click',()=>{
       modal.classList.remove('show');
       document.getElementById('btnReset')?.click();
     });
 
-    // fungsi global show result (dipanggil dari main.js)
     window.__azbrySetResult = function({text,subText}){
       txt.textContent = text || '';
       sub.textContent = subText || '';
       modal.classList.add('show');
     };
 
-    // tombol kembali ke menu utama
+    // tombol kembali ke menu
     document.getElementById('btnMenu')?.addEventListener('click', ()=>{
       window.location.href = "https://azbryminigamess.vercel.app/";
     });
