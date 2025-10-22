@@ -1,206 +1,159 @@
-// assets/js/main.js — Azbry Chess (match HTML v12)
-// Render via FEN (pasti muncul), check merah, popup menang (pakai __azbrySetResult), kompatibel toolbar & menu HTML.
-
-document.addEventListener('DOMContentLoaded', () => {
-  const $ = (id) => document.getElementById(id);
-
-  // Elemen yang ADA di HTML lo
-  let boardEl     = $('board');
-  const modeHuman = $('modeHuman');   // hidden proxy
-  const modeAI    = $('modeAI');      // hidden proxy
-  const btnReset  = $('btnReset');
-  const btnUndo   = $('btnUndo');
-  const btnRedo   = $('btnRedo');
-  const btnFlip   = $('btnFlip');
-  const moveLog   = $('moveHistory');
-
-  // Pastikan #board ada
-  if (!boardEl) {
-    boardEl = document.createElement('div');
-    boardEl.id = 'board';
-    boardEl.className = 'board';
-    document.body.prepend(boardEl);
+// /assets/js/main.js — versi sinkron dengan chess.html kamu (IDs & flow)
+(function () {
+  // Pastikan engine + UI ada
+  if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
+    console.error('Chess atau ChessUI tidak ditemukan. Cek urutan script dan hapus chess-ui.js eksternal jika perlu.');
+    return;
   }
 
-  // Engine & UI
-  const game = new Chess();
-  const ui   = new ChessUI(boardEl, onSquare);
+  // ----- State utama -----
+  const G = new Chess(); // engine
+  const boardEl = document.getElementById('board');
+  const ui = new ChessUI(boardEl, onSquareClick); // callback klik petak
+  let selected = null;      // kotak asal (algebraic)
+  let lastMove = null;      // {from,to}
+  let vsAI = false;         // mode AI sederhana (random legal move)
 
-  // FEN start (fallback)
-  const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  // ----- DOM hooks -----
+  const $status       = document.getElementById('status') || document.createElement('div');
+  const $moveHistory  = document.getElementById('moveHistory'); // <pre>
+  const $btnReset     = document.getElementById('btnReset');
+  const $btnUndo      = document.getElementById('btnUndo');
+  const $btnRedo      = document.getElementById('btnRedo');
+  const $btnFlip      = document.getElementById('btnFlip');
+  const $btnBoardOnly = document.getElementById('btnBoardOnly');
+  const $btnBack      = document.getElementById('btnBack');
 
-  // State
-  let mode     = 'human';   // 'human' | 'ai'
-  let selected = null;
-  let lastMove = null;
+  // Proxy tombol mode (dipicu dari overlay/segbar glue di HTML)
+  const $modeHuman = document.getElementById('modeHuman');
+  const $modeAI    = document.getElementById('modeAI');
 
-  // --- Controls ----------------------------------------------------------------
-  btnFlip?.addEventListener('click', () => { ui.toggleFlip(); sync(); });
-  btnReset?.addEventListener('click', () => { game.reset?.(); selected=null; lastMove=null; sync(); });
-  btnUndo ?.addEventListener('click', () => { game.undo?.();  selected=null; lastMove=null; sync(); });
-  btnRedo ?.addEventListener('click', () => { game.redo?.();  selected=null; lastMove=null; sync(); });
-
-  // Hidden proxy mode (dipanggil oleh HTML glue)
-  modeHuman?.addEventListener('click', () => setMode('human'));
-  modeAI   ?.addEventListener('click', () => setMode('ai'));
-
-  function setMode(m){
-    mode = m; selected = null; lastMove = null; sync();
-    // broadcast (optional)
-    try { window.dispatchEvent(new CustomEvent('azbry:modeChanged',{detail:{mode}})); } catch {}
-    // expose API (optional, dipanggil dari glue HTML)
-    window.AzbryChess = window.AzbryChess || {};
-    window.AzbryChess.setMode = setMode;
+  // ----- Util -----
+  function legalTargetsFrom(squareAlg) {
+    return G.moves({ square: squareAlg }).map(m => m.to); // array algebraic tujuan
   }
 
-  // --- Interaksi papan ---------------------------------------------------------
-  function onSquare(sq) {
-    if (mode === 'ai' && (game.turn?.() === 'b')) return; // player = putih
+  function renderAll(highlights = []) {
+    ui.render(G.board(), {
+      legal: highlights,
+      lastMove: lastMove
+    });
 
-    const moves = selected ? (game.moves?.({ square: selected }) || []) : [];
+    // Status
+    const turnText = G.turn() === 'w' ? 'Giliran Putih' : 'Giliran Hitam';
+    const st = G.gameStatus(); // 'ok' | 'check' | 'checkmate' | 'stalemate'
+    let suffix = '';
+    if (st === 'check') suffix = ' — Skak!';
+    if (st === 'checkmate') suffix = ' — Skakmat!';
+    if (st === 'stalemate') suffix = ' — Stalemate.';
+    $status.textContent = turnText + suffix;
 
-    if (selected && moves.some(m => m.to === sq)) {
-      const promo = needsPromotion(selected, sq) ? 'Q' : null;
-      const mv = game.move?.({ from: selected, to: sq, promotion: promo });
-      if (mv) {
-        lastMove = { from: selected, to: sq };
-        selected = null;
-        sync();
-        if (mode === 'ai') setTimeout(aiMove, 140);
+    // History ke <pre>
+    const h = G.history(); // ["e2 → e4", "e7 → e5", ...]
+    let txt = '';
+    for (let i = 0; i < h.length; i += 2) {
+      const w = h[i]   ?? '';
+      const b = h[i+1] ?? '';
+      txt += `${(i/2)+1}. ${w} ${b}\n`;
+    }
+    if ($moveHistory) $moveHistory.textContent = txt || '_';
+
+    // Tampilkan modal hasil bila game selesai (optional)
+    if (typeof window.__azbrySetResult === 'function') {
+      if (st === 'checkmate') {
+        const winner = (G.turn() === 'w') ? 'Hitam' : 'Putih'; // giliran side yg skakmat = side yg kalah
+        window.__azbrySetResult({
+          text: `${winner} Menang!`,
+          subText: 'Skakmat.'
+        });
+      } else if (st === 'stalemate') {
+        window.__azbrySetResult({
+          text: 'Seri',
+          subText: 'Stalemate.'
+        });
       }
+    }
+  }
+
+  function clearSelection() {
+    selected = null;
+    renderAll([]);
+  }
+
+  function tryMove(from, to) {
+    // Coba jalankan, fallback promosi = Queen
+    let note = G.move({ from, to });
+    if (!note) note = G.move({ from, to, promotion: 'Q' });
+    if (!note) return false;
+
+    lastMove = { from, to };
+    selected = null;
+    renderAll([]);
+
+    // Giliran AI
+    const st = G.gameStatus();
+    if (vsAI && st !== 'checkmate' && st !== 'stalemate') {
+      setTimeout(aiMove, 120);
+    }
+    return true;
+  }
+
+  function aiMove() {
+    const moves = G.moves();
+    if (!moves.length) return;
+    const m = moves[Math.floor(Math.random() * moves.length)];
+    G.move(m);
+    lastMove = { from: m.from, to: m.to };
+    renderAll([]);
+  }
+
+  // ----- Events -----
+  function onSquareClick(squareAlg) {
+    if (!selected) {
+      const targets = legalTargetsFrom(squareAlg);
+      if (targets.length === 0) { renderAll([]); return; }
+      selected = squareAlg;
+      renderAll(targets);
       return;
     }
 
-    const P = safeBoardCell(sq);
-    selected = (P && P.color === (game.turn?.() || 'w')) ? sq : null;
-    sync();
-  }
+    if (squareAlg === selected) { clearSelection(); return; }
 
-  function needsPromotion(from, to){
-    const toR = 8 - parseInt(to[1],10);
-    const p = safeBoardCell(from);
-    if (!p || p.piece !== 'P') return false;
-    return (p.color==='w' && toR===0) || (p.color==='b' && toR===7);
-  }
-
-  function safeBoardCell(sq){
-    try{
-      const arr = game.board?.();
-      if (!Array.isArray(arr) || arr.length !== 64) return null;
-      const idx = (8 - parseInt(sq[1],10)) * 8 + 'abcdefgh'.indexOf(sq[0]);
-      return arr[idx] || null;
-    }catch{ return null; }
-  }
-
-  // --- AI greedy ---------------------------------------------------------------
-  function aiMove(){
-    if (mode !== 'ai' || (game.turn?.() !== 'b')) return;
-    const legal = game.moves?.() || [];
-    if (!legal.length) { sync(); return; }
-    const val = { P:1,N:3,B:3,R:5,Q:9,K:100 };
-    let best=null, bestScore=-1;
-    for (const m of legal){
-      const t = safeBoardCell(m.to);
-      const s = t ? val[t.piece] : 0;
-      if (s > bestScore) { best = m; bestScore = s; }
-    }
-    const pick  = bestScore>0 ? best : legal[(Math.random()*legal.length)|0];
-    const promo = needsPromotion(pick.from, pick.to) ? 'Q' : null;
-    const note  = game.move?.({ from: pick.from, to: pick.to, promotion: promo });
-    if (note) lastMove = { from: pick.from, to: pick.to };
-    sync();
-  }
-
-  // --- Status universal --------------------------------------------------------
-  function getStatus(){
-    let hasMoves=true; try{ hasMoves = (game.moves?.().length > 0); }catch{}
-    let inCheck=false; try{
-      if (typeof game.inCheck === 'function') inCheck = !!game.inCheck();
-      else if (typeof game.in_check === 'function') inCheck = !!game.in_check();
-    }catch{}
-    let isMate=false; try{
-      if (typeof game.inCheckmate === 'function') isMate = !!game.inCheckmate();
-      else if (typeof game.in_checkmate === 'function') isMate = !!game.in_checkmate();
-      else if (!hasMoves && inCheck) isMate = true;
-    }catch{}
-    let isStale=false; try{
-      if (typeof game.inStalemate === 'function') isStale = !!game.inStalemate();
-      else if (typeof game.in_stalemate === 'function') isStale = !!game.in_stalemate();
-      else if (!hasMoves && !inCheck) isStale = true;
-    }catch{}
-    let status = 'ok';
-    if (isMate) status = 'checkmate';
-    else if (isStale) status = 'stalemate';
-    else if (inCheck) status = 'check';
-    return { status, inCheck };
-  }
-
-  // --- Label koordinat & efek check -------------------------------------------
-  function injectBoardLabels(){
-    if (!boardEl.querySelector('.files')){
-      const files = document.createElement('div'); files.className='files';
-      'abcdefgh'.split('').forEach(ch=>{ const s=document.createElement('span'); s.textContent=ch; files.appendChild(s); });
-      boardEl.appendChild(files);
-    }
-    if (!boardEl.querySelector('.ranks')){
-      const ranks = document.createElement('div'); ranks.className='ranks';
-      for (let i=8;i>=1;i--){ const s=document.createElement('span'); s.textContent=i; ranks.appendChild(s); }
-      boardEl.appendChild(ranks);
-    }
-  }
-  function mirrorCheckClass(){
-    boardEl.querySelectorAll('.sq.in-check').forEach(el=>el.classList.remove('in-check'));
-    boardEl.querySelectorAll('.sq.check').forEach(el=>el.classList.add('in-check'));
-  }
-
-  // --- Overlay hasil (pakai util dari HTML: window.__azbrySetResult) -----------
-  function showResult(text, subText=''){
-    if (typeof window.__azbrySetResult === 'function') {
-      window.__azbrySetResult({ text, subText });
+    // Coba gerak; kalau gagal dan kotak yg diklik punya langkah, jadikan seleksi baru
+    const ok = tryMove(selected, squareAlg);
+    if (!ok) {
+      const maybe = legalTargetsFrom(squareAlg);
+      if (maybe.length) { selected = squareAlg; renderAll(maybe); }
+      else { clearSelection(); }
     }
   }
 
-  // --- RENDER / SYNC (FEN FIRST → bidak PASTI muncul) --------------------------
-  function sync(){
-    const legal = selected ? (game.moves?.({ square:selected }) || []).map(m=>m.to) : [];
+  // Toolbar
+  $btnReset?.addEventListener('click', () => {
+    G.reset(); lastMove = null; selected = null; renderAll([]);
+  });
+  $btnUndo?.addEventListener('click', () => {
+    if (G.undo()) { lastMove = null; renderAll([]); }
+  });
+  $btnRedo?.addEventListener('click', () => {
+    if (G.redo()) { lastMove = null; renderAll([]); }
+  });
+  $btnFlip?.addEventListener('click', () => {
+    ui.toggleFlip();
+    renderAll(selected ? legalTargetsFrom(selected) : []);
+  });
 
-    // status & turn
-    const { status, inCheck } = getStatus();
-    const turn = game.turn?.() || 'w';
-    const inCheckOpt = inCheck ? turn : undefined;
+  // Mode (dipicu oleh glue script di HTML melalui proxy tombol tersembunyi)
+  $modeHuman?.addEventListener('click', () => {
+    vsAI = false;
+    G.reset(); lastMove = null; selected = null; renderAll([]);
+  });
+  $modeAI?.addEventListener('click', () => {
+    vsAI = true;
+    G.reset(); lastMove = null; selected = null; renderAll([]);
+  });
 
-    // render via FEN (engine punya fen(); kalau ga, pakai start)
-    const fen = (typeof game.fen === 'function') ? game.fen() : START_FEN;
-    ui.renderFEN(fen, { lastMove, legal, inCheck: inCheckOpt });
-
-    // aktivasi CSS merah
-    mirrorCheckClass();
-
-    // koordinat
-    injectBoardLabels();
-
-    // log sederhana
-    if (moveLog) {
-      try {
-        const h = game.history?.() || [];
-        moveLog.textContent = h.length ? h.map((x,i)=>`${i+1}. ${x}`).join('\n') : '_';
-      } catch { moveLog.textContent = '_'; }
-    }
-
-    // popup hasil
-    if (status === 'checkmate') {
-      const winner = (turn === 'w') ? 'Hitam' : 'Putih';
-      showResult(`${winner} Menang!`);
-    } else if (status === 'stalemate') {
-      showResult('Seri 🤝');
-    }
-  }
-
-  // --- Boot --------------------------------------------------------------------
-  game.reset?.();     // pastikan posisi awal
-  sync();
-
-  // Optional: expose API ke glue HTML
-  window.AzbryChess = window.AzbryChess || {};
-  window.AzbryChess.setMode = setMode;
-});
+  // Board-only & Back tombol (sudah di-wire di HTML glue; tidak perlu di-handle di sini)
+  // Hanya render awal
+  renderAll([]);
+})();
