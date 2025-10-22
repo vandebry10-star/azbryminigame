@@ -1,4 +1,4 @@
-// /assets/js/main.js — ELO 3000 (robust) + animasi warna benar + tray + check + popup
+// /assets/js/main.js — Stable: lock input, correct turns, robust AI + anim + trays + check + popup
 (function () {
   if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
     console.error('Chess / ChessUI tidak ditemukan.');
@@ -11,7 +11,6 @@
   // ===== algebra helpers =====
   const filesStr = 'abcdefgh';
   function idx(a){ return (8 - parseInt(a[1],10)) * 8 + filesStr.indexOf(a[0]); }
-  function alg(i){ return filesStr[i % 8] + (8 - ((i/8)|0)); }
 
   // ==================== BOOTSTRAP ====================
   const G  = new Chess();
@@ -21,9 +20,15 @@
   const $capBlack = document.getElementById('capBlack');  // "Hitam tertangkap"
   const $capWhite = document.getElementById('capWhite');  // "Putih tertangkap"
 
+  // Sisi (default: player=white, AI=black)
+  let humanColor = 'w';
+  let aiColor = 'b';
+
+  // State UI
   let selected = null;
   let lastMove = null;
   let vsAI = false;
+  let busy = false; // <-- Kunci anti dobel input/AI
 
   // koordinat a–h / 8–1
   (function stampCoordinates(){
@@ -74,13 +79,15 @@
     const fromIdx = idx(fromAlg), toIdx = idx(toAlg);
     const mover   = prevBoard[fromIdx];
     const prevTo = prevBoard[toIdx], nowTo = nextBoard[toIdx];
-    // normal capture: ada lawan di 'to' sebelumnya, sekarang warna berubah
+
+    // normal capture
     if (prevTo && nowTo && prevTo.color !== nowTo.color) return prevTo;
-    // en-passant: pion diagonal ke kotak kosong → korban di belakang 'to'
+
+    // en-passant (FIX precedence: pakai tanda kurung!)
     if (mover && mover.piece === 'P' && prevTo == null) {
       const fromFile = fromIdx % 8, toFile = toIdx % 8;
       if (fromFile !== toFile) {
-        const capSq = toIdx + (mover.color === 'w') ? 8 : -8;
+        const capSq = toIdx + (mover.color === 'w' ? 8 : -8);
         return prevBoard[capSq] || null;
       }
     }
@@ -275,94 +282,115 @@
     if(status==='checkmate'){
       const winner=(G.turn()==='w')?'Hitam':'Putih';
       window.__azbrySetResult?.({ text:`${winner} Menang!`, subText:'Skakmat ⚔️' });
+      busy = false;
       return true;
     }else if(status==='stalemate'){
       window.__azbrySetResult?.({ text:'Seri 🤝', subText:'Stalemate — tidak ada langkah sah' });
+      busy = false;
       return true;
     }
     return false;
   }
 
+  function triggerAIIfNeeded(){
+    if (!vsAI) { busy = false; return; }
+    if (G.turn() !== aiColor) { busy = false; return; } // hanya saat giliran AI
+    // AI turn
+    setTimeout(()=> {
+      try {
+        const st = G.gameStatus();
+        if (st==='checkmate' || st==='stalemate') { busy=false; return; }
+
+        const m = bestMoveWithTime(AI_PROFILE.timeMs, AI_PROFILE.maxDepth);
+        if (!m || !m.from || !m.to) { busy=false; render([]); return; }
+
+        const prev2 = JSON.parse(JSON.stringify(G.board()));
+        const pChar = glyphAtPrev(prev2, m.from) || '♟';
+
+        const ok = G.move(m);
+        if (!ok) { console.warn('AI picked illegal move, skipping'); busy=false; render([]); return; }
+
+        animateMove(m.from, m.to, pChar, () => {
+          const ended = afterMoveCommon(prev2, m.from, m.to);
+          if (!ended) { busy = false; } // selesai giliran AI
+        });
+      } catch (e) {
+        console.warn('AI turn error:', e);
+        busy = false; render([]);
+      }
+    }, 10);
+  }
+
   function tryMove(from,to){
+    // kalau VS AI, cegah klik saat bukan giliran player
+    if (vsAI && G.turn() !== humanColor) return false;
+    if (busy) return false; // kunci saat anim/AI
+    busy = true;
+
     const prev = JSON.parse(JSON.stringify(G.board()));
     const pieceChar = glyphAtPrev(prev, from);
 
     const moved = G.move({from,to}) || G.move({from,to,promotion:'Q'});
-    if(!moved) return false;
+    if(!moved){ busy=false; return false; }
 
     animateMove(from, to, pieceChar, () => {
       const done = afterMoveCommon(prev, from, to);
       if (done) return;
-
-      // giliran AI
-      if (vsAI){
-        setTimeout(()=> {
-          try {
-            const st = G.gameStatus();
-            if (st==='checkmate' || st==='stalemate') return;
-
-            const m = bestMoveWithTime(AI_PROFILE.timeMs, AI_PROFILE.maxDepth);
-            if (!m || !m.from || !m.to) { render([]); return; }
-
-            const prev2 = JSON.parse(JSON.stringify(G.board()));
-            const pChar = glyphAtPrev(prev2, m.from) || '♟';
-
-            const ok = G.move(m);
-            if (!ok) { console.warn('AI picked illegal move, skipping'); render([]); return; }
-
-            animateMove(m.from, m.to, pChar, () => {
-              const ended = afterMoveCommon(prev2, m.from, m.to);
-              if (!ended) { /* game berlanjut */ }
-            });
-          } catch (e) {
-            console.warn('AI turn error:', e);
-            render([]);
-          }
-        }, 10);
-      }
+      // setelah player move, jika VS AI dan sekarang giliran AI → jalan
+      triggerAIIfNeeded();
     });
 
     return true;
   }
 
   function onSquareClick(a){
+    if (busy) return; // kunci input saat anim/AI
+    // hanya boleh pilih bidak sisi yang jalan
+    const candidates = G.moves({square:a});
     if(!selected){
-      const targets=legalTargetsFrom(a);
-      if(!targets.length){render([]);return;}
-      selected=a;render(targets);return;
+      if(!candidates.length){ render([]); return; }
+      selected = a; render(candidates.map(m=>m.to)); return;
     }
-    if(a===selected){selected=null;render([]);return;}
-    const ok=tryMove(selected,a);
+    if(a===selected){ selected=null; render([]); return; }
+    const ok = tryMove(selected, a);
     if(!ok){
-      const maybe=legalTargetsFrom(a);
-      if(maybe.length){selected=a;render(maybe);} else {selected=null;render([]);}
+      if(candidates.length){ selected=a; render(candidates.map(m=>m.to)); }
+      else{ selected=null; render([]); }
     }
   }
 
   // ==================== TOOLBAR ====================
   document.getElementById('btnReset')?.addEventListener('click',()=>{
-    G.reset(); lastMove=null; selected=null;
+    G.reset();
+    lastMove=null; selected=null; busy=false;
     capturedBlack.length=0; capturedWhite.length=0;
     renderCaptures(); render([]);
   });
   document.getElementById('btnUndo')?.addEventListener('click',()=>{
+    if (busy) return;
     if(G.undo()){ lastMove=null; render([]); }
   });
   document.getElementById('btnRedo')?.addEventListener('click',()=>{
+    if (busy) return;
     if(G.redo()){ lastMove=null; render([]); }
   });
   document.getElementById('btnFlip')?.addEventListener('click',()=>{
+    if (busy) return;
     ui.toggleFlip(); render(selected?legalTargetsFrom(selected):[]);
   });
   document.getElementById('modeHuman')?.addEventListener('click',()=>{
-    vsAI=false; G.reset(); lastMove=null; selected=null;
+    vsAI=false; humanColor='w'; aiColor='b';
+    G.reset(); lastMove=null; selected=null; busy=false;
     capturedBlack.length=0; capturedWhite.length=0;
     renderCaptures(); render([]);
   });
   document.getElementById('modeAI')?.addEventListener('click',()=>{
-    vsAI=true;  G.reset(); lastMove=null; selected=null;
+    vsAI=true; humanColor='w'; aiColor='b'; // player putih vs AI hitam
+    G.reset(); lastMove=null; selected=null; busy=false;
     capturedBlack.length=0; capturedWhite.length=0;
     renderCaptures(); render([]);
+    // kalau mau AI jalan dulu (AI=hitam tidak jalan dulu). Kalau ingin AI putih dulu:
+    // humanColor='b'; aiColor='w'; triggerAIIfNeeded();
   });
 
   render([]); renderCaptures();
