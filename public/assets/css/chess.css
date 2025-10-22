@@ -95,15 +95,22 @@ body.board-only .board-wrap{ max-width:min(98vw,1100px); }
 
 /* Animasi bidak bergerak */
 .anim-piece{
-  position: absolute;
-  left: 0; top: 0;
-  transform: translate(0,0);
-  transition: transform .18s ease-in-out;
-  pointer-events: none;
-  line-height: 1;
-  font-size: clamp(42px, 9vw, 76px);
-  /* gaya warna mengikuti piece putih/hitam default */
-  color: #fff;
-  text-shadow: 0 0 2px #000, 0 0 1px #000, 0 1px 0 #000, 1px 0 0 #000, -1px 0 0 #000, 0 -1px 0 #000;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,.6));
+  position:absolute;
+  left:0; top:0;
+  transform:translate(0,0);
+  transition:transform .18s ease-in-out;
+  pointer-events:none;
+  line-height:1;
+  font-size:clamp(42px, 9vw, 76px);
+}
+
+/* warna ghost mengikuti kelas */
+.anim-piece.white{
+  color:#fff;
+  text-shadow:0 0 2px #000,0 0 1px #000,0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000,0 -1px 0 #000;
+  filter:drop-shadow(0 0 2px rgba(0,0,0,.6));
+}
+.anim-piece.black{
+  color:#222;
+  text-shadow:0 0 3px rgba(255,255,255,.25);
 }
