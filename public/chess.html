@@ -3,89 +3,123 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Azbry Chess.com</title>
+  <title>Azbry Chess</title>
 
   <!-- Styles -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=12" />
-  <link rel="stylesheet" href="assets/css/chess.css?v=12" />
+  <link rel="stylesheet" href="assets/css/azbry.css?v=13" />
+  <link rel="stylesheet" href="assets/css/chess.css?v=13" />
 
   <style>
     .hidden{display:none!important}
-    .hero-title{ text-align:center; margin:10px 0 6px; }
+    .hero-title{text-align:center;margin:10px 0 6px}
     .hero-title h1{
-      margin:0; font-weight:900;
+      margin:0;font-weight:900;
       font-size:clamp(26px,6vw,40px);
       color:var(--azbry-accent);
       text-shadow:0 0 18px var(--azbry-ring);
     }
-    .board-wrap{ margin:12px auto 12px; }
+    .board-wrap{margin:12px auto 12px}
     .toolbar{
-      max-width:820px; margin:0 auto 12px;
-      display:flex; flex-wrap:wrap; gap:10px;
-      align-items:center; justify-content:center;
-      padding:10px; border-radius:16px;
-      background:var(--panel-bg-2); border:1px solid var(--panel-bd);
+      max-width:820px;margin:0 auto 12px;
+      display:flex;flex-wrap:wrap;gap:10px;
+      align-items:center;justify-content:center;
+      padding:10px;border-radius:16px;
+      background:var(--panel-bg-2);
+      border:1px solid var(--panel-bd);
     }
-    .segbar{display:flex; gap:8px; flex-wrap:wrap}
-    .seg{padding:10px 14px; border-radius:12px; font-weight:800; letter-spacing:.2px;
-      background:var(--panel-bg-1); border:1px solid var(--panel-bd); color:#dbe4ee; cursor:pointer; transition:.18s}
-    .seg.active{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2)); color:var(--azbry-ink); border-color:transparent; box-shadow:0 0 12px rgba(184,255,154,.35)}
-    .btn{padding:10px 14px; border-radius:12px; font-weight:800; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#e8f0fb; cursor:pointer}
+    .segbar{display:flex;gap:8px;flex-wrap:wrap}
+    .seg{
+      padding:10px 14px;border-radius:12px;font-weight:800;letter-spacing:.2px;
+      background:var(--panel-bg-1);
+      border:1px solid var(--panel-bd);
+      color:#dbe4ee;cursor:pointer;transition:.18s
+    }
+    .seg.active{
+      background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
+      color:var(--azbry-ink);
+      border-color:transparent;
+      box-shadow:0 0 12px rgba(184,255,154,.35)
+    }
+    .btn{
+      padding:10px 14px;border-radius:12px;font-weight:800;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:#e8f0fb;cursor:pointer
+    }
     .btn.dark{background:rgba(255,255,255,.03)}
-    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2)); color:var(--azbry-ink); border-color:transparent; box-shadow:0 0 12px rgba(184,255,154,.25)}
-    .panel{max-width:820px; margin:0 auto}
-    #menuOverlay{position:fixed; inset:0; z-index:9998; background:rgba(11,13,16,.94); display:flex; align-items:center; justify-content:center; opacity:1; pointer-events:auto; transition:opacity .25s}
-    #menuOverlay.hide{opacity:0; pointer-events:none}
-    .menu-card{width:min(92vw,580px); padding:22px; border-radius:16px; text-align:center; background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015)); border:1px solid rgba(255,255,255,.08); box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)}
-    .menu-card h2{margin:6px 0 14px; font-weight:900; color:var(--azbry-accent); text-shadow:0 0 16px var(--azbry-ring); font-size:clamp(22px,4vw,32px)}
-    .seg-wrap{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
-    .menu-hint{margin-top:10px; opacity:.65}
-    #resultModal{position:fixed; inset:0; z-index:10000; background:rgba(11,13,16,.92); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .25s}
-    #resultModal.show{opacity:1; pointer-events:auto}
-    .result-card{width:min(92vw,560px); padding:22px; border-radius:16px; text-align:center; background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015)); border:1px solid rgba(255,255,255,.08); box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)}
-    .result-card h2{margin:4px 0 8px; color:var(--azbry-accent); font-weight:900; text-shadow:0 0 18px var(--azbry-ring); font-size:clamp(22px,4.4vw,34px)}
-    .result-sub{color:#cfd8e6; opacity:.9; margin-bottom:14px}
-    .result-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+    .btn.accent{
+      background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
+      color:var(--azbry-ink);border-color:transparent;
+      box-shadow:0 0 12px rgba(184,255,154,.25)
+    }
+    .panel{max-width:820px;margin:0 auto}
+    #menuOverlay{position:fixed;inset:0;z-index:9998;background:rgba(11,13,16,.94);display:flex;align-items:center;justify-content:center;opacity:1;pointer-events:auto;transition:opacity .25s}
+    #menuOverlay.hide{opacity:0;pointer-events:none}
+    .menu-card{
+      width:min(92vw,580px);padding:22px;border-radius:16px;text-align:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)
+    }
+    .menu-card h2{
+      margin:6px 0 14px;font-weight:900;color:var(--azbry-accent);
+      text-shadow:0 0 16px var(--azbry-ring);
+      font-size:clamp(22px,4vw,32px)
+    }
+    .menu-hint{margin-top:10px;opacity:.65}
+    #resultModal{
+      position:fixed;inset:0;z-index:10000;background:rgba(11,13,16,.92);
+      display:flex;align-items:center;justify-content:center;
+      opacity:0;pointer-events:none;transition:opacity .25s
+    }
+    #resultModal.show{opacity:1;pointer-events:auto}
+    .result-card{
+      width:min(92vw,560px);padding:22px;border-radius:16px;text-align:center;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.08);
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)
+    }
+    .result-card h2{
+      margin:4px 0 8px;color:var(--azbry-accent);font-weight:900;
+      text-shadow:0 0 18px var(--azbry-ring);
+      font-size:clamp(22px,4.4vw,34px)
+    }
+    .result-sub{color:#cfd8e6;opacity:.9;margin-bottom:14px}
+    .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
     body.board-only .panel{display:none}
-    body.board-only .toolbar .only-hide{display:none}
     #btnBack{display:none}
     body.board-only #btnBack{display:inline-flex}
   </style>
 </head>
+
 <body>
   <main class="container" id="chess-app">
-    <div class="hero-title"><h1>Azbry Chess.com</h1></div>
+    <div class="hero-title"><h1>Azbry Chess</h1></div>
 
-    <!-- PAPAN -->
-    <section class="board-wrap" aria-label="Papan Catur">
+    <!-- BOARD -->
+    <section class="board-wrap">
       <div id="board" class="board" aria-label="board"></div>
     </section>
 
-    <!-- TOOLBAR BAWAH -->
+    <!-- TOOLBAR -->
     <div class="toolbar">
-      <!-- Mode -->
-      <div class="segbar" aria-label="Pilih Mode">
-        <button id="btnHuman" class="seg active" type="button" title="Dua pemain di perangkat yang sama">VS Player</button>
-        <button id="btnAI" class="seg" type="button" title="Main lawan Azbry-MD">VS Azbry-MD</button>
+      <div class="segbar">
+        <button id="btnHuman" class="seg active" type="button">VS Player</button>
+        <button id="btnAI" class="seg" type="button">VS Azbry-MD</button>
       </div>
-
-      <!-- PROXY tombol lama untuk kompatibilitas main.js -->
-      <button id="modeHuman" class="hidden" type="button" data-mode="human"></button>
-      <button id="modeAI" class="hidden" type="button" data-mode="ai"></button>
-
-      <span class="only-hide" style="width:12px"></span>
-
-      <!-- Kontrol permainan -->
-      <button id="btnReset" class="btn accent" type="button">Muat Ulang</button>
-      <button id="btnUndo" class="btn" type="button">Undo</button>
-      <button id="btnRedo" class="btn" type="button">Redo</button>
-      <button id="btnFlip" class="btn dark" type="button">Flip Board</button>
-      <button id="btnBoardOnly" class="btn dark" type="button">Board Only</button>
-      <button id="btnBack" class="btn dark" type="button">Kembali</button>
+      <!-- Hidden proxy buat main.js -->
+      <button id="modeHuman" class="hidden"></button>
+      <button id="modeAI" class="hidden"></button>
+      <button id="btnReset" class="btn accent">Muat Ulang</button>
+      <button id="btnUndo" class="btn">Undo</button>
+      <button id="btnRedo" class="btn">Redo</button>
+      <button id="btnFlip" class="btn dark">Flip Board</button>
+      <button id="btnBoardOnly" class="btn dark">Board Only</button>
+      <button id="btnBack" class="btn dark">Kembali</button>
     </div>
 
     <!-- LOG -->
-    <section class="panel" aria-label="Riwayat">
+    <section class="panel">
       <div class="move-log">
         <h4>Riwayat Langkah</h4>
         <pre id="moveHistory">_</pre>
@@ -100,35 +134,36 @@
   </main>
 
   <!-- MENU OVERLAY -->
-  <div id="menuOverlay" aria-modal="true" role="dialog">
+  <div id="menuOverlay">
     <div class="menu-card">
       <div class="tag">AZBRY-MD</div>
       <h2>Pilih Mode Permainan</h2>
       <div class="seg-wrap">
-        <button id="menuHuman" class="seg active" type="button">VS Player</button>
-        <button id="menuAI" class="seg" type="button">VS Azbry-MD</button>
+        <button id="menuHuman" class="seg active">VS Player</button>
+        <button id="menuAI" class="seg">VS Azbry-MD</button>
       </div>
       <div class="menu-hint">Kamu bisa ganti mode kapan saja dari toolbar bawah.</div>
     </div>
   </div>
 
   <!-- RESULT MODAL -->
-  <div id="resultModal" aria-live="polite">
+  <div id="resultModal">
     <div class="result-card">
-      <h2 id="resultText">Putih Menang</h2>
+      <h2 id="resultText">Putih Menang!</h2>
       <div id="resultSub" class="result-sub"></div>
       <div class="result-actions">
-        <button id="btnPlayAgain" class="btn accent" type="button">Main Lagi</button>
-        <button id="btnCloseResult" class="btn dark" type="button">Tutup</button>
+        <button id="btnPlayAgain" class="btn accent">Main Lagi</button>
+        <button id="btnCloseResult" class="btn dark">Tutup</button>
       </div>
     </div>
   </div>
 
-  <!-- Scripts (urutan wajib) -->
-  <script src="assets/js/chess-engine.js?v=12"></script>
-  <script src="assets/js/main.js?v=12"></script>
+  <!-- Scripts (urutan W A J I B) -->
+  <script src="assets/js/chess-engine.js?v=13"></script>
+  <script src="assets/js/chess-ui.js?v=13"></script>
+  <script src="assets/js/main.js?v=13"></script>
 
-  <!-- Glue UI <-> main.js -->
+  <!-- Glue: UI ↔ Menu/Overlay -->
   <script>
     (function(){
       const menu = document.getElementById('menuOverlay');
@@ -136,8 +171,6 @@
       const btnAI = document.getElementById('btnAI');
       const menuHuman = document.getElementById('menuHuman');
       const menuAI = document.getElementById('menuAI');
-
-      // proxy lama
       const proxyHuman = document.getElementById('modeHuman');
       const proxyAI = document.getElementById('modeAI');
 
@@ -151,56 +184,39 @@
         }
       }
 
-      // Set mode: event → API → klik proxy lama → styling
       function setMode(mode){
-        try { window.dispatchEvent(new CustomEvent('azbry:setMode',{detail:{mode}})); } catch(e){}
-        if (window.AzbryChess && typeof AzbryChess.setMode === 'function') {
-          try { AzbryChess.setMode(mode); } catch(e){}
-        }
         if (mode === 'human') proxyHuman?.click(); else proxyAI?.click();
         markSeg(mode);
-      }
-
-      // Overlay awal (sekali per sesi)
-      if (sessionStorage.getItem('azbry_chess_seen_menu') === '1') {
         menu.classList.add('hide');
       }
-      menuHuman.addEventListener('click', ()=>{
-        setMode('human'); sessionStorage.setItem('azbry_chess_seen_menu','1'); menu.classList.add('hide');
-      });
-      menuAI.addEventListener('click', ()=>{
-        setMode('ai'); sessionStorage.setItem('azbry_chess_seen_menu','1'); menu.classList.add('hide');
-      });
 
-      // Tombol toolbar
+      menuHuman.addEventListener('click', ()=> setMode('human'));
+      menuAI.addEventListener('click', ()=> setMode('ai'));
       btnHuman.addEventListener('click', ()=> setMode('human'));
       btnAI.addEventListener('click', ()=> setMode('ai'));
 
-      // Board only & back
+      // Board-only toggle
       const btnBoardOnly = document.getElementById('btnBoardOnly');
       const btnBack = document.getElementById('btnBack');
       btnBoardOnly.addEventListener('click', ()=> document.body.classList.add('board-only'));
       btnBack.addEventListener('click', ()=> document.body.classList.remove('board-only'));
 
-      // Result helpers (dipanggil dari main.js)
+      // Result modal
       const modal = document.getElementById('resultModal');
       const txt = document.getElementById('resultText');
       const sub = document.getElementById('resultSub');
       document.getElementById('btnCloseResult').addEventListener('click', ()=> modal.classList.remove('show'));
       document.getElementById('btnPlayAgain').addEventListener('click', ()=>{
         modal.classList.remove('show');
-        try{ window.dispatchEvent(new CustomEvent('azbry:reset')); }catch(e){}
         document.getElementById('btnReset')?.click();
       });
 
-      // Global API untuk hasil (use di main.js)
+      // global fungsi show result
       window.__azbrySetResult = function({text, subText}){
         txt.textContent = text || '';
         sub.textContent = subText || '';
         modal.classList.add('show');
       };
-      // Contoh dipakai di main.js saat player menang vs AI:
-      // window.__azbrySetResult({ text:'Azbry Kalah', subText:'“Serius? Kamu menang? Kebetulan doang kali 😏”' });
     })();
   </script>
 </body>
