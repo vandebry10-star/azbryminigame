@@ -173,7 +173,7 @@ body.board-only .board-wrap {
 .board .files span{
   align-self: end;                     /* baris bawah */
   justify-self: end;                   /* tiap kolom di kanan */
-  padding: 0 6px 6px 0;                /* masuk ke dalam kotak */
+  padding: 0 4px 4px 0;                /* masuk ke dalam kotak */
   color: rgba(255,255,255,.96);
   text-shadow: 0 1px 1px rgba(0,0,0,.55);
   /* kalau mau lebih rapat: kurangi padding bawah/kanan */
@@ -193,7 +193,7 @@ body.board-only .board-wrap {
 .board .ranks span{
   align-self: start;                   /* baris atas */
   justify-self: start;                 /* kolom kiri */
-  padding: 6px 0 0 6px;                /* masuk ke dalam kotak */
+  padding: 4px 0 0 4px;                /* masuk ke dalam kotak */
   color: rgba(255,255,255,.96);
   text-shadow: 0 1px 1px rgba(0,0,0,.55);
 }
