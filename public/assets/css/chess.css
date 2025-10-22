@@ -156,40 +156,44 @@ body.board-only .board-wrap {
 .board.flipped .sq::before,
 .board.flipped .sq::after{ transform: rotate(180deg); }
 
-/* === Koordinat papan via .files & .ranks (tanpa ubah JS) === */
+/* === Koordinat pas di dalam sudut kotak =============================== */
 .board { position: relative; }
 
-/* Huruf a–h di bawah */
+/* Huruf a–h: di sudut kanan-bawah setiap kolom pada rank 1 */
 .board .files{
   position: absolute;
-  left: 0; right: 0; bottom: 6px;
+  inset: 0;                           /* overlay penuh selebar papan */
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  padding: 0 8px;
+  grid-template-rows: 100%;
   pointer-events: none;
-  z-index: 5;
-  font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  z-index: 9;
+  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
 }
 .board .files span{
-  justify-self: end;  /* pojok kanan bawah tiap kotak */
-  color: rgba(255,255,255,.92);
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
+  align-self: end;                     /* baris bawah */
+  justify-self: end;                   /* tiap kolom di kanan */
+  padding: 0 6px 6px 0;                /* masuk ke dalam kotak */
+  color: rgba(255,255,255,.96);
+  text-shadow: 0 1px 1px rgba(0,0,0,.55);
+  /* kalau mau lebih rapat: kurangi padding bawah/kanan */
 }
 
-/* Angka 8–1 di kiri */
+/* Angka 8–1: di sudut kiri-atas setiap baris pada file a */
 .board .ranks{
   position: absolute;
-  top: 8px; bottom: 8px; left: 6px;
+  inset: 0;
   display: grid;
   grid-template-rows: repeat(8, 1fr);
+  grid-template-columns: 100%;
   pointer-events: none;
-  z-index: 5;
-  font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-  text-shadow: 0 1px 0 rgba(0,0,0,.25);
+  z-index: 9;
+  font: 700 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
 }
 .board .ranks span{
-  align-self: start;   /* pojok kiri atas tiap kotak */
-  color: rgba(255,255,255,.92);
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
+  align-self: start;                   /* baris atas */
+  justify-self: start;                 /* kolom kiri */
+  padding: 6px 0 0 6px;                /* masuk ke dalam kotak */
+  color: rgba(255,255,255,.96);
+  text-shadow: 0 1px 1px rgba(0,0,0,.55);
 }
