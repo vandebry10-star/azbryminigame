@@ -246,5 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---------- Init ---------- */
   buildGrid();
   if (engine) renderEngine();
+  // Safety rebuild kalau papan belum kebentuk
+setTimeout(() => {
+  if (!boardEl.querySelector('.square')) {
+    console.warn('⚠️ Rebuild papan (fallback)');
+    buildGrid();
+    renderEngine();
+  }
+}, 200);
 });
 </script>
