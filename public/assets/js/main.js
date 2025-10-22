@@ -1,4 +1,4 @@
-// /assets/js/main.js — ELO 3000 + animasi warna benar + tray + check + popup
+// /assets/js/main.js — ELO 3000 (robust) + animasi warna benar + tray + check + popup
 (function () {
   if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
     console.error('Chess / ChessUI tidak ditemukan.');
@@ -74,11 +74,13 @@
     const fromIdx = idx(fromAlg), toIdx = idx(toAlg);
     const mover   = prevBoard[fromIdx];
     const prevTo = prevBoard[toIdx], nowTo = nextBoard[toIdx];
-    if (prevTo && nowTo && prevTo.color !== nowTo.color) return prevTo;        // normal
-    if (mover && mover.piece === 'P' && prevTo == null) {                      // en-passant
+    // normal capture: ada lawan di 'to' sebelumnya, sekarang warna berubah
+    if (prevTo && nowTo && prevTo.color !== nowTo.color) return prevTo;
+    // en-passant: pion diagonal ke kotak kosong → korban di belakang 'to'
+    if (mover && mover.piece === 'P' && prevTo == null) {
       const fromFile = fromIdx % 8, toFile = toIdx % 8;
       if (fromFile !== toFile) {
-        const capSq = toIdx + (mover.color === 'w' ? 8 : -8);
+        const capSq = toIdx + (mover.color === 'w') ? 8 : -8;
         return prevBoard[capSq] || null;
       }
     }
@@ -101,16 +103,14 @@
     if (!p) return null;
     return glyph(p);
   }
-
-  // >>> FIX warna ghost piece (ikuti warna bidak di papan sesudah move)
+  // ghost mengikuti warna bidak di state SETELAH move
   function animateMove(fromAlg, toAlg, pieceChar, done){
     try {
       const srcCell = cellForAlg(fromAlg);
       const dstCell = cellForAlg(toAlg);
       if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
 
-      // lihat warna bidak di kotak tujuan PADA STATE SAAT INI (sesudah G.move dipanggil)
-      const pData = G.board()[idx(toAlg)] || null;
+      const pData = G.board()[idx(toAlg)] || null; // state sekarang (sesudah G.move)
       const colorClass = (pData && pData.color === 'b') ? 'anim-piece black' : 'anim-piece white';
 
       const ghost = document.createElement('span');
@@ -118,7 +118,7 @@
       ghost.textContent = pieceChar;
       boardEl.appendChild(ghost);
 
-      // sembunyikan piece asal sementara biar ga dobel
+      // sembunyikan piece asal sementara
       const srcPiece = srcCell.querySelector('.piece');
       if (srcPiece) srcPiece.style.opacity = '0';
 
@@ -127,18 +127,18 @@
       ghost.style.left = `${c1.x}px`;
       ghost.style.top  = `${c1.y}px`;
 
-      requestAnimationFrame(()=>{
-        ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
-      });
+      requestAnimationFrame(()=>{ ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`; });
 
       const cleanup = () => {
-        ghost.remove();
-        if (srcPiece) srcPiece.style.opacity = '';
+        try { ghost.remove(); if (srcPiece) srcPiece.style.opacity = ''; } catch {}
         done?.();
       };
       ghost.addEventListener('transitionend', cleanup, { once:true });
-      setTimeout(cleanup, 250); // fallback
-    } catch(e){ console.warn('anim error', e); done?.(); }
+      setTimeout(cleanup, 300); // fallback
+    } catch(e){
+      console.warn('anim error', e);
+      done?.(); // jangan nahan flow
+    }
   }
 
   // ==================== AI: EVAL & SEARCH ====================
@@ -182,13 +182,13 @@
     const moves = G.moves();
     const caps = [];
     for (const m of moves) {
-      if (performance.now() > endTime) break;
+      if ((performance.now?.() ?? Date.now()) > endTime) break;
       const target = G.board()[idx(m.to)];
       if (target) caps.push(m);
     }
     caps.sort((a,b)=>scoreMove(b)-scoreMove(a));
     for (const m of caps){
-      if (performance.now() > endTime) break;
+      if ((performance.now?.() ?? Date.now()) > endTime) break;
       if (!G.move(m)) continue;
       const score = -qsearch(-beta, -alpha, endTime);
       G.undo();
@@ -198,14 +198,14 @@
     return alpha;
   }
   function negamax(depth, alpha, beta, endTime){
-    if (performance.now() > endTime) return evaluate();
+    if ((performance.now?.() ?? Date.now()) > endTime) return evaluate();
     if (depth === 0) return AI_PROFILE.useQuiescence ? qsearch(alpha, beta, endTime) : evaluate();
     nodes++;
     let best = -1e9, legalFound = false;
     let moves = G.moves();
     moves.sort((a,b)=>scoreMove(b)-scoreMove(a));
     for (const m of moves){
-      if (performance.now() > endTime) break;
+      if ((performance.now?.() ?? Date.now()) > endTime) break;
       if (!G.move(m)) continue;
       legalFound = true;
       const score = -negamax(depth-1, -beta, -alpha, endTime);
@@ -222,35 +222,49 @@
     return best;
   }
   function bestMoveWithTime(timeMs, maxDepth){
-    const endTime = performance.now() + timeMs;
-    let best = null; nodes = 0;
-    let rootMoves = G.moves();
-    rootMoves.sort((a,b)=>scoreMove(b)-scoreMove(a));
-    for (let depth=1; depth<=maxDepth; depth++){
-      if (performance.now() > endTime) break;
-      let localBest=null, localBestScore=-1e9;
-      for (const m of rootMoves){
-        if (performance.now() > endTime) break;
-        if (!G.move(m)) continue;
-        const sc = -negamax(depth-1, -1e9, 1e9, endTime);
-        G.undo();
-        if (sc > localBestScore) { localBestScore = sc; localBest = m; }
+    try {
+      const now = (performance.now?.() ?? Date.now());
+      const endTime = now + Math.max(100, timeMs|0); // minimal 100ms
+      let best = null; nodes = 0;
+
+      let rootMoves = G.moves();
+      if (!rootMoves || !rootMoves.length) return null;
+      rootMoves.sort((a,b)=>scoreMove(b)-scoreMove(a));
+
+      const maxD = Math.max(1, maxDepth|0);
+      for (let depth=1; depth<=maxD; depth++){
+        if ((performance.now?.() ?? Date.now()) > endTime) break;
+
+        let localBest=null, localBestScore=-1e9;
+        for (const m of rootMoves){
+          if ((performance.now?.() ?? Date.now()) > endTime) break;
+          if (!G.move(m)) continue;
+          const sc = -negamax(depth-1, -1e9, 1e9, endTime);
+          G.undo();
+          if (sc > localBestScore) { localBestScore = sc; localBest = m; }
+        }
+        if (localBest) {
+          best = localBest;
+          // put PV to front
+          rootMoves.sort((a,b)=>{
+            if (a.from===best.from && a.to===best.to) return -1;
+            if (b.from===best.from && b.to===best.to) return 1;
+            return scoreMove(b)-scoreMove(a);
+          });
+        } else {
+          break;
+        }
       }
-      if (localBest) best = localBest;
-      if (best){
-        rootMoves.sort((a,b)=>{
-          if (a.from===best.from && a.to===best.to) return -1;
-          if (b.from===best.from && b.to===best.to) return 1;
-          return scoreMove(b)-scoreMove(a);
-        });
-      }
+      return best || rootMoves[0] || null;
+    } catch (e) {
+      console.warn('AI search error:', e);
+      const legal = G.moves();
+      return (legal && legal[0]) ? legal[0] : null;
     }
-    return best || rootMoves[0] || null;
   }
 
   // ==================== FLOW + ANIM INTEGRATION ====================
   function afterMoveCommon(prevBoard, from, to){
-    // tray korban
     const cap = detectCapture(prevBoard, G.board(), from, to);
     if (cap) { (cap.color==='b'?capturedBlack:capturedWhite).push(cap); renderCaptures(); }
     lastMove = { from, to };
@@ -273,11 +287,9 @@
     const prev = JSON.parse(JSON.stringify(G.board()));
     const pieceChar = glyphAtPrev(prev, from);
 
-    // jalankan engine dulu (DOM masih posisi lama → cocok buat animasi)
     const moved = G.move({from,to}) || G.move({from,to,promotion:'Q'});
     if(!moved) return false;
 
-    // animasi ghost dari posisi lama ke baru, lalu render final
     animateMove(from, to, pieceChar, () => {
       const done = afterMoveCommon(prev, from, to);
       if (done) return;
@@ -285,16 +297,27 @@
       // giliran AI
       if (vsAI){
         setTimeout(()=> {
-          const prev2 = JSON.parse(JSON.stringify(G.board()));
-          const m = bestMoveWithTime(AI_PROFILE.timeMs, AI_PROFILE.maxDepth);
-          if (!m) return;
-          const pChar = glyphAtPrev(prev2, m.from);
-          // jalankan dulu
-          G.move(m);
-          // animasikan sesuai warna di papan setelah move
-          animateMove(m.from, m.to, pChar, () => {
-            afterMoveCommon(prev2, m.from, m.to);
-          });
+          try {
+            const st = G.gameStatus();
+            if (st==='checkmate' || st==='stalemate') return;
+
+            const m = bestMoveWithTime(AI_PROFILE.timeMs, AI_PROFILE.maxDepth);
+            if (!m || !m.from || !m.to) { render([]); return; }
+
+            const prev2 = JSON.parse(JSON.stringify(G.board()));
+            const pChar = glyphAtPrev(prev2, m.from) || '♟';
+
+            const ok = G.move(m);
+            if (!ok) { console.warn('AI picked illegal move, skipping'); render([]); return; }
+
+            animateMove(m.from, m.to, pChar, () => {
+              const ended = afterMoveCommon(prev2, m.from, m.to);
+              if (!ended) { /* game berlanjut */ }
+            });
+          } catch (e) {
+            console.warn('AI turn error:', e);
+            render([]);
+          }
         }, 10);
       }
     });
