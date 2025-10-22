@@ -1,5 +1,5 @@
 /* =========================================================
-   Azbry Chess — main.js (Full Fix)
+   Azbry Chess — main.js (Full Fix Stable)
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -223,15 +223,27 @@
       $board.appendChild(ghost);
       animLock = true;
 
+      // fallback jika transitionend gak kebaca
+      let cleared = false;
+      const clear = () => {
+        if (cleared) return;
+        cleared = true;
+        try { ghost.remove(); } catch(_) {}
+        animLock = false;
+        done();
+      };
+
       requestAnimationFrame(()=>{
         ghost.style.transform = `translate(${ex}px, ${ey}px)`;
+        const tId = setTimeout(clear, 450); // fallback 450ms
         ghost.addEventListener('transitionend', ()=>{
-          ghost.remove();
-          animLock=false;
-          done();
+          clearTimeout(tId);
+          clear();
         }, {once:true});
       });
-    }catch(e){ animLock=false; done(); }
+    }catch(e){
+      animLock=false; done();
+    }
   }
 
   // ---------- Result ----------
@@ -264,19 +276,24 @@
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     G.reset(); lastMove=null; clearSelection(); render();
+    // jika sudah di mode AI dan sekarang gilirannya hitam, biarkan AI jalan dulu
+    if (mode==='ai' && G.turn()==='b') setTimeout(aiPlay, 20);
   });
 
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
+    if (animLock || aiThinking) return;
     UI.toggleFlip(); render();
   });
 
   $modeHuman && $modeHuman.addEventListener('click', ()=>{
+    if (animLock || aiThinking) return;
     mode='human';
     $modeHuman.classList.add('accent');
     $modeAI && $modeAI.classList.remove('accent');
   });
 
   $modeAI && $modeAI.addEventListener('click', ()=>{
+    if (animLock || aiThinking) return;
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
@@ -287,9 +304,9 @@
   //                      A I   “G A H A R”
   // ========================================================
   const AI_SETTINGS = {
-    timeMs: 1400,   // naikin ke 2000–3000 buat makin keras
+    timeMs: 1500,   // naikin ke 2500–3000 buat makin keras
     qDepth: 8,
-    nullMove: true,
+    nullMove: false,   // <-- DIMATIKAN untuk stabilitas (pernah bikin giliran “skip”)
     useTT: true
   };
 
@@ -393,7 +410,7 @@
     return alpha;
   }
 
-  // alpha-beta
+  // alpha-beta (tanpa null-move default -> stabil)
   function alphabeta(depth,alpha,beta,allowNull,deadline){
     if (performance.now()>deadline) throw new Error('TIME');
 
@@ -403,12 +420,9 @@
 
     if (depth===0) return qsearch(alpha,beta,AI_SETTINGS.qDepth);
 
-    // null-move
+    // null-move pruning optional (dimatikan via AI_SETTINGS.nullMove=false)
     if (allowNull && AI_SETTINGS.nullMove && depth>=3 && !G.inCheck()){
-      G.side = (G.side==='w'?'b':'w');
-      const sc = -alphabeta(depth-3,-beta,-beta+1,false,deadline);
-      G.side = (G.side==='w'?'b':'w');
-      if (sc>=beta) return beta;
+      // catatan: DIHILANGKAN demi stabilitas posisi
     }
 
     let best=-Infinity, flag=1;
@@ -416,7 +430,7 @@
     if (!moves.length){
       const st=G.gameStatus();
       if (st==='checkmate') return -99999+(50-depth);
-      return 0;
+      return 0; // stalemate
     }
 
     for (const m of moves){
@@ -445,8 +459,7 @@
 
     let best=null, bestScore=-Infinity, depth=1;
     try{
-      // deepen until time out
-      // eslint-disable-next-line no-constant-condition
+      // deepen until time up
       while(true){
         const res = searchDepth(depth, deadline);
         if (res && res.move){ best=res.move; bestScore=res.score; }
