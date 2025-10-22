@@ -1,4 +1,4 @@
-// /assets/js/main.js — ELO 3000 + animasi gerak + check highlight + tray capture + popup
+// /assets/js/main.js — ELO 3000 + animasi warna benar + tray + check + popup
 (function () {
   if (typeof window.Chess !== 'function' || typeof window.ChessUI !== 'function') {
     console.error('Chess / ChessUI tidak ditemukan.');
@@ -18,8 +18,8 @@
   const boardEl = document.getElementById('board');
   const ui = new ChessUI(boardEl, onSquareClick);
   const $hist = document.getElementById('moveHistory');
-  const $capBlack = document.getElementById('capBlack');
-  const $capWhite = document.getElementById('capWhite');
+  const $capBlack = document.getElementById('capBlack');  // "Hitam tertangkap"
+  const $capWhite = document.getElementById('capWhite');  // "Putih tertangkap"
 
   let selected = null;
   let lastMove = null;
@@ -101,47 +101,24 @@
     if (!p) return null;
     return glyph(p);
   }
+
+  // >>> FIX warna ghost piece (ikuti warna bidak di papan sesudah move)
   function animateMove(fromAlg, toAlg, pieceChar, done){
-  try {
-    const srcCell = cellForAlg(fromAlg);
-    const dstCell = cellForAlg(toAlg);
-    if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
+    try {
+      const srcCell = cellForAlg(fromAlg);
+      const dstCell = cellForAlg(toAlg);
+      if (!srcCell || !dstCell || !pieceChar) { done?.(); return; }
 
-    const pData = G.board()[idx(toAlg)] || null;
-    const colorClass = (pData && pData.color === 'b') ? 'anim-piece black' : 'anim-piece white';
+      // lihat warna bidak di kotak tujuan PADA STATE SAAT INI (sesudah G.move dipanggil)
+      const pData = G.board()[idx(toAlg)] || null;
+      const colorClass = (pData && pData.color === 'b') ? 'anim-piece black' : 'anim-piece white';
 
-    const ghost = document.createElement('span');
-    ghost.className = colorClass;
-    ghost.textContent = pieceChar;
-    boardEl.appendChild(ghost);
-
-    const srcPiece = srcCell.querySelector('.piece');
-    if (srcPiece) srcPiece.style.opacity = '0';
-
-    const c1 = centerOf(srcCell, boardEl);
-    const c2 = centerOf(dstCell, boardEl);
-    ghost.style.left = `${c1.x}px`;
-    ghost.style.top  = `${c1.y}px`;
-
-    requestAnimationFrame(()=>{
-      ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
-    });
-
-    const cleanup = () => {
-      ghost.remove();
-      if (srcPiece) srcPiece.style.opacity = '';
-      done?.();
-    };
-    ghost.addEventListener('transitionend', cleanup, { once:true });
-    setTimeout(cleanup, 220);
-  } catch(e){ console.warn('anim error', e); done?.(); }
-  }
       const ghost = document.createElement('span');
-      ghost.className = 'anim-piece';
+      ghost.className = colorClass;
       ghost.textContent = pieceChar;
       boardEl.appendChild(ghost);
 
-      // sembunyikan piece asal biar ga dobel
+      // sembunyikan piece asal sementara biar ga dobel
       const srcPiece = srcCell.querySelector('.piece');
       if (srcPiece) srcPiece.style.opacity = '0';
 
@@ -150,20 +127,18 @@
       ghost.style.left = `${c1.x}px`;
       ghost.style.top  = `${c1.y}px`;
 
-      // trigger layout, lalu animasikan
       requestAnimationFrame(()=>{
         ghost.style.transform = `translate(${c2.x - c1.x}px, ${c2.y - c1.y}px)`;
       });
 
       const cleanup = () => {
         ghost.remove();
-        if (srcPiece) srcPiece.style.opacity = ''; // balikin
+        if (srcPiece) srcPiece.style.opacity = '';
         done?.();
       };
       ghost.addEventListener('transitionend', cleanup, { once:true });
-      // fallback kalau transition gak kebaca
-      setTimeout(cleanup, 220);
-    }catch(e){ console.warn('anim error', e); done?.(); }
+      setTimeout(cleanup, 250); // fallback
+    } catch(e){ console.warn('anim error', e); done?.(); }
   }
 
   // ==================== AI: EVAL & SEARCH ====================
@@ -298,7 +273,7 @@
     const prev = JSON.parse(JSON.stringify(G.board()));
     const pieceChar = glyphAtPrev(prev, from);
 
-    // jalankan engine dulu (DOM belum di-render ulang → posisi lama masih terlihat)
+    // jalankan engine dulu (DOM masih posisi lama → cocok buat animasi)
     const moved = G.move({from,to}) || G.move({from,to,promotion:'Q'});
     if(!moved) return false;
 
@@ -316,7 +291,7 @@
           const pChar = glyphAtPrev(prev2, m.from);
           // jalankan dulu
           G.move(m);
-          // animasikan
+          // animasikan sesuai warna di papan setelah move
           animateMove(m.from, m.to, pChar, () => {
             afterMoveCommon(prev2, m.from, m.to);
           });
@@ -341,7 +316,7 @@
     }
   }
 
-  // toolbar
+  // ==================== TOOLBAR ====================
   document.getElementById('btnReset')?.addEventListener('click',()=>{
     G.reset(); lastMove=null; selected=null;
     capturedBlack.length=0; capturedWhite.length=0;
