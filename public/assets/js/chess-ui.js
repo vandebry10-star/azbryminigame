@@ -1,5 +1,9 @@
-// assets/js/chess-ui.js — ChessUI FINAL (delegation + fallback + pointer-safe)
-// CUKUP ganti file ini saja. Tidak perlu utak-atik CSS lagi.
+// assets/js/chess-ui.js — ChessUI FINAL STABLE
+// - Event delegation (click & touch) di .board → aman di HP
+// - Fallback: hitung file/rank dari posisi tap kalau target bukan .sq
+// - piece & dot: pointerEvents:none (klik tembus)
+// - Defensive clear: tidak ada bidak dobel
+// - Dukungan flip, legal dots, last move, in-check
 
 ;(function (global) {
   'use strict';
@@ -11,9 +15,9 @@
   };
 
   function idxToAlg(i){
-    const r = 8 - Math.floor(i / 8);
-    const f = i % 8;
-    return FILES[f] + r;
+    const r = 8 - Math.floor(i / 8); // 8..1
+    const f = i % 8;                 // 0..7
+    return FILES[f] + r;             // "a1".."h8"
   }
 
   function ChessUI(boardEl, onSquareClick) {
@@ -22,12 +26,12 @@
     this.onSquareClick = typeof onSquareClick === 'function' ? onSquareClick : function(){};
     this.flipped = false;
     this.squares = [];
-    this._lastKind  = null;
+    this._lastKind  = null;   // 'array' | 'fen'
     this._lastBoard = null;
     this._lastFEN   = null;
     this._opts      = {};
     this._buildGrid();
-    this._bindDelegatedClicks(); // <<— satu handler untuk semua klik (aman di HP)
+    this._bindDelegatedClicks();  // penting untuk HP
   }
 
   // ================= Grid =================
@@ -45,32 +49,30 @@
         d.dataset.square = sqAlg;
         d.dataset.file   = FILES[f];
         d.dataset.rank   = r;
-        // NOTE: tidak pasang listener di sini lagi (biar tidak bentrok di mobile)
         this.squares.push(d);
         b.appendChild(d);
       }
     }
   };
 
-  // ================= Delegation + Fallback =================
+  // ================= Klik Delegation + Fallback =================
   ChessUI.prototype._bindDelegatedClicks = function(){
     const handler = (ev) => {
-      // 1) cari .sq terdekat dari target klik/tap
-      const target = ev.target;
-      let cell = target && target.closest ? target.closest('.sq') : null;
+      // 1) cari .sq terdekat dari target
+      let cell = ev.target && ev.target.closest ? ev.target.closest('.sq') : null;
 
       if (!cell || !this.board.contains(cell)) {
-        // 2) fallback: hitung kotak dari posisi tap
+        // 2) fallback: hitung kolom/baris dari posisi tap
         const rect = this.board.getBoundingClientRect();
-        const touch = ev.touches && ev.touches[0];
-        const cx = touch ? touch.clientX : ev.clientX;
-        const cy = touch ? touch.clientY : ev.clientY;
+        const t = ev.touches && ev.touches[0];
+        const cx = t ? t.clientX : ev.clientX;
+        const cy = t ? t.clientY : ev.clientY;
         if (typeof cx !== 'number' || typeof cy !== 'number') return;
 
         const x = Math.min(Math.max(cx - rect.left, 0), rect.width  - 0.01);
         const y = Math.min(Math.max(cy - rect.top,  0), rect.height - 0.01);
         const col = Math.floor((x / rect.width)  * 8); // 0..7
-        const row = Math.floor((y / rect.height) * 8); // 0..7 dari atas
+        const row = Math.floor((y / rect.height) * 8); // 0..7 (dari atas)
         const file = FILES[col];
         const rank = 8 - row;
         const sqAlg = file + rank;
@@ -83,7 +85,7 @@
       this.onSquareClick(this._map(sqAlg));
     };
 
-    // bersihin bind lama biar nggak dobel
+    // bersihkan bind lama (kalau UI di-init lagi)
     if (this._delegatedHandler) {
       this.board.removeEventListener('click', this._delegatedHandler);
       this.board.removeEventListener('touchstart', this._delegatedHandler);
@@ -119,13 +121,12 @@
 
   function putPiece(target, char, isWhite){
     if (!target) return;
-    // bersih2 dulu: cegah bidak dobel
+    // defensive: bersihin piece lama di kotak ini
     target.querySelectorAll('.piece').forEach(n => n.remove());
     const el = document.createElement('div');
     el.className = 'piece ' + (isWhite ? 'white' : 'black');
     el.textContent = char;
-    // jangan blokir klik
-    el.style.pointerEvents = 'none';
+    el.style.pointerEvents = 'none'; // jangan blokir klik
     el.style.zIndex = '2';
     target.appendChild(el);
   }
@@ -134,19 +135,20 @@
     if (!target) return;
     const dot = document.createElement('div');
     dot.className = 'dot enter';
-    dot.style.pointerEvents = 'none';
+    dot.style.pointerEvents = 'none'; // safety
     target.appendChild(dot);
     requestAnimationFrame(()=> dot.classList.remove('enter'));
   }
 
-  // =============== Render: dari array 64 ===============
+  // =============== Render: dari array 64 =================
+  // boardArray[i] = null | { color:'w'|'b', piece:'P'|'N'|'B'|'R'|'Q'|'K' }
   ChessUI.prototype.render = function (boardArray, opts = {}) {
     this._lastKind  = 'array';
     this._lastBoard = boardArray;
     this._opts      = opts || {};
     this._clearPiecesAndMarks();
 
-    // Pieces
+    // pieces
     for (let i = 0; i < 64; i++) {
       const cell = boardArray[i];
       if (!cell) continue;
@@ -156,22 +158,21 @@
       putPiece(target, PIECE_CHAR[key] || '?', cell.color === 'w');
     }
 
-    // Selected
+    // selected
     if (opts.selected) {
       const c = this.board.querySelector(`[data-square="${this._map(opts.selected)}"]`);
       if (c) c.classList.add('sel');
     }
 
-    // Legal dots
+    // legal dots
     if (Array.isArray(opts.legal)) {
       for (const to of opts.legal) {
         const c = this.board.querySelector(`[data-square="${this._map(to)}"]`);
-        if (!c) continue;
-        putDot(c);
+        if (c) putDot(c);
       }
     }
 
-    // Last move
+    // last move
     if (opts.lastMove && opts.lastMove.from && opts.lastMove.to) {
       const s = this.board.querySelector(`[data-square="${this._map(opts.lastMove.from)}"]`);
       const d = this.board.querySelector(`[data-square="${this._map(opts.lastMove.to)}"]`);
@@ -179,7 +180,7 @@
       if (d) d.classList.add('last');
     }
 
-    // In-check
+    // in-check (highlight kotak raja yang diserang)
     if (opts.inCheck) {
       const need = opts.inCheck === 'w' ? 'K' : 'k';
       for (let i = 0; i < 64; i++) {
@@ -196,7 +197,7 @@
     }
   };
 
-  // =============== Render: dari FEN ===============
+  // =============== Render: dari FEN (opsional) =========
   ChessUI.prototype.renderFEN = function (fen, opts = {}) {
     this._lastKind = 'fen';
     this._lastFEN  = fen;
@@ -221,22 +222,18 @@
       const c = this.board.querySelector(`[data-square="${this._map(opts.selected)}"]`);
       if (c) c.classList.add('sel');
     }
-
     if (Array.isArray(opts.legal)) {
       for (const to of opts.legal) {
         const c = this.board.querySelector(`[data-square="${this._map(to)}"]`);
-        if (!c) continue;
-        putDot(c);
+        if (c) putDot(c);
       }
     }
-
     if (opts.lastMove && opts.lastMove.from && opts.lastMove.to) {
       const s = this.board.querySelector(`[data-square="${this._map(opts.lastMove.from)}"]`);
       const d = this.board.querySelector(`[data-square="${this._map(opts.lastMove.to)}"]`);
       if (s) s.classList.add('src');
       if (d) d.classList.add('last');
     }
-
     if (opts.inCheck) {
       const need = opts.inCheck === 'w' ? 'K' : 'k';
       for (let rr = 0; rr < 8; rr++) {
