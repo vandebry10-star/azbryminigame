@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Azbry Chess.com</title>
+
+<!-- Tema global Azbry (punyamu) -->
+<link rel="stylesheet" href="/assets/css/azbry.css?v=3">
+<!-- CSS papan & bidak -->
+<link rel="stylesheet" href="/assets/css/chess.css">
+</head>
+<body>
+  <main class="container">
+    <div class="top-header">
+      <div class="title">
+        <span class="tag">AZBRY-MD</span>
+        <h1>Azbry Chess.com</h1>
+      </div>
+      <div class="mode-picker">
+        <button id="modeHuman" class="seg active">2 Player</button>
+        <button id="modeAI" class="seg">Vs Azbry-MD</button>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <div id="board" class="board"></div>
+    </div>
+
+    <section class="panel">
+      <div class="controls">
+        <button id="btnReset" class="btn accent">Muat Ulang</button>
+        <button id="btnUndo"  class="btn">Undo</button>
+        <button id="btnRedo"  class="btn">Redo</button>
+        <button id="btnFlip"  class="btn dark">Flip Board</button>
+        <button id="btnBoardOnly" class="btn dark">Board Only</button>
+        <button id="btnBack" class="btn dark" style="display:none">Kembali</button>
+      </div>
+
+      <div class="move-log">
+        <h4>Riwayat Langkah</h4>
+        <pre id="moveHistory">—</pre>
+      </div>
+    </section>
+
+    <div class="license">
+      <div>Lisensi MIT • © <span id="y"></span> Azbry-MD</div>
+      <a class="cta" href="https://azbry-portofolio.vercel.app/" target="_blank">↗ Portofolio</a>
+    </div>
+  </main>
+
+  <script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+
+  <!-- Engine dulu -->
+  <script src="/assets/js/chess-engine.js"></script>
+  <!-- Controller/renderer -->
+  <script src="/assets/js/main.js"></script>
+</body>
+</html>
