@@ -13,61 +13,120 @@
   <link rel="stylesheet" href="assets/css/chess.css?v=20" />
 
   <style>
-    body{max-width:980px;margin:0 auto;padding:16px;background:#0b0f12;color:#e8f0fb;font-family:system-ui,sans-serif}
+    body{
+      max-width:980px;
+      margin:0 auto;
+      padding:16px;
+      background:#0b0f12;
+      color:#e8f0fb;
+      font-family:system-ui,sans-serif;
+    }
     .hero-title{text-align:center;margin:8px 0 10px}
-    /* ⬇️ HANYA judul yang ganti font ke Poppins (jelas & tebal) */
     .hero-title h1{
       margin:0;
       font-family:"Poppins", system-ui, sans-serif;
-      font-weight:800;                               /* tebal tapi tetap enak dibaca */
+      font-weight:800;
       letter-spacing:.5px;
       font-size:clamp(26px,6vw,40px);
       color:var(--azbry-accent,#b8ff9a);
-      text-shadow:0 0 16px rgba(184,255,154,.3)
+      text-shadow:0 0 16px rgba(184,255,154,.3);
     }
+
+    /* toolbar umum */
     .toolbar{
-      max-width:920px;margin:8px auto 14px;
-      display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center
+      max-width:920px;
+      margin:8px auto 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
     }
     .btn{
-      padding:10px 14px;border-radius:12px;font-weight:800;cursor:pointer;
-      border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#e8f0fb;transition:.2s
+      padding:10px 14px;
+      border-radius:12px;
+      font-weight:800;
+      cursor:pointer;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:#e8f0fb;
+      transition:.2s;
     }
     .btn.accent{
       background:linear-gradient(180deg,var(--azbry-accent,#b8ff9a),var(--azbry-accent-2,#a3f07f));
-      color:#0b0f12;border-color:transparent;box-shadow:0 0 14px rgba(184,255,154,.3)
+      color:#0b0f12;
+      border-color:transparent;
+      box-shadow:0 0 14px rgba(184,255,154,.3);
     }
     .panel{max-width:920px;margin:0 auto}
-    .board-wrap{max-width:820px;margin:0 auto 12px}
-    .move-log pre{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);padding:10px;border-radius:12px;min-height:36px}
+    .board-wrap{max-width:820px;margin:0 auto 12px;position:relative;}
+
+    /* header di atas papan */
+    .board-header{
+      max-width:820px;
+      margin:10px auto 8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .board-header .left,
+    .board-header .right{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    #btnMenu{
+      background:linear-gradient(180deg,#b8ff9a,#9df47a);
+      color:#0b0f12;
+      border-color:transparent;
+      box-shadow:0 0 14px rgba(184,255,154,.3);
+    }
+    #btnMenu:hover{filter:brightness(1.1);transform:scale(1.02);}
+    .move-log pre{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      padding:10px;
+      border-radius:12px;
+      min-height:36px;
+    }
     .captured.panel{margin-top:10px}
     .cap-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0}
     .cap-tray{
       display:flex;gap:6px;flex-wrap:wrap;min-height:28px;
       padding:8px 10px;border-radius:12px;
-      background:var(--panel-bg-1, rgba(255,255,255,.04));border:1px solid var(--panel-bd, rgba(255,255,255,.08));
+      background:var(--panel-bg-1, rgba(255,255,255,.04));
+      border:1px solid var(--panel-bd, rgba(255,255,255,.08));
     }
     .cap-piece{font-size:20px;line-height:1;filter:drop-shadow(0 0 8px rgba(0,0,0,.35))}
+
     /* Result modal gaya sederhana */
     #resultModal{
       position:fixed;inset:0;z-index:10000;background:rgba(11,13,16,.92);
       display:flex;align-items:center;justify-content:center;
-      opacity:0;pointer-events:none;transition:opacity .25s
+      opacity:0;pointer-events:none;transition:opacity .25s;
     }
-    #resultModal.show{opacity:1;pointer-events:auto}
+    #resultModal.show{opacity:1;pointer-events:auto;}
     .result-card{
-      width:min(92vw,560px);padding:22px;border-radius:16px;text-align:center;
+      width:min(92vw,560px);
+      padding:22px;
+      border-radius:16px;
+      text-align:center;
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
       border:1px solid rgba(255,255,255,.08);
-      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03)
+      box-shadow:0 20px 60px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.03);
     }
     .result-card h2{
-      margin:4px 0 8px;color:var(--azbry-accent,#b8ff9a);font-weight:900;
+      margin:4px 0 8px;
+      color:var(--azbry-accent,#b8ff9a);
+      font-weight:900;
       text-shadow:0 0 18px rgba(184,255,154,.35);
-      font-size:clamp(22px,4.4vw,34px)
+      font-size:clamp(22px,4.4vw,34px);
     }
-    .result-sub{color:#cfd8e6;opacity:.9;margin-bottom:14px}
-    .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .result-sub{color:#cfd8e6;opacity:.9;margin-bottom:14px;}
+    .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
   </style>
 </head>
 
@@ -75,20 +134,28 @@
   <main id="chess-app">
     <div class="hero-title"><h1>Azbry Chess.com</h1></div>
 
+    <!-- HEADER ATAS BOARD -->
+    <div class="board-header">
+      <div class="left">
+        <button id="modeHuman" class="btn accent">VS Human (2P)</button>
+        <button id="modeAI" class="btn">VS Azbry-MD (M nya Magnus)</button>
+      </div>
+      <div class="right">
+        <button id="btnMenu" class="btn">← Kembali ke Menu</button>
+      </div>
+    </div>
+
     <!-- BOARD -->
     <section class="board-wrap">
       <div id="board" class="board" aria-label="board"></div>
     </section>
 
-    <!-- TOOLBAR -->
+    <!-- TOOLBAR BAWAH -->
     <div class="toolbar">
-      <button id="modeHuman" class="btn accent">VS Human (2P)</button>
-      <button id="modeAI" class="btn">VS Azbry-MD (M nya Magnus)</button>
-      <button id="btnReset" class="btn">Muat Ulang</button>
+      <button id="btnReset" class="btn accent">Muat Ulang</button>
       <button id="btnUndo" class="btn">Undo</button>
       <button id="btnRedo" class="btn">Redo</button>
       <button id="btnFlip" class="btn">Balik Meja</button>
-      <button id="btnMenu" class="btn">← Kembali ke Menu</button>
     </div>
 
     <!-- CAPTURED PIECES -->
@@ -126,7 +193,7 @@
   <script src="assets/js/chess-engine.js?v=20"></script>
   <script src="assets/js/main.js?v=20"></script>
 
-  <!-- Glue: tombol mode & modal -->
+  <!-- Glue: tombol mode, menu & modal -->
   <script>
   (function(){
     const btnHuman = document.getElementById('modeHuman');
@@ -162,7 +229,6 @@
       modal.classList.add('show');
     };
 
-    // ⬇️ Tambahkan ini
     // tombol kembali ke menu utama
     document.getElementById('btnMenu')?.addEventListener('click', ()=>{
       window.location.href = "https://azbryminigamess.vercel.app/";
