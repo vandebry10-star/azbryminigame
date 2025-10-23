@@ -5,38 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
 <title>Azbry Drift — Mobile</title>
 <style>
-  :root{--bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;--panel:rgba(255,255,255,.06);--bd:rgba(255,255,255,.12)}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:500 14px/1.3 system-ui,Segoe UI,Roboto,Arial;touch-action:manipulation}
-  .app{position:fixed;inset:0;display:flex;flex-direction:column}
-  .stage{position:relative;flex:1;min-height:100svh}   /* <-- pastikan punya tinggi nyata */
-  canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:
-    radial-gradient(1400px 700px at 50% 120%, rgba(0,0,0,.6), transparent 60%),
-    repeating-linear-gradient(0deg,#101419 0 2px,#0e1216 2px 4px);}
-  .hud-top{position:absolute;left:12px;right:12px;top:env(safe-area-inset-top,12px);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;pointer-events:none;z-index:3}
-  .pills{display:flex;gap:8px;flex-wrap:wrap}
-  .pill{pointer-events:auto;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--bd)}
-  .top-btns{display:flex;gap:8px}
-  .btn{pointer-events:auto;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--bd);color:var(--ink);font-weight:700}
-  .controls{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;justify-content:space-between;align-items:flex-end;gap:12px;z-index:3}
-  .steer{display:flex;gap:10px}
-  .big{width:74px;height:74px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid var(--bd);display:grid;place-items:center;color:var(--ink);font-weight:900;user-select:none}
-  .big:active{transform:scale(.98)}
-  .padR{display:flex;gap:10px}
-  .wide{width:120px;height:74px;border-radius:18px;background:linear-gradient(180deg,var(--accent),#a3f07f);color:#101;border:none;font-weight:900;box-shadow:0 0 18px rgba(184,255,154,.25)}
-  .hb{width:120px;height:74px;border-radius:18px;background:#ff3760;color:#fff;border:1px solid rgba(255,255,255,.2);font-weight:900}
-  .rotate{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(11,13,16,.9);z-index:4;text-align:center;padding:20px}
-  .rotate.show{display:flex}
-  .rotate .box{padding:16px 18px;border:1px solid var(--bd);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03))}
-  .rotate h3{margin:0 0 8px;font-weight:900;color:var(--accent)}
-  @media (min-width:900px){.big{width:64px;height:64px}.wide,.hb{width:110px;height:64px}}
+:root{--bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;--panel:rgba(255,255,255,.06);--bd:rgba(255,255,255,.12)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:500 14px/1.3 system-ui,Segoe UI,Roboto,Arial;touch-action:manipulation}
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+.stage{position:relative;flex:1;min-height:100svh}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:
+  radial-gradient(1400px 700px at 50% 120%, rgba(0,0,0,.6), transparent 60%),
+  repeating-linear-gradient(0deg,#101419 0 2px,#0e1216 2px 4px);}
+.hud-top{position:absolute;left:12px;right:12px;top:env(safe-area-inset-top,12px);display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;pointer-events:none;z-index:3}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{pointer-events:auto;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--bd)}
+.top-btns{display:flex;gap:8px}
+.btn{pointer-events:auto;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--bd);color:var(--ink);font-weight:700}
+.controls{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;justify-content:space-between;align-items:flex-end;gap:12px;z-index:3}
+.controls, .controls *{touch-action:none} /* penting */
+.steer{display:flex;gap:10px}
+.big{width:74px;height:74px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid var(--bd);display:grid;place-items:center;color:var(--ink);font-weight:900;user-select:none}
+.big:active, .press{transform:scale(.96);background:rgba(255,255,255,.14)}
+.padR{display:flex;gap:10px}
+.wide{width:120px;height:74px;border-radius:18px;background:linear-gradient(180deg,var(--accent),#a3f07f);color:#101;border:none;font-weight:900;box-shadow:0 0 18px rgba(184,255,154,.25)}
+.hb{width:120px;height:74px;border-radius:18px;background:#ff3760;color:#fff;border:1px solid rgba(255,255,255,.2);font-weight:900}
+.rotate{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(11,13,16,.9);z-index:4;text-align:center;padding:20px}
+.rotate.show{display:flex}
+.rotate .box{padding:16px 18px;border:1px solid var(--bd);border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03))}
+.rotate h3{margin:0 0 8px;font-weight:900;color:var(--accent)}
+@media (min-width:900px){.big{width:64px;height:64px}.wide,.hb{width:110px;height:64px}}
 </style>
 </head>
 <body>
 <div class="app">
   <div class="stage" id="stage">
     <canvas id="game"></canvas>
-
-    <!-- HUD -->
     <div class="hud-top">
       <div class="pills">
         <div class="pill">Lap: <span id="lap">0</span></div>
@@ -52,7 +51,6 @@
       </div>
     </div>
 
-    <!-- Controls -->
     <div class="controls">
       <div class="steer">
         <div class="big" data-hold="KeyA">⟵</div>
@@ -65,7 +63,6 @@
       </div>
     </div>
 
-    <!-- Portrait hint -->
     <div id="rotate" class="rotate"><div class="box">
       <h3>Putar ke Landscape</h3>
       <div>Game ini lebih enak dimainkan dalam posisi layar <b>mendatar</b>.</div>
@@ -75,81 +72,61 @@
 
 <script>
 (()=>{
-// ===== Canvas & sizing (ANTI 0x0) =====
-const stage = document.getElementById('stage');
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha:false });
-
+const stage=document.getElementById('stage');
+const canvas=document.getElementById('game');
+const ctx=canvas.getContext('2d',{alpha:false});
 function resizeCanvas(){
-  // pakai ukuran PARENT .stage; fallback ke window
-  const dpr = Math.min(window.devicePixelRatio||1, 2);
-  const cw = Math.floor((stage.clientWidth  || window.innerWidth ) * dpr);
-  const ch = Math.floor((stage.clientHeight || window.innerHeight) * dpr);
-  if (cw>0 && ch>0 && (canvas.width!==cw || canvas.height!==ch)) {
-    canvas.width = cw; canvas.height = ch;
-  }
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const cw=(stage.clientWidth||window.innerWidth)*dpr;
+  const ch=(stage.clientHeight||window.innerHeight)*dpr;
+  if(cw>0&&ch>0){canvas.width=cw;canvas.height=ch;}
 }
-
-const rot = document.getElementById('rotate');
+const rot=document.getElementById('rotate');
 function updateRotateHint(){
-  const isPortrait = window.innerHeight > window.innerWidth;
-  rot.classList.toggle('show', isPortrait);
+  rot.classList.toggle('show',window.innerHeight>window.innerWidth);
 }
-window.addEventListener('resize', ()=>{ resizeCanvas(); updateRotateHint(); rebuildGates(); });
+window.addEventListener('resize',()=>{resizeCanvas();updateRotateHint();gates=mkGates();resetCar();});
+resizeCanvas();updateRotateHint();
 
-// ===== HUD =====
 const $lap=document.getElementById('lap'),$lapTime=document.getElementById('lapTime'),
-      $best=document.getElementById('best'),$speed=document.getElementById('speed'),$fps=document.getElementById('fps');
-
-function W(){ return canvas.width; }
-function H(){ return canvas.height; }
-
-// ===== Track gates =====
+$best=document.getElementById('best'),$speed=document.getElementById('speed'),$fps=document.getElementById('fps');
+function W(){return canvas.width;}function H(){return canvas.height;}
 function mkGates(){
-  const w=W(), h=H();
-  return [
-    {x:w*0.20,y:h*0.75,nx:0,ny:-1,w:Math.max(120,w*0.10)},
-    {x:w*0.82,y:h*0.70,nx:-1,ny:0,w:Math.max(120,w*0.12)},
-    {x:w*0.52,y:h*0.22,nx:0,ny: 1,w:Math.max(120,w*0.12)},
-  ];
+  const w=W(),h=H();
+  return[{x:w*0.20,y:h*0.75,nx:0,ny:-1,w:Math.max(120,w*0.10)},
+         {x:w*0.82,y:h*0.70,nx:-1,ny:0,w:Math.max(120,w*0.12)},
+         {x:w*0.52,y:h*0.22,nx:0,ny:1,w:Math.max(120,w*0.12)}];
 }
-let gates = [];
-function rebuildGates(){ gates = mkGates(); resetCar(); }
-
-// ===== Car =====
+let gates=mkGates();
 const car={x:0,y:0,angle:-Math.PI/2,vx:0,vy:0,angVel:0,steer:0,throttle:0,hb:false,length:54,width:28,mass:1200,inertia:2500};
-function spawnPoint(){const g=gates[0];return{x:g.x,y:g.y + Math.max(40,H()*0.06)};}
-function resetCar(){
-  const s=spawnPoint();
-  Object.assign(car,{x:s.x,y:s.y,angle:-Math.PI/2,vx:0,vy:0,angVel:0,steer:0,throttle:0,hb:false});
-  lastCheckpoint=0;
-}
-
-// ===== Lap =====
+function spawnPoint(){const g=gates[0];return{x:g.x,y:g.y+Math.max(40,H()*0.06)};}
+function resetCar(){const s=spawnPoint();Object.assign(car,{x:s.x,y:s.y,angle:-Math.PI/2,vx:0,vy:0,angVel:0,steer:0,throttle:0,hb:false});lastCheckpoint=0;}
 let currentLap=0,lastCheckpoint=0,lapStart=performance.now(),bestLap=null;
 function restartLap(){currentLap=0;lapStart=performance.now();lastCheckpoint=0;resetCar();}
-
-// ===== Input =====
 const keys=Object.create(null);
 window.addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyR')resetCar();if(e.code==='Enter')restartLap();});
 window.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+// --- fix universal control ---
 function bindHold(el){
   const code=el.dataset.hold;
-  const on=e=>{e.preventDefault();keys[code]=true;};
-  const off=e=>{e.preventDefault();keys[code]=false;};
-  el.addEventListener('touchstart',on,{passive:false});
-  el.addEventListener('touchend',off,{passive:false});
-  el.addEventListener('touchcancel',off,{passive:false});
-  el.addEventListener('mousedown',on); window.addEventListener('mouseup',off);
+  const onDown=e=>{e.preventDefault();keys[code]=true;el.classList.add('press');};
+  const onUp=e=>{e.preventDefault();keys[code]=false;el.classList.remove('press');};
+  el.addEventListener('pointerdown',onDown);
+  window.addEventListener('pointerup',onUp);
+  el.addEventListener('touchstart',onDown,{passive:false});
+  el.addEventListener('touchend',onUp,{passive:false});
+  el.addEventListener('touchcancel',onUp,{passive:false});
+  el.addEventListener('mousedown',onDown);
+  window.addEventListener('mouseup',onUp);
 }
 document.querySelectorAll('[data-hold]').forEach(bindHold);
 
-// ===== Physics =====
 const params={engineForce:8800,brakeForce:8200,airDrag:0.905,rotDrag:0.985,cornerStiffnessFront:7.6,cornerStiffnessRear:5.9,grip:0.92,hbRearGrip:0.45,maxSteer:0.72,steerSpeed:4,maxSpeed:62};
 const skid=[];
 function addSkid(x,y,a){skid.push({x,y,a,t:0});if(skid.length>220)skid.shift();}
 function dot(ax,ay,bx,by){return ax*bx+ay*by;}
-function passedGate(i,px,py){const g=gates[i];const dx=px-g.x,dy=py-g.y;const side=dot(dx,dy,g.nx,g.ny);const lat=Math.abs(dot(dx,dy,-g.ny,g.x? -g.x: g.nx));return(side>0&&lat<=g.w/2);}
+function passedGate(i,px,py){const g=gates[i];const dx=px-g.x,dy=py-g.y;const side=dot(dx,dy,g.nx,g.ny);const lat=Math.abs(dot(dx,dy,-g.ny,g.nx));return(side>0&&lat<=g.w/2);}
 function updateLap(px,py){const next=(lastCheckpoint+1)%gates.length;if(passedGate(next,px,py)){lastCheckpoint=next;if(next===0){currentLap++;const now=performance.now();const lapT=(now-lapStart)/1000;lapStart=now;if(!bestLap||lapT<bestLap)bestLap=lapT;}}}
 function step(dt){
   const t=(keys.KeyW?1:0)-(keys.KeyS?1:0);
@@ -157,30 +134,27 @@ function step(dt){
   car.throttle=t;car.hb=!!keys.Space;
   car.steer+=steerDir*params.steerSpeed*dt;car.steer=Math.max(-1,Math.min(1,car.steer));
   const cos=Math.cos(car.angle),sin=Math.sin(car.angle);
-  const localVx=cos*car.vx+sin*car.vy, localVy=-sin*car.vx+cos*car.vy;
+  const localVx=cos*car.vx+sin*car.vy,localVy=-sin*car.vx+cos*car.vy;
   let Fx=car.throttle*params.engineForce;
   if(keys.KeyS&&localVx>0)Fx-=params.brakeForce;
   const speed=Math.hypot(car.vx,car.vy);
-  const limiter=Math.min(1,Math.max(0,1-(speed/params.maxSpeed-0.9))); if(limiter<1&&Fx>0)Fx*=limiter;
-  const frontSlip=localVy+car.angVel*car.length*0.5, rearSlip=localVy-car.angVel*car.length*0.5;
+  const limiter=Math.min(1,Math.max(0,1-(speed/params.maxSpeed-0.9)));if(limiter<1&&Fx>0)Fx*=limiter;
+  const frontSlip=localVy+car.angVel*car.length*0.5,rearSlip=localVy-car.angVel*car.length*0.5;
   const gripRear=car.hb?params.hbRearGrip:params.grip;
   const FyFront=-params.cornerStiffnessFront*frontSlip*params.grip;
   const FyRear=-params.cornerStiffnessRear*rearSlip*gripRear;
-  const Fxw=cos*(Fx)-sin*(FyFront+FyRear), Fyw=sin*(Fx)+cos*(FyFront+FyRear);
+  const Fxw=cos*(Fx)-sin*(FyFront+FyRear),Fyw=sin*(Fx)+cos*(FyFront+FyRear);
   const torque=(FyFront*car.length*0.5)-(FyRear*car.length*0.5);
-  car.vx+=(Fxw/car.mass)*dt; car.vy+=(Fyw/car.mass)*dt; car.angVel+=(torque/car.inertia)*dt;
-  car.vx*=Math.pow(params.airDrag,dt*60); car.vy*=Math.pow(params.airDrag,dt*60); car.angVel*=Math.pow(0.985,dt*60);
-  car.x+=car.vx*dt; car.y+=car.vy*dt; car.angle+=car.angVel*dt;
-  const slipMag=Math.abs(localVy); if(slipMag>2.4&&speed>2){ const rx=car.x-Math.cos(car.angle)*car.length*0.25+Math.sin(car.angle)*car.width*0.3*(Math.random()>.5?1:-1); const ry=car.y-Math.sin(car.angle)*car.length*0.25-Math.cos(car.angle)*car.width*0.3*(Math.random()>.5?1:-1); addSkid(rx,ry,Math.min(0.35+(slipMag/10),0.8)); }
+  car.vx+=(Fxw/car.mass)*dt;car.vy+=(Fyw/car.mass)*dt;car.angVel+=(torque/car.inertia)*dt;
+  car.vx*=Math.pow(params.airDrag,dt*60);car.vy*=Math.pow(params.airDrag,dt*60);car.angVel*=Math.pow(0.985,dt*60);
+  car.x+=car.vx*dt;car.y+=car.vy*dt;car.angle+=car.angVel*dt;
+  const slipMag=Math.abs(localVy);if(slipMag>2.4&&speed>2){const rx=car.x-Math.cos(car.angle)*car.length*0.25+Math.sin(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);const ry=car.y-Math.sin(car.angle)*car.length*0.25-Math.cos(car.angle)*car.width*0.3*(Math.random()>.5?1:-1);addSkid(rx,ry,Math.min(0.35+(slipMag/10),0.8));}
   updateLap(car.x,car.y);
 }
-
-// ===== Draw =====
 function rrect(x,y,w,h,r){const rr=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+rr,y);ctx.arcTo(x+w,y,x+w,y+h,rr);ctx.arcTo(x+w,y+h,x,y+h,rr);ctx.arcTo(x,y+h,x,y,rr);ctx.arcTo(x,y,x+w,y,rr);ctx.closePath();}
 function wheel(x,y,a=1){ctx.save();ctx.translate(x,y);ctx.fillStyle=`rgba(17,17,17,${a})`;rrect(-10,-4,20,8,2);ctx.fill();ctx.restore();}
 function draw(){
-  const w=W(),h=H();
-  ctx.clearRect(0,0,w,h);
+  const w=W(),h=H();ctx.clearRect(0,0,w,h);
   ctx.save();ctx.strokeStyle='rgba(184,255,154,.22)';ctx.lineWidth=Math.max(2,w*0.002);ctx.setLineDash([8,10]);
   ctx.beginPath();ctx.moveTo(gates[0].x,gates[0].y);
   ctx.quadraticCurveTo(w*0.66,h*0.86,gates[1].x,gates[1].y);
@@ -189,41 +163,22 @@ function draw(){
   ctx.stroke();ctx.setLineDash([]);ctx.restore();
   gates.forEach((g,i)=>{ctx.save();ctx.translate(g.x,g.y);const ang=Math.atan2(g.ny,g.nx);ctx.rotate(ang);ctx.fillStyle=i===0?'rgba(255,255,255,.75)':'rgba(184,255,154,.55)';ctx.fillRect(-g.w/2,-2,g.w,4);ctx.restore();});
   for(const s of skid){s.t+=1;ctx.fillStyle=`rgba(0,0,0,${s.a*(1-s.t/240)})`;ctx.beginPath();ctx.arc(s.x,s.y,2,0,Math.PI*2);ctx.fill();}
-  ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.angle);ctx.fillStyle='rgba(0,0,0,.35)';rrect(-car.length/2,-car.width/2,car.length,car.width,6);ctx.fill();ctx.restore();
-  ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.angle);ctx.fillStyle='#1b90ff';rrect(-car.length/2,-car.width/2,car.length,car.width,6);ctx.fill();
-  ctx.fillStyle='#fff';ctx.fillRect(-6,-car.width/2+6,12,car.width-12);
-  ctx.fillStyle='#111';wheel(+car.length*0.28,-car.width*0.55,1);wheel(+car.length*0.28,+car.width*0.55,1);wheel(-car.length*0.28,-car.width*0.55,.85);wheel(-car.length*0.28,+car.width*0.55,.85);
-  ctx.restore();
+  ctx.save();ctx.translate(car.x,car.y);ctx.rotate(car.angle);ctx.fillStyle='#1b90ff';rrect(-car.length/2,-car.width/2,car.length,car.width,6);ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(-6,-car.width/2+6,12,car.width-12);ctx.fillStyle='#111';wheel(+car.length*0.28,-car.width*0.55,1);wheel(+car.length*0.28,+car.width*0.55,1);wheel(-car.length*0.28,-car.width*0.55,.85);wheel(-car.length*0.28,+car.width*0.55,.85);ctx.restore();
 }
-
-// ===== Loop & Boot =====
 let last=performance.now();
 function loop(now){
-  const dt=Math.min(0.033,Math.max(0.001,(now-last)/1000)); last=now;
-  step(dt); draw();
+  const dt=Math.min(0.033,Math.max(0.001,(now-last)/1000));last=now;
+  step(dt);draw();
   const nowLap=(performance.now()-lapStart)/1000;
-  $lap.textContent=currentLap; $lapTime.textContent=nowLap.toFixed(3);
+  $lap.textContent=currentLap;$lapTime.textContent=nowLap.toFixed(3);
   $best.textContent=bestLap?bestLap.toFixed(3):'—';
   $speed.textContent=Math.max(0,(Math.hypot(car.vx,car.vy)*3.6)|0);
   $fps.textContent=(1/dt)|0;
   requestAnimationFrame(loop);
 }
-
-function startGame(){
-  updateRotateHint();
-  resizeCanvas();        // <— ukuran dari .stage, anti 0×0
-  rebuildGates();        // bangun track sesuai ukuran
-  resetCar();
-  draw();                // render sekali supaya gak blank
-  last=performance.now();
-  requestAnimationFrame(loop);
-}
-startGame();
-
-// ===== Buttons =====
+resetCar();draw();requestAnimationFrame(loop);
 document.getElementById('btnReset').onclick=resetCar;
 document.getElementById('btnRestart').onclick=restartLap;
-document.addEventListener('visibilitychange',()=>{last=performance.now();});
 })();
 </script>
 </body>
