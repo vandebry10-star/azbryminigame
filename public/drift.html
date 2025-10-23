@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
-<title>Azbry Drift — Final Mobile Fix</title>
+<title>Azbry Drift — Ultra Mobile Fix</title>
 <style>
   :root{--bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;--panel:rgba(255,255,255,.06);--bd:rgba(255,255,255,.12)}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:600 14px/1.3 system-ui,Segoe UI,Roboto,Arial;touch-action:manipulation}
@@ -12,16 +12,20 @@
   canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;background:
     radial-gradient(1200px 800px at 50% 120%, rgba(0,0,0,.55), transparent 60%),
     repeating-linear-gradient(0deg,#11161d 0 2px,#0f141a 2px 4px);}
+
   /* HUD */
-  .hud{position:absolute;left:10px;right:10px;top:env(safe-area-inset-top,10px);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;z-index:10;pointer-events:none}
+  .hud{position:absolute;left:10px;right:10px;top:env(safe-area-inset-top,10px);
+       display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;z-index:10;pointer-events:none}
   .pills{display:flex;gap:8px;flex-wrap:wrap}
   .pill{pointer-events:auto;padding:6px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--bd)}
   .top-btns{display:flex;gap:8px}
   .btn{pointer-events:auto;padding:8px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--bd);color:var(--ink);font-weight:800}
+  .on{background:linear-gradient(180deg,var(--accent),#a3f07f); color:#101; border-color:transparent}
+
   /* Controls */
   .controls{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);
-    display:flex;justify-content:space-between;align-items:flex-end;gap:12px;z-index:12}
-  .controls, .controls *{touch-action:none} /* <- biar gesture HP gak ‘makan’ tap */
+    display:flex;justify-content:space-between;align-items:flex-end;gap:12px;z-index:12;pointer-events:auto}
+  .controls, .controls *{touch-action:none} /* cegah gesture sistem makan input */
   .steer{display:flex;gap:10px}
   .big{width:74px;height:74px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid var(--bd);
     display:grid;place-items:center;color:var(--ink);font-weight:900;user-select:none}
@@ -43,6 +47,7 @@
         <span class="pill">Time: <b id="lapTime">0.000</b>s</span>
         <span class="pill">Speed: <b id="speed">0</b> km/h</span>
         <span class="pill">FPS: <b id="fps">60</b></span>
+        <span class="pill" id="inp">Input: <b id="inpW">W=0</b> <b id="inpA">A=0</b> <b id="inpS">S=0</b> <b id="inpD">D=0</b> <b id="inpHB">HB=0</b></span>
       </div>
       <div class="top-btns">
         <button id="btnReset" class="btn">Reset</button>
@@ -56,7 +61,7 @@
         <div class="big" data-hold="KeyD">⟶</div>
       </div>
       <div class="padR" style="display:flex;gap:10px">
-        <div class="wide" data-hold="KeyW">GAS</div>
+        <div class="wide" data-hold="KeyW" id="btnGas">GAS</div>
         <div class="big hb" data-hold="Space">HB</div>
         <div class="wide" data-hold="KeyS">REM</div>
       </div>
@@ -89,7 +94,13 @@ const H = () => canvas.height;
 const $lap=document.getElementById('lap'),
       $lapTime=document.getElementById('lapTime'),
       $speed=document.getElementById('speed'),
-      $fps=document.getElementById('fps');
+      $fps=document.getElementById('fps'),
+      $w=document.getElementById('inpW'),
+      $a=document.getElementById('inpA'),
+      $s=document.getElementById('inpS'),
+      $d=document.getElementById('inpD'),
+      $hb=document.getElementById('inpHB'),
+      $btnGas=document.getElementById('btnGas');
 
 // ===== Track (3 gate simple) =====
 function mkGates(){
@@ -115,36 +126,55 @@ function resetCar(){
 resetCar();
 document.getElementById('btnReset').onclick = resetCar;
 
-// ===== Input (mobile + desktop, 100% nempel) =====
+// ===== Input (pointer + touch + mouse + keyboard) =====
 const keys = Object.create(null);
+
 window.addEventListener('keydown', e => { keys[e.code]=true; });
 window.addEventListener('keyup',   e => { keys[e.code]=false; });
 
 function bindHold(el){
   const code = el.dataset.hold;
-  const down = e => { e.preventDefault(); keys[code]=true; el.classList.add('press'); };
-  const up   = e => { e.preventDefault(); keys[code]=false; el.classList.remove('press'); };
-  // Touch
-  el.addEventListener('touchstart', down, {passive:false});
-  el.addEventListener('touchend',   up,   {passive:false});
-  el.addEventListener('touchcancel',up,   {passive:false});
-  // Mouse
-  el.addEventListener('mousedown', down);
-  el.addEventListener('mouseup',   up);
-  window.addEventListener('mouseup', ()=>{ keys[code]=false; el.classList.remove('press'); });
+  const onDown = e => {
+    if (e.pointerId!==undefined && el.setPointerCapture) el.setPointerCapture(e.pointerId);
+    e.preventDefault(); keys[code]=true; el.classList.add('press'); reflectKeys();
+  };
+  const onUp = e => {
+    e.preventDefault(); keys[code]=false; el.classList.remove('press'); reflectKeys();
+  };
+  // Pointer first
+  el.addEventListener('pointerdown', onDown);
+  el.addEventListener('pointerup',   onUp);
+  el.addEventListener('pointercancel', onUp);
+  // Touch fallback
+  el.addEventListener('touchstart', onDown, {passive:false});
+  el.addEventListener('touchend',   onUp,   {passive:false});
+  el.addEventListener('touchcancel',onUp,   {passive:false});
+  // Mouse fallback
+  el.addEventListener('mousedown', onDown);
+  el.addEventListener('mouseup',   onUp);
+  window.addEventListener('mouseup', ()=>{ keys[code]=false; el.classList.remove('press'); reflectKeys(); });
 }
 document.querySelectorAll('[data-hold]').forEach(bindHold);
 
+function reflectKeys(){
+  $w.textContent = 'W='+(keys.KeyW?1:0);
+  $a.textContent = 'A='+(keys.KeyA?1:0);
+  $s.textContent = 'S='+(keys.KeyS?1:0);
+  $d.textContent = 'D='+(keys.KeyD?1:0);
+  $hb.textContent= 'HB='+(keys.Space?1:0);
+  $btnGas.classList.toggle('on', !!keys.KeyW);
+}
+
 // ===== Physics (simple driftable) =====
 const P = {
-  engine: 10000,  // tenaga gas
+  engine: 10500,  // tenaga gas
   brake:   8200,
   air:     0.90,  // drag
-  grip:    0.90,  // grip normal
+  grip:    0.92,  // grip normal
   hbGrip:  0.45,  // grip saat handbrake
-  steerSpeed: 4.2,
-  maxSteer:   0.75,
-  maxSpeed:   62    // km/h -> limiter
+  steerSpeed: 4.4,
+  maxSteer:   0.85,
+  maxSpeed:   64    // km/h (perkiraan)
 };
 
 function step(dt){
@@ -165,9 +195,9 @@ function step(dt){
   let Fx = car.throttle * P.engine;
   if (keys.KeyS && localVx>0) Fx -= P.brake;
 
-  // limiter kecepatan
+  // limiter kecepatan (unit piksel/s, jadi cukup rem)
   const speed = Math.hypot(car.vx, car.vy);
-  if (speed > P.maxSpeed/3.6) Fx *= 0.6;
+  if (speed > (P.maxSpeed/3.6)) Fx *= 0.6;
 
   // lateral (drift feel)
   const slip = localVy;
@@ -189,7 +219,7 @@ function step(dt){
 
   // belok dari steer & kecepatan maju (sederhana tapi enak)
   const fwd = c*car.vx + si*car.vy;
-  car.angle += (car.steer * 0.02) * fwd;
+  car.angle += (car.steer * 0.022) * fwd;
 }
 
 // ===== Draw =====
@@ -203,7 +233,7 @@ function draw(){
   const w=W(), h=H();
   ctx.clearRect(0,0,w,h);
 
-  // garis racing (sekedar panduan)
+  // racing line
   ctx.save();
   ctx.strokeStyle='rgba(184,255,154,.24)';
   ctx.lineWidth = Math.max(2, w*0.002);
@@ -256,7 +286,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 
-// Boot: render sekali biar gak blank, lalu jalanin loop
+// Boot
 draw();
 requestAnimationFrame(loop);
 })();
