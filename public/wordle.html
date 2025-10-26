@@ -46,29 +46,51 @@
   .flip{ animation:flip .45s ease both }
   @keyframes flip{ 50%{transform:rotateX(90deg)} 51%{transform:rotateX(0)} }
 
-  .kb{display:grid;gap:6px;margin-top:12px}
-  .row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
-  .key{
-    padding:10px 12px;border-radius:10px;background:var(--panel-bg-1);
-    border:1px solid var(--panel-bd);font-weight:800;color:#eaf1e9;min-width:34px
-  }
-  .key.big{min-width:74px}
-
   .msg{margin:10px 0 6px;min-height:22px;opacity:.9;text-align:center}
 
-  .pillbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center}
+  /* Info pills + reset (SEKARANG DI ATAS KEYBOARD) */
+  .pillbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;align-items:center;margin-top:10px}
   .pill{padding:6px 10px;border-radius:999px;background:var(--panel-bg-1);border:1px solid var(--panel-bd);font-weight:800}
 
+  /* ===== Keyboard responsif ===== */
+  .kb-wrap{margin-top:10px}
+  .kb{
+    display:grid;grid-template-columns:1fr auto;gap:8px;align-items:stretch;
+    width:100%;
+  }
+  .kb-rows{display:grid;gap:6px}
+  .row{display:flex;gap:6px;justify-content:center}
+  .key{
+    padding:12px 10px;border-radius:10px;background:var(--panel-bg-1);
+    border:1px solid var(--panel-bd);font-weight:800;color:#eaf1e9;
+    min-width:34px;flex:1 1 auto;text-align:center
+  }
+  .row .key{flex:0 1 auto} /* huruf tidak dipaksa rata lebar */
+  .side{display:flex;flex-direction:column;gap:6px;align-self:stretch}
+  .key.del{min-width:74px}
+  .key.enter{
+    min-width:74px;
+    /* biar kira-kira setinggi dua tombol baris: */
+    height: calc(2.4em + 18px);
+  }
+
+  /* Sentuhan kecil */
   .panel.note{padding:12px;border:1px solid var(--panel-bd);border-radius:16px;background:var(--panel-bg-2)}
   .note h4{margin:0 0 6px;color:#cdd6e3}
   .note p{margin:0;color:#aeb9c8}
+
+  /* Mobile fine-tune */
+  @media (max-width:420px){
+    .key{padding:10px 8px}
+    .key.del,.key.enter{min-width:64px}
+  }
 </style>
 </head>
 <body>
 <main class="container wrap">
   <div class="topbar">
     <div class="title">
-      <span class="tag">FebryWesker</span>
+      <span class="tag">AZBRY • MD</span>
       <h1>Wordle Lite</h1>
     </div>
   </div>
@@ -84,16 +106,24 @@
   </section>
 
   <div id="msg" class="msg"></div>
-  <div class="kb" id="kb"></div>
 
-  <!-- Info & Reset DIPINDAH KE BAWAH -->
-  <section style="margin-top:12px">
-    <div class="pillbar">
-      <span class="pill">Huruf: <b>5</b></span>
-      <span class="pill">Kesempatan: <b>6</b></span>
-      <button id="reset" class="btn accent">Reset</button>
-    </div>
+  <!-- Info (Huruf/Kesempatan/Reset) DI ATAS keyboard -->
+  <section class="pillbar">
+    <span class="pill">Huruf: <b>5</b></span>
+    <span class="pill">Kesempatan: <b>6</b></span>
+    <button id="reset" class="btn accent">Reset</button>
   </section>
+
+  <!-- Keyboard -->
+  <div class="kb-wrap">
+    <div class="kb" id="kb">
+      <div class="kb-rows" id="kbRows"></div>
+      <div class="side">
+        <button class="key del" id="btnDel">DEL</button>
+        <button class="key enter" id="btnEnter">ENTER</button>
+      </div>
+    </div>
+  </div>
 
   <div class="license" style="margin-top:14px">
     <p>Lisensi MIT • © 2025 Azbry-MD</p>
@@ -104,7 +134,6 @@
 <script>
 (()=>{
 // ===== dictionary 100 kata Bahasa Indonesia (5 huruf) =====
-// (sengaja disusun kata umum; bisa kamu kurasi kapan saja)
 const WORDS = [
   "ADUAN","AKHIR","ANGIN","APIAN","ASING","BATAS","BAYAR","BEBAS","BENAR","BENIH",
   "BESAR","BIDIK","BISIK","BUNGA","BURUH","CAHYA","CANDU","CIPTA","CUKUP","DAMAI",
@@ -124,8 +153,10 @@ let answer=TARGET(), row=0, col=0, grid=Array.from({length:6},()=>Array(5).fill(
 
 // ===== dom =====
 const $b=document.getElementById("board"),
-      $kb=document.getElementById("kb"),
-      $m=document.getElementById("msg");
+      $m=document.getElementById("msg"),
+      $kbRows=document.getElementById("kbRows"),
+      $btnEnter=document.getElementById("btnEnter"),
+      $btnDel=document.getElementById("btnDel");
 
 // render papan
 function draw(){
@@ -193,21 +224,24 @@ function onKey(e){
 }
 document.addEventListener("keydown",onKey);
 
-// onscreen keyboard
+// onscreen keyboard: tiga baris kiri, kolom kanan untuk DEL (atas) & ENTER (bawah)
 const L1="QWERTYUIOP", L2="ASDFGHJKL", L3="ZXCVBNM";
-function rowKeys(s, hasEnter){
+function makeRow(letters){
   const div=document.createElement("div"); div.className="row";
-  s.split("").forEach(k=>{ const b=btn(k,()=>put(k)); div.appendChild(b); });
-  if(hasEnter){ div.prepend(btn("ENTER",commit,true)); div.appendChild(btn("DEL",back,true)); }
+  letters.split("").forEach(k=>{ const b=mkKey(k,()=>put(k)); div.appendChild(b); });
   return div;
 }
-function btn(label,fn,big){
+function mkKey(label,fn){
   const b=document.createElement("button");
-  b.className="key"+(big?" big":""); b.textContent=label; b.onclick=fn; return b;
+  b.className="key"; b.textContent=label; b.onclick=fn; return b;
 }
-$kb.append(rowKeys(L1), rowKeys(L2), rowKeys(L3,true));
+// build rows
+$kbRows.append(makeRow(L1), makeRow(L2), makeRow(L3));
+// side buttons
+$btnEnter.onclick = commit;
+$btnDel.onclick   = back;
 
-// tombol reset (SEKARANG DI BAWAH)
+// tombol reset
 document.getElementById("reset").onclick=()=>{
   answer=TARGET(); row=0; col=0; grid=Array.from({length:6},()=>Array(5).fill(""));
   draw(); setMsg(""); document.addEventListener("keydown",onKey);
