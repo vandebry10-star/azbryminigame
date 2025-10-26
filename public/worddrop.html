@@ -1,336 +1,117 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Azbry WordDrop</title>
-
-  <!-- Tema global -->
-  <link rel="stylesheet" href="assets/css/azbry.css?v=20" />
-
-  <style>
-    /* ====== hanya layout spesifik game ini (yang lain ngikut azbry.css) ====== */
-    .board-wrap { max-width: 720px; }
-    #wd-board{
-      --cols: 8; --rows: 12;
-      display: grid; gap: 2px;
-      grid-template-columns: repeat(var(--cols), 1fr);
-      grid-template-rows: repeat(var(--rows), minmax(24px, 1fr));
-      width: 100%; aspect-ratio: 2/3;
-      border-radius: 16px; overflow: hidden;
-      background: var(--panel-bg-1); border:1px solid var(--panel-bd);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.02);
-      position: relative;
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Azbry Wordle Lite</title>
+<link rel="stylesheet" href="assets/css/azbry.css?v=20"/>
+<style>
+  .wrap{max-width:520px;margin:0 auto}
+  .grid{display:grid;gap:8px;grid-template-columns:repeat(5,1fr)}
+  .cell{aspect-ratio:1/1;border-radius:10px;display:grid;place-items:center;
+        font-weight:900;font-size:clamp(18px,6vw,28px);
+        background:var(--panel-bg-1);border:1px solid var(--panel-bd);color:#eaf1e9}
+  .cell.f{background:#6aaa64;color:#0b0d10}  /* full match */
+  .cell.p{background:#c9b458;color:#0b0d10}  /* partial */
+  .cell.m{opacity:.45}                       /* miss */
+  .kb{display:grid;gap:6px;margin-top:12px}
+  .row{display:flex;gap:6px;justify-content:center}
+  .key{padding:10px 12px;border-radius:10px;background:var(--panel-bg-1);
+       border:1px solid var(--panel-bd);font-weight:800;color:#eaf1e9;min-width:34px}
+  .key.big{min-width:70px}
+  .top{display:flex;justify-content:space-between;align-items:center;margin:10px 0}
+</style>
+</head><body>
+<main class="container wrap">
+  <div class="top">
+    <h1 style="margin:0;color:var(--azbry-accent)">Azbry Wordle</h1>
+    <button id="reset" class="btn accent">Reset</button>
+  </div>
+  <div id="board" class="grid" style="grid-template-rows:repeat(6,1fr)"></div>
+  <div id="msg" style="margin:10px 0 6px;min-height:22px;opacity:.9"></div>
+  <div class="kb" id="kb"></div>
+</main>
+<script>
+(()=>{
+// ===== dictionary 100 kata Bahasa Indonesia =====
+const WORDS = [
+  "ADUAN","AKHIR","ANGIN","APIAN","ASING","BATAS","BAYAR","BEBAS","BENAR","BENIH",
+  "BESAR","BIDIK","BISIK","BUNGA","BURUH","CAHYA","CANDU","CIPTA","CUKUP","DAMAI",
+  "DUNIA","GAJAH","GARIS","GERAK","HADIR","HAKIM","HALUS","HARTA","IKLAN","IKLIM",
+  "ILHAM","IMPIA","INDAH","ISIAN","ISTIR","JAMUR","JANJI","JELAS","JUARA","KABAR",
+  "KAMAR","KASIH","KAYUH","KEBAT","KERJA","KORAN","KUNCI","LAGAR","LAMPU","LARUT",
+  "LAWAN","LELAH","LIRIK","LUCUH","MADIN","MAHAS","MAKAN","MALAM","MANDI","MANIS",
+  "MASUK","MAWAR","MEKAN","MIMPI","MINUM","MODAL","MULAI","MURID","NAKAL","NASIH",
+  "PANAS","PANDA","PANTU","PASAR","PEDAG","PEMBA","PESAN","PIKIR","PILIH","PINDA",
+  "RAHAS","RAKIT","RAMAI","RAPAT","RASAQ","REKSA","RINGA","RUMAH","SAMPA","SAKIT",
+  "SENJA","SENYU","SINAR","SUARA","SURAT","TAMAN","TANGG","TIDUR","UJUNG","WARNA"
+];
+const TARGET = () => WORDS[Math.random()*WORDS.length|0];
+// ===== state =====
+let answer=TARGET(), row=0, col=0, grid=Array.from({length:6},()=>Array(5).fill(""));
+// ===== dom =====
+const $b=document.getElementById("board"), $kb=document.getElementById("kb"), $m=document.getElementById("msg");
+function draw(){
+  $b.innerHTML="";
+  for(let r=0;r<6;r++){
+    for(let c=0;c<5;c++){
+      const d=document.createElement("div"); d.className="cell";
+      d.textContent=(grid[r][c]||"").toUpperCase(); $b.appendChild(d);
     }
-    .cell{
-      display:grid; place-items:center;
-      background: rgba(255,255,255,.02);
-      color:#eaf1e9; font-weight:900;
-      font-size: clamp(16px, 3.5vw, 24px);
-      border-radius: 6px;
-    }
-    .ghost{ opacity:.35 }
-    .tile{
-      display:grid; place-items:center;
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
-      border:1px solid var(--panel-bd);
-      color:#fff; font-weight:900; border-radius:10px;
-      width: 90%; height: 90%;
-      box-shadow: 0 4px 18px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.08);
-      text-shadow: 0 1px 0 rgba(0,0,0,.55);
-    }
-    .tile.good{ background:linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2)); color:#0b0d10; }
-    .blink{ animation:blink .18s linear 4 }
-    @keyframes blink{ 50%{filter:brightness(1.6)} }
-
-    .hud-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
-    .pill{ padding:6px 10px; border-radius:999px; background:var(--panel-bg-1); border:1px solid var(--panel-bd); font-weight:800 }
-    .target{ padding:8px 12px; border-radius:12px; font-weight:900;
-      background:linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2)); color:var(--azbry-ink);
-      border:0; box-shadow:0 0 14px rgba(184,255,154,.28)
-    }
-    .controls .btn.small{ padding:8px 10px; font-size:.95rem }
-    .kbd{font: 700 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; opacity:.7}
-    @media (max-width:560px){
-      #wd-board{ --rows: 14 }
-    }
-  </style>
-</head>
-<body>
-  <main class="container">
-    <header class="top-header">
-      <div class="title">
-        <div class="tag">AZBRY • MINIGAME</div>
-        <h1>WordDrop</h1>
-      </div>
-      <div class="hud-row">
-        <span class="pill">Skor: <b id="sc">0</b></span>
-        <span class="pill">Waktu: <b id="tm">60</b>s</span>
-        <span class="pill">Level: <b id="lv">1</b></span>
-      </div>
-    </header>
-
-    <section class="board-wrap">
-      <div id="wd-board" aria-label="board"></div>
-    </section>
-
-    <section class="panel">
-      <div class="controls">
-        <button id="btnStart" class="btn accent">Mulai / Reset</button>
-        <button id="btnMenu" class="btn dark">← Menu</button>
-        <div style="flex:1"></div>
-        <span class="pill">Target: <span id="target" class="target">AZBRY</span></span>
-      </div>
-
-      <div class="controls">
-        <button id="btnLeft"  class="btn small">⟵ Kiri <span class="kbd">[A/◀]</span></button>
-        <button id="btnDrop"  class="btn small accent">Jatuhkan <span class="kbd">[Spasi]</span></button>
-        <button id="btnRight" class="btn small">Kanan ⟶ <span class="kbd">[D/▶]</span></button>
-      </div>
-
-      <div class="move-log">
-        <h4>Cara Main</h4>
-        <pre id="help" style="white-space:normal">
-- Huruf acak turun satu-satu. Gerakkan kiri/kanan, lalu JATUHKAN (Spasi).
-- Susun huruf horizontal hingga membentuk “TARGET” (warna hijau) untuk skor + waktu.
-- Target baru akan muncul tiap berhasil / naik level. Semoga hoki!
-        </pre>
-      </div>
-
-      <div class="license">
-        <p>Lisensi MIT • © 2025 Azbry-MD</p>
-        <a class="cta" href="./index.html">↗ Kembali ke Menu</a>
-      </div>
-    </section>
-  </main>
-
-  <script>
-  (function(){
-    // ====== DOM
-    const $B = document.getElementById('wd-board');
-    const $SC = document.getElementById('sc');
-    const $TM = document.getElementById('tm');
-    const $LV = document.getElementById('lv');
-    const $TG = document.getElementById('target');
-    const $btnStart = document.getElementById('btnStart');
-    const $btnLeft  = document.getElementById('btnLeft');
-    const $btnRight = document.getElementById('btnRight');
-    const $btnDrop  = document.getElementById('btnDrop');
-    document.getElementById('btnMenu').onclick = ()=> location.href='./index.html';
-
-    // ====== Board
-    const COLS = 8;
-    let ROWS = +getComputedStyle($B).getPropertyValue('--rows') || 12;
-    const cells = []; // [r][c] -> <div.cell>
-    const grid  = []; // [r][c] -> null | {ch}
-
-    function buildBoard(){
-      ROWS = +getComputedStyle($B).getPropertyValue('--rows') || 12;
-      $B.innerHTML=''; cells.length=0; grid.length=0;
-      for (let r=0;r<ROWS;r++){
-        cells[r]=[]; grid[r]=Array(COLS).fill(null);
-        for (let c=0;c<COLS;c++){
-          const d=document.createElement('div');
-          d.className='cell';
-          d.dataset.r=r; d.dataset.c=c;
-          $B.appendChild(d);
-          cells[r][c]=d;
-        }
-      }
-    }
-    buildBoard();
-    window.addEventListener('resize', ()=>{ buildBoard(); render(); });
-
-    // ====== Word list (pendek / umum biar fun)
-    const WORDS = [
-      "AZBRY","CHESS","BOARD","MAGUS","PIXEL","DRIFT","KODE","SCRIPT","GAMER",
-      "AI","TOKEN","KOMPUTER","JAVASCRIPT","MOBILE","LAYAR","NEON","RING","WESKER","FEBRY"
-    ];
-
-    // ====== State
-    let running=false, tick=0, fallEvery=18, timer=60, score=0, level=1;
-    let target = pickWord();
-    let cur = null; // {r,c,ch}
-
-    function pickWord(){
-      const w = WORDS[(Math.random()*WORDS.length)|0];
-      $TG.textContent=w;
-      return w;
-    }
-
-    // ====== Helpers
-    function spawn(){
-      const ch = target[(Math.random()*target.length)|0]; // weighted from target -> lebih sering keluar huruf target
-      const c  = (Math.random()*COLS)|0;
-      cur = { r:0, c, ch };
-      if (grid[0][c]) { gameOver(); return; }
-      drawCurrent();
-    }
-    function inBoard(r,c){ return r>=0 && r<ROWS && c>=0 && c<COLS; }
-
-    function lock(){
-      if (!cur) return;
-      grid[cur.r][cur.c] = { ch: cur.ch };
-      cur = null;
-      checkRows();
-      spawn();
-    }
-
-    function move(dx){
-      if (!running || !cur) return;
-      const nc = cur.c + dx;
-      if (!inBoard(cur.r, nc)) return;
-      if (grid[cur.r][nc]) return;
-      undrawCurrent(); cur.c = nc; drawCurrent();
-    }
-
-    function drop(){
-      if (!running || !cur) return;
-      undrawCurrent();
-      while (cur.r+1 < ROWS && !grid[cur.r+1][cur.c]) cur.r++;
-      drawCurrent(); lock();
-    }
-
-    function step(){
-      if (!running) return;
-      tick++;
-      if (tick % fallEvery === 0 && cur){
-        const nr = cur.r+1;
-        if (nr>=ROWS || grid[nr][cur.c]) lock();
-        else { undrawCurrent(); cur.r = nr; drawCurrent(); }
-      }
-      if (tick % 60 === 0){ // 60 ticks ~ 1s (approx)
-        timer--; if (timer<=0){ gameOver(); }
-        else $TM.textContent = timer;
-      }
-      requestAnimationFrame(step);
-    }
-
-    // ====== check & clear
-    function checkRows(){
-      let cleared = 0;
-      for (let r=0;r<ROWS;r++){
-        // cari semua substring sepanjang target di baris r
-        for (let start=0; start<=COLS-target.length; start++){
-          let ok=true;
-          for (let k=0;k<target.length;k++){
-            const cell = grid[r][start+k];
-            if (!cell || cell.ch !== target[k]) { ok=false; break; }
-          }
-          if (ok){
-            // highlight
-            for (let k=0;k<target.length;k++){
-              const d = cells[r][start+k];
-              d.firstChild?.classList.add('good','blink');
-            }
-            // hapus setelah delay pendek
-            setTimeout(()=>{
-              for (let k=0;k<target.length;k++){
-                grid[r][start+k]=null;
-                const d = cells[r][start+k];
-                d.innerHTML='';
-              }
-              collapse(r);
-            }, 140);
-            cleared++;
-          }
-        }
-      }
-      if (cleared>0){
-        const gain = 50*cleared;
-        score += gain; $SC.textContent = score;
-        timer = Math.min(120, timer + 5*cleared); $TM.textContent=timer;
-
-        // naik level tiap 3 clear
-        if (score >= level*300){
-          level++; $LV.textContent=level;
-          fallEvery = Math.max(8, fallEvery-2);
-          target = pickWord();
-        }
-      }
-    }
-
-    function collapse(r){
-      // turunkan semua tile di atas r (kolom per kolom)
-      for (let c=0;c<COLS;c++){
-        for (let i=r; i>=0; i--){
-          if (!grid[i][c]){
-            // cari di atasnya
-            let k=i-1;
-            while (k>=0 && !grid[k][c]) k--;
-            if (k>=0){
-              grid[i][c]=grid[k][c]; grid[k][c]=null;
-            }
-          }
-        }
-      }
-      render();
-    }
-
-    // ====== render
-    function render(){
-      for (let r=0;r<ROWS;r++){
-        for (let c=0;c<COLS;c++){
-          const d=cells[r][c];
-          const v=grid[r][c];
-          if (!v){ d.innerHTML=''; continue; }
-          if (!d.firstChild){
-            const s=document.createElement('div');
-            s.className='tile';
-            s.textContent=v.ch;
-            d.appendChild(s);
-          }else{
-            d.firstChild.textContent=v.ch;
-          }
-        }
-      }
-      if (cur) drawCurrent();
-    }
-    function drawCurrent(){
-      const d=cells[cur.r][cur.c];
-      d.innerHTML='';
-      const s=document.createElement('div');
-      s.className='tile';
-      s.textContent=cur.ch;
-      d.appendChild(s);
-    }
-    function undrawCurrent(){
-      const d=cells[cur.r][cur.c];
-      d.innerHTML='';
-    }
-
-    // ====== game control
-    function reset(){
-      running=false;
-      score=0; timer=60; level=1; fallEvery=18; tick=0;
-      $SC.textContent='0'; $TM.textContent='60'; $LV.textContent='1';
-      target = pickWord();
-      for (let r=0;r<ROWS;r++){ grid[r].fill(null); }
-      render();
-      spawn();
-    }
-    function gameOver(){
-      running=false;
-      cur = null;
-      alert(`Game Over!\nSkor: ${score}`);
-    }
-
-    $btnStart.addEventListener('click', ()=>{ reset(); running=true; requestAnimationFrame(step); });
-    $btnLeft .addEventListener('click', ()=> move(-1));
-    $btnRight.addEventListener('click', ()=> move(1));
-    $btnDrop .addEventListener('click', drop);
-
-    // Keyboard
-    window.addEventListener('keydown', (e)=>{
-      if (!running) return;
-      if (e.code==='ArrowLeft'||e.code==='KeyA') move(-1);
-      else if (e.code==='ArrowRight'||e.code==='KeyD') move(1);
-      else if (e.code==='Space') { e.preventDefault(); drop(); }
-    });
-
-    // boot (tampilkan papan kosong + spawn preview)
-    reset();
-  })();
-  </script>
-</body>
-</html>
+  }
+}
+function setMsg(t){ $m.textContent=t||""; }
+function reveal(r){
+  const guess=grid[r].join("").toUpperCase();
+  const A=answer.split(""), G=guess.split("");
+  const used=Array(5).fill(false);
+  // pass1 exact
+  for(let i=0;i<5;i++){
+    const cell=$b.children[r*5+i];
+    if(G[i]===A[i]){ cell.classList.add("f"); used[i]=true; }
+  }
+  // pass2 partial
+  for(let i=0;i<5;i++){
+    const cell=$b.children[r*5+i];
+    if(cell.classList.contains("f")) continue;
+    let k=A.findIndex((ch,j)=>!used[j]&&ch===G[i]);
+    if(k>-1){ cell.classList.add("p"); used[k]=true; }
+    else cell.classList.add("m");
+  }
+  if(guess===answer){ setMsg("MENANG! Jawaban: "+answer); lock(); }
+  else if(r===5){ setMsg("Kalah. Jawaban: "+answer); lock(); }
+}
+function lock(){ document.removeEventListener("keydown", onKey); }
+// ===== input =====
+function commit(){
+  if(col<5) return;
+  reveal(row); row++; col=0;
+}
+function put(ch){
+  if(row>=6||col>=5) return;
+  grid[row][col++]=ch;
+  draw();
+}
+function back(){
+  if(col>0){ grid[row][--col]=""; draw(); }
+}
+function onKey(e){
+  const k=e.key.toUpperCase();
+  if(k==="ENTER") commit();
+  else if(k==="BACKSPACE") back();
+  else if(k.length===1 && k>="A" && k<="Z") put(k);
+}
+document.addEventListener("keydown",onKey);
+// on-screen kb
+const L1="QWERTYUIOP", L2="ASDFGHJKL", L3="ZXCVBNM";
+function rowKeys(s, hasEnter){
+  const div=document.createElement("div"); div.className="row";
+  s.split("").forEach(k=>{ const b=btn(k,()=>put(k)); div.appendChild(b); });
+  if(hasEnter){ div.prepend(btn("ENTER",commit,true)); div.appendChild(btn("DEL",back,true)); }
+  return div;
+}
+function btn(label,fn,big){ const b=document.createElement("button"); b.className="key"+(big?" big":""); b.textContent=label; b.onclick=fn; return b; }
+$kb.append(rowKeys(L1), rowKeys(L2), rowKeys(L3,true));
+// reset
+document.getElementById("reset").onclick=()=>{ answer=TARGET(); row=0; col=0; grid=Array.from({length:6},()=>Array(5).fill("")); draw(); setMsg(""); document.addEventListener("keydown",onKey); };
+draw();
+})();
+</script>
+</body></html>
