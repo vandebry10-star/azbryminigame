@@ -1,9 +1,8 @@
 /* =========================================================
-   Azbry Chess — main.js (Clean, No-Anim, No-UndoRedo, AI-safe)
-   - Tidak ada animasi gerak
-   - Tidak ada undo/redo
-   - AI mikir 2 detik, tidak numpuk (single timer)
-   - Tidak ada auto double-move / saling respon
+   Azbry Chess — main.js (Strict, No-Anim, No-UndoRedo)
+   - Input manusia hanya saat gilirannya
+   - AI single timer + epoch token (anti-double, anti-late)
+   - Move selalu diverifikasi legal saat eksekusi
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -21,6 +20,11 @@
   const G  = new Chess();                // from chess-engine.js
   const UI = new ChessUI($board, onSquareClick);
 
+  // ---------- Config ----------
+  const HUMAN_COLOR = 'w';
+  const AI_COLOR    = 'b';
+  const AI_THINK_TIME_MS = 2000; // 2 detik
+
   // ---------- State ----------
   let mode = 'human';                    // 'human' | 'ai'
   let selected = null;                   // algebraic: 'e2'
@@ -28,6 +32,7 @@
   let lastMove = null;                   // {from,to}
   let aiTimer = null;                    // single timer untuk AI
   let aiThinking = false;
+  let aiEpoch = 0;                       // token untuk membatalkan hasil AI yang usang
 
   // ---------- Helpers ----------
   const FILES = "abcdefgh";
@@ -120,16 +125,18 @@
 
   // ---------- Input ----------
   function onSquareClick(a){ // algebraic 'e2'
+    // Hanya boleh input saat:
+    // - MODE HUMAN, dan
+    // - Giliran HUMAN_COLOR, dan
+    // - AI tidak sedang berpikir
+    if (mode !== 'human' && !(mode==='ai' && G.turn()===HUMAN_COLOR)) return;
+    if (G.turn() !== HUMAN_COLOR) return;
     if (aiThinking) return;
 
-    // player = putih saat mode AI
-    if (mode==='ai' && G.turn()==='b') return;
-
-    const side = G.turn();
     const p = pieceAtAlg(a);
 
     if (!selected){
-      if (!p || p.color!==side) return;
+      if (!p || p.color!==HUMAN_COLOR) return;
       selected = a;
       legalForSelected = G.moves({square:a});
       render({legalSquares: legalForSelected.map(m=>m.to)});
@@ -138,7 +145,7 @@
     }
 
     // ganti seleksi ke bidak sendiri lain
-    if (p && p.color===side && a!==selected){
+    if (p && p.color===HUMAN_COLOR && a!==selected){
       selected = a;
       legalForSelected = G.moves({square:a});
       render({legalSquares: legalForSelected.map(m=>m.to)});
@@ -154,7 +161,11 @@
       return;
     }
 
-    doMove(mv); // langsung jalan (no animation)
+    // amankan: pastikan move legal TERKINI (bukan list lama)
+    const fresh = G.moves().find(x => x.from===mv.from && x.to===mv.to && (!!x.promotion === !!mv.promotion));
+    if (!fresh) { clearSelection(); render(); return; }
+
+    doMove(fresh); // langsung jalan (no animation)
   }
 
   function markSrc(a){
@@ -172,6 +183,12 @@
 
   // ---------- Move ----------
   function doMove(m){
+    // Guard: hanya boleh jalan jika memang gilirannya side sesuai m.from
+    if (G.turn() !== (pieceAtAlg(typeof m.from==='string'?m.from:alg(m.from))?.color||G.turn())) {
+      // kalau aneh, abort
+      clearSelection(); render(); return;
+    }
+
     const from = typeof m.from==='string'? m.from : alg(m.from);
     const to   = typeof m.to  ==='string'? m.to   : alg(m.to);
 
@@ -185,8 +202,9 @@
     const status = G.gameStatus();
     if (status==='checkmate' || status==='stalemate'){ showResult(status); return; }
 
-    if (mode==='ai' && G.turn()==='b'){
-      scheduleAI(); // panggil AI sekali, 2 detik delay
+    // Jika mode AI dan sekarang gilirannya AI -> jadwalkan AI
+    if (mode==='ai' && G.turn()===AI_COLOR){
+      scheduleAI();
     }
   }
 
@@ -196,20 +214,31 @@
   }
   function scheduleAI(){
     clearAITimer();
-    aiTimer = setTimeout(runAI, 2000); // pikir 2 detik
+    // bump epoch, sehingga hasil lama otomatis batal
+    const myEpoch = ++aiEpoch;
+    aiTimer = setTimeout(()=>runAI(myEpoch), AI_THINK_TIME_MS);
   }
-  function runAI(){
+  function runAI(epoch){
     // guard: bisa saja user sudah switch mode / reset
-    if (mode!=='ai' || G.turn()!=='b'){ clearAITimer(); return; }
+    if (epoch !== aiEpoch) return;               // stale
+    if (mode!=='ai' || G.turn()!==AI_COLOR) return;
 
     aiThinking = true;
     try{
-      const best = (window.AzbryAI && window.AzbryAI.think)
-        ? window.AzbryAI.think(G, { timeMs: 2000, maxDepth: 8 })
-        : null;
+      const think = (window.AzbryAI && window.AzbryAI.think) ? window.AzbryAI.think : null;
+      let best = null;
+      if (think){
+        // AI HARUS PURE: tidak boleh memodifikasi G secara permanen
+        best = think(G, { timeMs: AI_THINK_TIME_MS, maxDepth: 10, safe:true });
+      }
+      // Pastikan masih match epoch & turn
+      if (epoch !== aiEpoch) return;             // stale
+      if (mode!=='ai' || G.turn()!==AI_COLOR) return;
+
       if (best){
-        // pastikan masih gilirannya hitam
-        if (G.turn()==='b') doMove(best);
+        // Verifikasi lagi: move masih legal di posisi sekarang
+        const legal = G.moves().find(x => x.from===best.from && x.to===best.to && (!!x.promotion === !!best.promotion));
+        if (legal) doMove(legal);
       }
     } finally {
       aiThinking = false;
@@ -233,9 +262,9 @@
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (aiThinking) return;
     clearAITimer();
+    aiEpoch++; // batalkan semua hasil AI yang mungkin datang
     G.reset(); lastMove=null; clearSelection(); render();
-    // jika mode AI dan giliran hitam, biarkan AI jalan dulu
-    if (mode==='ai' && G.turn()==='b') scheduleAI();
+    if (mode==='ai' && G.turn()===AI_COLOR) scheduleAI();
   });
 
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
@@ -247,14 +276,15 @@
     if (aiThinking) return;
     mode='human';
     clearAITimer();
-    // highlight tombol ditangani oleh HTML glue
+    aiEpoch++; // invalidate pending AI
   });
 
   $modeAI && $modeAI.addEventListener('click', ()=>{
     if (aiThinking) return;
     mode='ai';
     clearAITimer();
-    if (G.turn()==='b') scheduleAI();
+    aiEpoch++; // start fresh epoch
+    if (G.turn()===AI_COLOR) scheduleAI();
   });
 
   // ---------- Boot ----------
