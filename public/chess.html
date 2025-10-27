@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Azbry Chess.com</title>
 
-  <!-- Google Font untuk Judul -->
+  <!-- Font Judul -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 
   <!-- Styles -->
@@ -159,6 +159,8 @@
     }
     .result-sub{color:#cfd8e6;opacity:.9;margin-bottom:14px;}
     .result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+    /* hilangkan undo redo */
+    #btnUndo,#btnRedo{display:none!important}
   </style>
 </head>
 
@@ -195,8 +197,6 @@
     <!-- TOOLBAR BAWAH -->
     <div class="toolbar">
       <button id="btnReset" class="btn">Muat Ulang</button>
-      <button id="btnUndo" class="btn">Undo</button>
-      <button id="btnRedo" class="btn">Redo</button>
       <button id="btnFlip" class="btn">Putar Meja</button>
     </div>
 
@@ -221,16 +221,17 @@
 
   <!-- Scripts -->
   <script src="assets/js/chess-engine.js"></script>
-<script src="assets/js/chess-ai.js"></script>
-<script src="assets/js/main.js"></script>
+  <script src="assets/js/chess-ai.js"></script>
+  <script src="assets/js/main.js"></script>
 
+  <!-- Glue Script -->
   <script>
   (function(){
-    const btnHuman = document.getElementById('modeHuman');
-    const btnAI    = document.getElementById('modeAI');
-    const modal    = document.getElementById('resultModal');
-    const txt      = document.getElementById('resultText');
-    const sub      = document.getElementById('resultSub');
+    const btnHuman=document.getElementById('modeHuman');
+    const btnAI=document.getElementById('modeAI');
+    const modal=document.getElementById('resultModal');
+    const txt=document.getElementById('resultText');
+    const sub=document.getElementById('resultSub');
 
     function setActive(which){
       if(which==='ai'){
@@ -250,14 +251,14 @@
       document.getElementById('btnReset')?.click();
     });
 
-    window.__azbrySetResult = function({text,subText}){
-      txt.textContent = text || '';
-      sub.textContent = subText || '';
+    window.__azbrySetResult=function({text,subText}){
+      txt.textContent=text||'';
+      sub.textContent=subText||'';
       modal.classList.add('show');
     };
 
-    document.getElementById('btnMenu')?.addEventListener('click', ()=>{
-      window.location.href = "https://azbryminigamess.vercel.app/";
+    document.getElementById('btnMenu')?.addEventListener('click',()=>{
+      window.location.href="https://azbryminigamess.vercel.app/";
     });
   })();
   </script>
