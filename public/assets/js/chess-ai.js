@@ -1,35 +1,18 @@
+<script>
 /* =========================================================
-   Azbry Chess — chess-ai.js (AI Module)
+   Azbry Chess — chess-ai.js (Strong, Stable, No Null-Move)
+   API: const AI = AzbryAI(G);  AI.chooseBest(timeMs) -> move | null
    ========================================================= */
-function createAzbryAI(G, cfg){
-  const AI = Object.assign({ timeMs:1500, qDepth:8, useTT:true }, cfg||{});
+function AzbryAI(G){
+  // ---------- utils ----------
+  const FILES="abcdefgh";
+  const idx = a => (8 - parseInt(a.charAt(1),10)) * 8 + FILES.indexOf(a.charAt(0));
+  const alg = i => FILES.charAt(i%8) + (8 - ((i/8)|0));
 
-  // --- Zobrist-lite ---
-  const Z_KEYS = (() => {
-    const rnd = () => (Math.random() * 2 ** 32) | 0;
-    const m = {};
-    ['w','b'].forEach(c=>{
-      ['P','N','B','R','Q','K'].forEach(p=>{
-        for(let i=0;i<64;i++) m[`${c}${p}${i}`]=rnd();
-      });
-    });
-    m.turn=rnd();
-    return m;
-  })();
-
-  function positionHash(){
-    let h=0|0;
-    for (let i=0;i<64;i++){
-      const p=G.get(i); if(!p) continue;
-      h ^= Z_KEYS[`${p.color}${p.piece}${i}`]||0;
-    }
-    if (G.turn()==='w') h ^= Z_KEYS.turn;
-    return h>>>0;
-  }
-
+  // ---------- piece values & PST ----------
   const VAL = {P:100,N:305,B:325,R:500,Q:900,K:0};
   const PST = {
-    P:[ 0,5,5,0,0,5,5,0, 0,10,10,5,5,10,10,0, 0,10,20,20,20,20,10,0, 5,10,10,25,25,10,10,5, 5,10,10,20,20,10,10,5, 0,10,10,0,0,10,10,0, 0,5,5,-10,-10,5,5,0, 0,0,0,0,0,0,0,0],
+    P:[ 0,5,5,0,0,5,5,0,  0,10,10,5,5,10,10,0,  0,10,20,20,20,20,10,0,  5,10,10,25,25,10,10,5,  5,10,10,20,20,10,10,5,  0,10,10,0,0,10,10,0,  0,5,5,-10,-10,5,5,0,  0,0,0,0,0,0,0,0 ],
     N:[-50,-40,-30,-30,-30,-30,-40,-50, -40,-20,0,5,5,0,-20,-40, -30,5,15,10,10,15,5,-30, -30,0,15,15,15,15,0,-30, -30,5,10,15,15,10,5,-30, -30,0,10,15,15,10,0,-30, -40,-20,0,0,0,0,-20,-40, -50,-40,-30,-30,-30,-30,-40,-50],
     B:[-20,-10,-10,-10,-10,-10,-10,-20, -10,5,0,0,0,0,5,-10, -10,10,10,10,10,10,10,-10, -10,0,10,10,10,10,0,-10, -10,5,5,10,10,5,5,-10, -10,0,5,10,10,5,0,-10, -10,0,0,0,0,0,0,-10, -20,-10,-10,-10,-10,-10,-10,-20],
     R:[0,0,0,5,5,0,0,0, 0,0,0,10,10,0,0,0, 0,0,0,10,10,0,0,0, 0,0,0,10,10,0,0,0, 0,0,0,10,10,0,0,0, 0,0,0,10,10,0,0,0, 5,5,5,10,10,5,5,5, 0,0,0,0,0,0,0,0],
@@ -37,28 +20,45 @@ function createAzbryAI(G, cfg){
     K:[-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-30,-30,-40,-40,-30,-30,-30, -20,-20,-20,-20,-20,-20,-20,-20, -10,-10,-10,-10,-10,-10,-10,-10, 5,5,0,0,0,0,5,5, 10,10,10,10,10,10,10,10, 20,20,20,20,20,20,20,20]
   };
 
-  const TT = new Map();
-  const FILES = "abcdefgh";
-  const MVV={P:1,N:3,B:3,R:5,Q:9,K:100};
-  const idx = a => (8 - parseInt(a.charAt(1),10)) * 8 + FILES.indexOf(a.charAt(0));
+  // ---------- zobrist lite ----------
+  const Z = (()=>{ const r=()=> (Math.random()*2**32)|0; const z={};
+    ['w','b'].forEach(c=>['P','N','B','R','Q','K'].forEach(p=>{
+      for(let i=0;i<64;i++) z[`${c}${p}${i}`]=r();
+    }));
+    z.turn=r();
+    return z;
+  })();
 
-  function evalBoard(){
-    let s=0;
-    for (let i=0;i<64;i++){
+  function hash(){
+    let h=0|0;
+    for(let i=0;i<64;i++){
       const p=G.get(i); if(!p) continue;
-      const k=(p.color==='w'?1:-1);
-      s += k*VAL[p.piece];
-      s += k*((PST[p.piece]&&PST[p.piece][i])||0);
+      h ^= (Z[`${p.color}${p.piece}${i}`]||0);
     }
+    if (G.turn()==='w') h ^= Z.turn;
+    return h>>>0;
+  }
+
+  // ---------- eval ----------
+  function evaluate(){
+    let s=0;
+    for(let i=0;i<64;i++){
+      const p=G.get(i); if(!p) continue;
+      const sign = (p.color==='w'? 1 : -1);
+      s += sign * VAL[p.piece];
+      s += sign * ((PST[p.piece] && PST[p.piece][i])||0);
+    }
+    // score dari sisi side to move
     return (G.turn()==='w'? s : -s);
   }
 
+  // ---------- move ordering ----------
+  const MVV={P:1,N:3,B:3,R:5,Q:9,K:100};
   function captureScore(m){
     const to=idx(m.to); const cap=G.get(to); if(!cap) return 0;
     const from=idx(m.from); const pc=G.get(from)||m.piece;
-    return 10*MVV[cap.piece] - MVV[pc.piece||'P'];
+    return 10*MVV[cap.piece] - MVV[pc?.piece||'P'];
   }
-
   function orderedMoves(){
     const ms=G.moves();
     ms.forEach(m=>{
@@ -75,8 +75,21 @@ function createAzbryAI(G, cfg){
     return ms;
   }
 
-  function qsearch(alpha,beta,depth){
-    const stand = evalBoard();
+  // ---------- TT ----------
+  const TT = new Map();
+  function ttGet(key, depth, alpha, beta){
+    const t=TT.get(key); if(!t || t.depth<depth) return null;
+    if (t.flag===0) return t.score;
+    if (t.flag===-1 && t.score<=alpha) return alpha;
+    if (t.flag=== 1 && t.score>=beta ) return beta;
+    return t.score;
+  }
+  function ttPut(key, depth, score, flag){ TT.set(key,{depth,score,flag}); }
+
+  // ---------- quiescence ----------
+  function qsearch(alpha,beta,depth,deadline){
+    if (performance.now()>deadline) throw new Error('TIME');
+    const stand = evaluate();
     if (stand>=beta) return beta;
     if (alpha<stand) alpha=stand;
     if (depth<=0) return stand;
@@ -87,7 +100,7 @@ function createAzbryAI(G, cfg){
 
     for (const m of caps){
       const ok=G.move(m); if(!ok) continue;
-      const sc = -qsearch(-beta,-alpha,depth-1);
+      const sc = -qsearch(-beta,-alpha,depth-1,deadline);
       G.undo();
       if (sc>=beta) return beta;
       if (sc>alpha) alpha=sc;
@@ -95,22 +108,24 @@ function createAzbryAI(G, cfg){
     return alpha;
   }
 
+  // ---------- alpha-beta (STABLE: tanpa null-move) ----------
   function alphabeta(depth,alpha,beta,deadline){
     if (performance.now()>deadline) throw new Error('TIME');
-    const key = AI.useTT ? positionHash() : 0;
-    const tt  = AI.useTT ? TT.get(key) : null;
-    if (tt && tt.depth>=depth) return tt.score;
 
-    if (depth===0) return qsearch(alpha,beta,AI.qDepth);
+    const key = hash();
+    const tt  = ttGet(key,depth,alpha,beta);
+    if (tt!=null && depth>0) return tt;
 
-    let best=-Infinity;
+    if (depth===0) return qsearch(alpha,beta,8,deadline);
+
     const moves=orderedMoves();
     if (!moves.length){
       const st=G.gameStatus();
       if (st==='checkmate') return -99999+(50-depth);
-      return 0;
+      return 0; // stalemate
     }
 
+    let best=-Infinity, flag=1;
     for (const m of moves){
       const ok=G.move(m); if(!ok) continue;
       let sc;
@@ -118,11 +133,12 @@ function createAzbryAI(G, cfg){
         sc = -alphabeta(depth-1,-beta,-alpha,deadline);
       }catch(e){ G.undo(); if(e.message==='TIME') throw e; throw e; }
       G.undo();
+
       if (sc>best) best=sc;
-      if (sc>alpha) alpha=sc;
-      if (alpha>=beta) break;
+      if (sc>alpha){ alpha=sc; flag=0; }
+      if (alpha>=beta){ flag=-1; break; }
     }
-    if (AI.useTT) TT.set(key,{depth,score:best});
+    ttPut(key,depth,best,flag);
     return best;
   }
 
@@ -141,21 +157,26 @@ function createAzbryAI(G, cfg){
     return {move:best, score:bestScore};
   }
 
-  function thinkOnce(timeOverrideMs){
-    const timeMs = timeOverrideMs || AI.timeMs;
+  function chooseBest(timeMs){
     const start=performance.now();
     const deadline=start+timeMs;
-
     let best=null, depth=1;
+
     try{
       while(true){
         const res = searchDepth(depth, deadline);
         if (res && res.move) best=res.move;
         depth++;
       }
-    }catch(e){ /* TIME */ }
+    }catch(e){ /* TIME reached */ }
+
+    // Normalisasi move agar aman dipakai G.move()
+    if (best && typeof best.from!=='string'){
+      best = { from: alg(best.from), to: alg(best.to), promotion: best.promotion||null };
+    }
     return best;
   }
 
-  return { thinkOnce };
+  return { chooseBest };
 }
+</script>
