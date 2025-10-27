@@ -1,15 +1,13 @@
-<script>
 /* =========================================================
    Azbry Chess — chess-ai.js (Strong, Stable, No Null-Move)
    API: const AI = AzbryAI(G);  AI.chooseBest(timeMs) -> move | null
    ========================================================= */
 function AzbryAI(G){
-  // ---------- utils ----------
   const FILES="abcdefgh";
   const idx = a => (8 - parseInt(a.charAt(1),10)) * 8 + FILES.indexOf(a.charAt(0));
   const alg = i => FILES.charAt(i%8) + (8 - ((i/8)|0));
 
-  // ---------- piece values & PST ----------
+  // nilai + PST
   const VAL = {P:100,N:305,B:325,R:500,Q:900,K:0};
   const PST = {
     P:[ 0,5,5,0,0,5,5,0,  0,10,10,5,5,10,10,0,  0,10,20,20,20,20,10,0,  5,10,10,25,25,10,10,5,  5,10,10,20,20,10,10,5,  0,10,10,0,0,10,10,0,  0,5,5,-10,-10,5,5,0,  0,0,0,0,0,0,0,0 ],
@@ -20,7 +18,7 @@ function AzbryAI(G){
     K:[-30,-40,-40,-50,-50,-40,-40,-30, -30,-40,-40,-50,-50,-40,-40,-30, -30,-30,-30,-40,-40,-30,-30,-30, -20,-20,-20,-20,-20,-20,-20,-20, -10,-10,-10,-10,-10,-10,-10,-10, 5,5,0,0,0,0,5,5, 10,10,10,10,10,10,10,10, 20,20,20,20,20,20,20,20]
   };
 
-  // ---------- zobrist lite ----------
+  // zobrist
   const Z = (()=>{ const r=()=> (Math.random()*2**32)|0; const z={};
     ['w','b'].forEach(c=>['P','N','B','R','Q','K'].forEach(p=>{
       for(let i=0;i<64;i++) z[`${c}${p}${i}`]=r();
@@ -39,7 +37,7 @@ function AzbryAI(G){
     return h>>>0;
   }
 
-  // ---------- eval ----------
+  // eval
   function evaluate(){
     let s=0;
     for(let i=0;i<64;i++){
@@ -48,11 +46,10 @@ function AzbryAI(G){
       s += sign * VAL[p.piece];
       s += sign * ((PST[p.piece] && PST[p.piece][i])||0);
     }
-    // score dari sisi side to move
     return (G.turn()==='w'? s : -s);
   }
 
-  // ---------- move ordering ----------
+  // ordering
   const MVV={P:1,N:3,B:3,R:5,Q:9,K:100};
   function captureScore(m){
     const to=idx(m.to); const cap=G.get(to); if(!cap) return 0;
@@ -75,7 +72,7 @@ function AzbryAI(G){
     return ms;
   }
 
-  // ---------- TT ----------
+  // TT
   const TT = new Map();
   function ttGet(key, depth, alpha, beta){
     const t=TT.get(key); if(!t || t.depth<depth) return null;
@@ -86,7 +83,7 @@ function AzbryAI(G){
   }
   function ttPut(key, depth, score, flag){ TT.set(key,{depth,score,flag}); }
 
-  // ---------- quiescence ----------
+  // quiescence
   function qsearch(alpha,beta,depth,deadline){
     if (performance.now()>deadline) throw new Error('TIME');
     const stand = evaluate();
@@ -108,7 +105,7 @@ function AzbryAI(G){
     return alpha;
   }
 
-  // ---------- alpha-beta (STABLE: tanpa null-move) ----------
+  // alpha-beta (tanpa null-move → stabil)
   function alphabeta(depth,alpha,beta,deadline){
     if (performance.now()>deadline) throw new Error('TIME');
 
@@ -122,7 +119,7 @@ function AzbryAI(G){
     if (!moves.length){
       const st=G.gameStatus();
       if (st==='checkmate') return -99999+(50-depth);
-      return 0; // stalemate
+      return 0;
     }
 
     let best=-Infinity, flag=1;
@@ -161,7 +158,6 @@ function AzbryAI(G){
     const start=performance.now();
     const deadline=start+timeMs;
     let best=null, depth=1;
-
     try{
       while(true){
         const res = searchDepth(depth, deadline);
@@ -170,7 +166,6 @@ function AzbryAI(G){
       }
     }catch(e){ /* TIME reached */ }
 
-    // Normalisasi move agar aman dipakai G.move()
     if (best && typeof best.from!=='string'){
       best = { from: alg(best.from), to: alg(best.to), promotion: best.promotion||null };
     }
@@ -179,4 +174,3 @@ function AzbryAI(G){
 
   return { chooseBest };
 }
-</script>
