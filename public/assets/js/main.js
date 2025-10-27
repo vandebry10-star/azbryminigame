@@ -1,5 +1,5 @@
 /* =========================================================
-   Azbry Chess — main.js (Stable + AI “Magnus Mode”)
+   Azbry Chess — main.js (Hard AI + Anti-Desync Guards)
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -20,12 +20,13 @@
   const UI = new ChessUI($board, onSquareClick);
 
   // ---------- State ----------
-  let mode = 'human';
-  let selected = null;
-  let legalForSelected = [];
-  let lastMove = null;
+  let mode = 'human';            // 'human' | 'ai'
+  let selected = null;           // 'e2'
+  let legalForSelected = [];     // moves for selected
+  let lastMove = null;           // {from,to}
   let animLock = false;
   let aiThinking = false;
+  let searchToken = 0;           // invalidasi hasil AI yang telat
 
   // ---------- Helpers ----------
   const FILES = "abcdefgh";
@@ -37,8 +38,19 @@
     const B={P:'♟',N:'♞',B:'♝',R:'♜',Q:'♛',K:'♚'};
     return p.color==='w'? W[p.piece] : B[p.piece];
   }
+  function sameMove(a,b){
+    if(!a||!b) return false;
+    const af = typeof a.from==='string'?a.from:alg(a.from);
+    const at = typeof a.to  ==='string'?a.to  :alg(a.to);
+    const bf = typeof b.from==='string'?b.from:alg(b.from);
+    const bt = typeof b.to  ==='string'?b.to  :alg(b.to);
+    const ap = a.promotion||null, bp=b.promotion||null;
+    return af===bf && at===bt && ap===bp;
+  }
+  function currentLegal(){ return G.moves(); }
+  function includesMove(L,m){ return L.some(x=>sameMove(x,m)); }
 
-  // ---------- Coordinates ----------
+  // ---------- Coordinates (ikut flip) ----------
   function stampCoordinates(){
     for (let i=0;i<64;i++){
       const cell = UI.cells[i];
@@ -87,10 +99,9 @@
     $hist.textContent = out.trim();
   }
 
-  // ---------- Captured ----------
+  // ---------- Captured (rebuild dari history: anti-duplikat) ----------
   function rebuildCaptures(){
-    const deadB = [];
-    const deadW = [];
+    const deadB = [], deadW = [];
     for (const h of G.hist){
       const cap = h.snap && h.snap.cap;
       if (!cap) continue;
@@ -119,9 +130,10 @@
   // ---------- Input ----------
   function onSquareClick(a){
     if (animLock || aiThinking) return;
-    if (mode==='ai' && G.turn()==='b') return;
+    if (mode==='ai' && G.turn()==='b') return; // giliran AI (hitam)
     const side = G.turn();
     const p = pieceAtAlg(a);
+
     if (!selected){
       if (!p || p.color!==side) return;
       selected = a;
@@ -130,6 +142,7 @@
       markSrc(a);
       return;
     }
+
     if (p && p.color===side && a!==selected){
       selected = a;
       legalForSelected = G.moves({square:a});
@@ -137,8 +150,14 @@
       markSrc(a);
       return;
     }
+
     const mv = legalForSelected.find(m=>m.to===a);
     if (!mv){ clearSelection(); render(); return; }
+
+    // sebelum eksekusi, revalidasi terhadap posisi TERKINI
+    const leg = currentLegal();
+    if (!includesMove(leg, mv)){ clearSelection(); render(); return; }
+
     playMove(mv);
   }
 
@@ -159,15 +178,38 @@
   function playMove(m){
     const from = typeof m.from==='string'? m.from : alg(m.from);
     const to   = typeof m.to  ==='string'? m.to   : alg(m.to);
+
+    // hard lock input
+    animLock = true;
+
     animateMove(from,to, ()=>{
+      // sebelum apply, pastikan MASIH legal (anti race)
+      const legNow = currentLegal();
+      if (!includesMove(legNow, {from,to,promotion:m.promotion||null})){
+        animLock = false;
+        clearSelection();
+        render();
+        return;
+      }
+
       const did = G.move({from,to,promotion:m.promotion||null});
-      if (!did){ render(); return; }
+      animLock = false;
+
+      if (!did){ clearSelection(); render(); return; }
+
       lastMove = {from,to};
       clearSelection();
       render();
+
       const status = G.gameStatus();
       if (status==='checkmate' || status==='stalemate'){ showResult(status); return; }
-      if (mode==='ai' && G.turn()==='b'){ setTimeout(aiPlay, 10); }
+
+      if (mode==='ai' && G.turn()==='b' && !aiThinking){
+        // start AI dengan token baru (untuk invalidasi hasil lama)
+        searchToken++;
+        const tok = searchToken;
+        setTimeout(()=>aiPlay(tok), 20);
+      }
     });
   }
 
@@ -187,27 +229,31 @@
       if (!fromCell || !toCell){ done(); return; }
       const piece = pieceAtAlg(fromAlg);
       if (!piece){ done(); return; }
+
       const ghost = document.createElement('span');
       ghost.className = 'anim-piece ' + (piece.color==='w'?'white':'black');
       ghost.textContent = glyph(piece);
+
       const br = $board.getBoundingClientRect();
       const fr = fromCell.getBoundingClientRect();
       const tr = toCell.getBoundingClientRect();
+
       const sx = fr.left - br.left + fr.width/2;
       const sy = fr.top  - br.top  + fr.height/2;
       const ex = tr.left - br.left + tr.width/2;
       const ey = tr.top  - br.top  + tr.height/2;
+
       ghost.style.transform = `translate(${sx}px, ${sy}px)`;
       $board.appendChild(ghost);
-      animLock = true;
+
       let cleared = false;
       const clear = () => {
         if (cleared) return;
         cleared = true;
         try { ghost.remove(); } catch(_) {}
-        animLock = false;
         done();
       };
+
       requestAnimationFrame(()=>{
         ghost.style.transform = `translate(${ex}px, ${ey}px)`;
         const tId = setTimeout(clear, 450);
@@ -216,7 +262,7 @@
           clear();
         }, {once:true});
       });
-    }catch(e){ animLock=false; done(); }
+    }catch(e){ done(); }
   }
 
   // ---------- Result ----------
@@ -234,64 +280,101 @@
   // ---------- Controls ----------
   $btnUndo && $btnUndo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
+    // undo 1 ply (human) + 1 ply (AI) kalau mode AI
     if (mode==='ai'){
       const a=G.undo(); const b=G.undo(); if(!a && !b) return;
-    }else{ if(!G.undo()) return; }
+    }else{
+      if(!G.undo()) return;
+    }
     lastMove=null; clearSelection(); render();
   });
+
   $btnRedo && $btnRedo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     if (!G.redo()) return;
     lastMove=null; clearSelection(); render();
   });
+
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     G.reset(); lastMove=null; clearSelection(); render();
-    if (mode==='ai' && G.turn()==='b') setTimeout(aiPlay, 10);
+    // jika mode AI dan giliran hitam (selalu), biarkan AI mikir dulu
+    if (mode==='ai' && G.turn()==='b'){
+      searchToken++; const tok=searchToken;
+      setTimeout(()=>aiPlay(tok), 20);
+    }
   });
+
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     UI.toggleFlip(); render();
   });
+
   $modeHuman && $modeHuman.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     mode='human';
     $modeHuman.classList.add('accent');
     $modeAI && $modeAI.classList.remove('accent');
   });
+
   $modeAI && $modeAI.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
-    if (G.turn()==='b') setTimeout(aiPlay, 10);
+    if (G.turn()==='b'){
+      searchToken++; const tok=searchToken;
+      setTimeout(()=>aiPlay(tok), 20);
+    }
   });
 
-  // ---------- AI Play ----------
-  const AI_TIME_MS = 7000; // lebih tinggi = lebih kuat
-  function aiPlay(){
-    if (aiThinking) return;
+  // ========================================================
+  //                      A I   P L A Y
+  // ========================================================
+  const AI_TIME_MS = 7000; // naikin buat makin gahar
+
+  function aiPlay(tok){
+    // batal kalau sudah ada pencarian baru
+    if (tok !== searchToken) return;
+    if (aiThinking || animLock) return;
+    if (mode!=='ai' || G.turn()!=='b') return;
+
     aiThinking = true;
+    clearSelection(); // bersihin seleksi agar gak ‘klik nyasar’
+
     setTimeout(()=>{
       try{
         if (!window.AzbryAI || typeof AzbryAI.chooseMove!=='function'){
-          const ms = G.moves();
-          if (ms && ms.length) playMove(ms[0]);
-          aiThinking=false;
+          const ms = currentLegal();
+          if (tok===searchToken && ms && ms.length) playMove(ms[0]);
           return;
         }
+
         const best = AzbryAI.chooseMove(G, { timeMs: AI_TIME_MS });
-        if (best){ playMove(best); }
-        else render();
+
+        // invalidasi hasil lama
+        if (tok !== searchToken) return;
+
+        // revalidasi ke posisi TERKINI
+        const legalNow = currentLegal();
+        if (!best || !includesMove(legalNow, best)){
+          // fallback: ambil first legal (biar nggak crash)
+          if (legalNow.length) playMove(legalNow[0]);
+          else render();
+          return;
+        }
+
+        playMove(best);
       }catch(e){
         console.error('[AI ERROR]', e);
-        const ms = G.moves();
-        if (ms && ms.length) playMove(ms[0]);
+        const ms = currentLegal();
+        if (tok===searchToken && ms && ms.length) playMove(ms[0]);
       }finally{
-        aiThinking=false;
+        aiThinking = false;
       }
     }, 0);
   }
 
+  // ---------- Boot ----------
   render();
 })();
