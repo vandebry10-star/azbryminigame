@@ -1,5 +1,5 @@
 /* =========================================================
-   Azbry Chess — main.js (Hard AI + Anti-Desync Guards)
+   Azbry Chess — main.js (AI Single-Scheduler, Anti-Auto-Reply)
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -26,7 +26,8 @@
   let lastMove = null;           // {from,to}
   let animLock = false;
   let aiThinking = false;
-  let searchToken = 0;           // invalidasi hasil AI yang telat
+  let aiTimer = null;            // satu-satunya timer AI
+  let searchToken = 0;           // invalidasi hasil telat
 
   // ---------- Helpers ----------
   const FILES = "abcdefgh";
@@ -154,7 +155,7 @@
     const mv = legalForSelected.find(m=>m.to===a);
     if (!mv){ clearSelection(); render(); return; }
 
-    // sebelum eksekusi, revalidasi terhadap posisi TERKINI
+    // revalidasi terhadap posisi TERKINI
     const leg = currentLegal();
     if (!includesMove(leg, mv)){ clearSelection(); render(); return; }
 
@@ -179,8 +180,7 @@
     const from = typeof m.from==='string'? m.from : alg(m.from);
     const to   = typeof m.to  ==='string'? m.to   : alg(m.to);
 
-    // hard lock input
-    animLock = true;
+    animLock = true; // hard lock input
 
     animateMove(from,to, ()=>{
       // sebelum apply, pastikan MASIH legal (anti race)
@@ -204,12 +204,8 @@
       const status = G.gameStatus();
       if (status==='checkmate' || status==='stalemate'){ showResult(status); return; }
 
-      if (mode==='ai' && G.turn()==='b' && !aiThinking){
-        // start AI dengan token baru (untuk invalidasi hasil lama)
-        searchToken++;
-        const tok = searchToken;
-        setTimeout(()=>aiPlay(tok), 20);
-      }
+      // Jangan panggil AI di sini — cukup jadwalkan via scheduler tunggal
+      maybeScheduleAI();
     });
   }
 
@@ -278,31 +274,33 @@
   }
 
   // ---------- Controls ----------
+  function clearAITimer(){ if (aiTimer){ clearTimeout(aiTimer); aiTimer=null; } }
+
   $btnUndo && $btnUndo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
-    // undo 1 ply (human) + 1 ply (AI) kalau mode AI
+    clearAITimer();
     if (mode==='ai'){
       const a=G.undo(); const b=G.undo(); if(!a && !b) return;
     }else{
       if(!G.undo()) return;
     }
     lastMove=null; clearSelection(); render();
+    maybeScheduleAI();
   });
 
   $btnRedo && $btnRedo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
+    clearAITimer();
     if (!G.redo()) return;
     lastMove=null; clearSelection(); render();
+    maybeScheduleAI();
   });
 
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
+    clearAITimer();
     G.reset(); lastMove=null; clearSelection(); render();
-    // jika mode AI dan giliran hitam (selalu), biarkan AI mikir dulu
-    if (mode==='ai' && G.turn()==='b'){
-      searchToken++; const tok=searchToken;
-      setTimeout(()=>aiPlay(tok), 20);
-    }
+    maybeScheduleAI();
   });
 
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
@@ -313,6 +311,7 @@
   $modeHuman && $modeHuman.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     mode='human';
+    clearAITimer();
     $modeHuman.classList.add('accent');
     $modeAI && $modeAI.classList.remove('accent');
   });
@@ -322,59 +321,77 @@
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
-    if (G.turn()==='b'){
-      searchToken++; const tok=searchToken;
-      setTimeout(()=>aiPlay(tok), 20);
-    }
+    maybeScheduleAI();
   });
 
   // ========================================================
-  //                      A I   P L A Y
+  //                     AI SCHEDULER
   // ========================================================
   const AI_TIME_MS = 7000; // naikin buat makin gahar
 
-  function aiPlay(tok){
-    // batal kalau sudah ada pencarian baru
-    if (tok !== searchToken) return;
+  function maybeScheduleAI(){
+    clearAITimer();
+    if (mode!=='ai') return;
+    if (G.turn()!=='b') return;     // AI = hitam
+    if (aiThinking) return;
+    if (animLock) return;
+
+    // Delay kecil biar UI settle, lalu start AI
+    aiTimer = setTimeout(()=>{
+      aiTimer = null;
+      startAI();
+    }, 20);
+  }
+
+  function startAI(){
     if (aiThinking || animLock) return;
     if (mode!=='ai' || G.turn()!=='b') return;
 
+    // Set sinkron biar anti race
     aiThinking = true;
-    clearSelection(); // bersihin seleksi agar gak ‘klik nyasar’
+    clearSelection();
+    searchToken++;
 
+    const tok = searchToken;
+    // Jalankan hitungan AI di microtask berikut
     setTimeout(()=>{
       try{
-        if (!window.AzbryAI || typeof AzbryAI.chooseMove!=='function'){
-          const ms = currentLegal();
-          if (tok===searchToken && ms && ms.length) playMove(ms[0]);
-          return;
+        let best = null;
+        if (window.AzbryAI && typeof AzbryAI.chooseMove==='function'){
+          best = AzbryAI.chooseMove(G, { timeMs: AI_TIME_MS });
+        }else{
+          // fallback sederhana
+          const ms=currentLegal();
+          best = ms && ms[0];
         }
 
-        const best = AzbryAI.chooseMove(G, { timeMs: AI_TIME_MS });
-
-        // invalidasi hasil lama
+        // batal kalau sudah ada token baru
         if (tok !== searchToken) return;
 
-        // revalidasi ke posisi TERKINI
+        // revalidasi legalitas terhadap posisi TERKINI
         const legalNow = currentLegal();
         if (!best || !includesMove(legalNow, best)){
-          // fallback: ambil first legal (biar nggak crash)
-          if (legalNow.length) playMove(legalNow[0]);
-          else render();
-          return;
+          if (legalNow.length){
+            playMove(legalNow[0]);
+          }else{
+            render();
+          }
+        }else{
+          playMove(best);
         }
-
-        playMove(best);
       }catch(e){
         console.error('[AI ERROR]', e);
-        const ms = currentLegal();
-        if (tok===searchToken && ms && ms.length) playMove(ms[0]);
+        const ms=currentLegal();
+        if (ms && ms.length) playMove(ms[0]);
       }finally{
         aiThinking = false;
+        // setelah AI move/attempt, jadwalkan lagi kalau masih gilirannya AI (harusnya tidak)
+        maybeScheduleAI();
       }
     }, 0);
   }
 
   // ---------- Boot ----------
   render();
+  // if default mode 'human', nothing to schedule
 })();
