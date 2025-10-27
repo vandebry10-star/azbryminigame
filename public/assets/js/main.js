@@ -1,5 +1,5 @@
 /* =========================================================
-   Azbry Chess — main.js (No-Anim, Stable, AI delay 2s)
+   Azbry Chess — main.js (Tanpa Animasi, Stabil, Delay AI 2s)
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -208,39 +208,33 @@
     inputLocked = true;
 
     try{
-      // minta best move dari AI (lihat chess-ai.js)
-      const move = await AZBRY_AI.findBestMove(G, { timeMs: 2000 }); // 2 detik
-      if (move){
-        // safety: pastikan masih giliran hitam & game belum selesai
-        if (G.turn()==='b' && G.gameStatus()==='playing'){
-          const did = G.move(move);
-          if (did){
-            lastMove = {from: move.from, to: move.to};
-            render();
-          }
+      const move = await AZBRY_AI.findBestMove(G, { timeMs: 2000, maxDepth: 10 });
+      if (move && G.turn()==='b' && G.gameStatus()==='playing'){
+        const did = G.move(move);
+        if (did){
+          lastMove = {from: move.from, to: move.to};
+          render();
         }
       }
+
       const status = G.gameStatus();
       if (status==='checkmate' || status==='stalemate'){
         showResult(status);
       }
-    }catch(_e){
-      // diamkan; jangan rusak input
-    }finally{
+    }catch(_e){/* diam */}
+    finally{
       aiThinking = false;
-      // jika setelah AI jalan, sekarang giliran putih -> buka input
       if (G.turn()==='w') inputLocked=false;
     }
   }
 
   // ---------- Controls ----------
   $btnReset && $btnReset.addEventListener('click', ()=>{
-    if (aiThinking) return; // jangan reset saat AI mikir
+    if (aiThinking) return;
     G.reset();
     lastMove=null;
     clearSelection();
     render();
-    // kalau mode AI dan giliran hitam (misal user flip sisi awal), biarkan AI jalan
     if (mode==='ai' && G.turn()==='b') aiTurn();
   });
 
@@ -263,7 +257,6 @@
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
-    // kalau sekarang gilirannya hitam, langsung AI turn
     if (G.turn()==='b') aiTurn();
   });
 
