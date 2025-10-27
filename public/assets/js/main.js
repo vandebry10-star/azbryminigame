@@ -1,5 +1,5 @@
 /* =========================================================
-   Azbry Chess — main.js (Stable + External AI)
+   Azbry Chess — main.js (Stable + AI “Magnus Mode”)
    ========================================================= */
 (function () {
   // ---------- DOM ----------
@@ -16,7 +16,7 @@
   if (!$board) return;
 
   // ---------- Engine & UI ----------
-  const G  = new Chess();                
+  const G  = new Chess();
   const UI = new ChessUI($board, onSquareClick);
 
   // ---------- State ----------
@@ -62,8 +62,8 @@
 
   function highlightCheck(){
     UI.cells.forEach(c=>c.classList.remove('check'));
-    if (G.inCheck('w')) markCheck(kingIndex('w'));
-    if (G.inCheck('b')) markCheck(kingIndex('b'));
+    if (G.inCheck('w')) { const k = kingIndex('w'); if (k>=0) markCheck(k); }
+    if (G.inCheck('b')) { const k = kingIndex('b'); if (k>=0) markCheck(k); }
   }
   function kingIndex(color){
     for (let i=0;i<64;i++){ const p=G.get(i); if (p && p.color===color && p.piece==='K') return i; }
@@ -89,7 +89,8 @@
 
   // ---------- Captured ----------
   function rebuildCaptures(){
-    const deadB = [], deadW = [];
+    const deadB = [];
+    const deadW = [];
     for (const h of G.hist){
       const cap = h.snap && h.snap.cap;
       if (!cap) continue;
@@ -119,10 +120,8 @@
   function onSquareClick(a){
     if (animLock || aiThinking) return;
     if (mode==='ai' && G.turn()==='b') return;
-
     const side = G.turn();
     const p = pieceAtAlg(a);
-
     if (!selected){
       if (!p || p.color!==side) return;
       selected = a;
@@ -131,7 +130,6 @@
       markSrc(a);
       return;
     }
-
     if (p && p.color===side && a!==selected){
       selected = a;
       legalForSelected = G.moves({square:a});
@@ -139,7 +137,6 @@
       markSrc(a);
       return;
     }
-
     const mv = legalForSelected.find(m=>m.to===a);
     if (!mv){ clearSelection(); render(); return; }
     playMove(mv);
@@ -162,17 +159,15 @@
   function playMove(m){
     const from = typeof m.from==='string'? m.from : alg(m.from);
     const to   = typeof m.to  ==='string'? m.to   : alg(m.to);
-
     animateMove(from,to, ()=>{
       const did = G.move({from,to,promotion:m.promotion||null});
       if (!did){ render(); return; }
       lastMove = {from,to};
       clearSelection();
       render();
-
       const status = G.gameStatus();
       if (status==='checkmate' || status==='stalemate'){ showResult(status); return; }
-      if (mode==='ai' && G.turn()==='b'){ setTimeout(aiPlay, 20); }
+      if (mode==='ai' && G.turn()==='b'){ setTimeout(aiPlay, 10); }
     });
   }
 
@@ -192,11 +187,9 @@
       if (!fromCell || !toCell){ done(); return; }
       const piece = pieceAtAlg(fromAlg);
       if (!piece){ done(); return; }
-
       const ghost = document.createElement('span');
       ghost.className = 'anim-piece ' + (piece.color==='w'?'white':'black');
       ghost.textContent = glyph(piece);
-
       const br = $board.getBoundingClientRect();
       const fr = fromCell.getBoundingClientRect();
       const tr = toCell.getBoundingClientRect();
@@ -204,11 +197,9 @@
       const sy = fr.top  - br.top  + fr.height/2;
       const ex = tr.left - br.left + tr.width/2;
       const ey = tr.top  - br.top  + tr.height/2;
-
       ghost.style.transform = `translate(${sx}px, ${sy}px)`;
       $board.appendChild(ghost);
       animLock = true;
-
       let cleared = false;
       const clear = () => {
         if (cleared) return;
@@ -217,12 +208,12 @@
         animLock = false;
         done();
       };
-
       requestAnimationFrame(()=>{
         ghost.style.transform = `translate(${ex}px, ${ey}px)`;
         const tId = setTimeout(clear, 450);
         ghost.addEventListener('transitionend', ()=>{
-          clearTimeout(tId); clear();
+          clearTimeout(tId);
+          clear();
         }, {once:true});
       });
     }catch(e){ animLock=false; done(); }
@@ -243,61 +234,64 @@
   // ---------- Controls ----------
   $btnUndo && $btnUndo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
-    if (mode==='ai'){ G.undo(); G.undo(); } else { G.undo(); }
+    if (mode==='ai'){
+      const a=G.undo(); const b=G.undo(); if(!a && !b) return;
+    }else{ if(!G.undo()) return; }
     lastMove=null; clearSelection(); render();
   });
   $btnRedo && $btnRedo.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
-    G.redo(); lastMove=null; clearSelection(); render();
+    if (!G.redo()) return;
+    lastMove=null; clearSelection(); render();
   });
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     G.reset(); lastMove=null; clearSelection(); render();
-    if (mode==='ai' && G.turn()==='b') setTimeout(aiPlay, 20);
+    if (mode==='ai' && G.turn()==='b') setTimeout(aiPlay, 10);
   });
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     UI.toggleFlip(); render();
   });
-
   $modeHuman && $modeHuman.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     mode='human';
     $modeHuman.classList.add('accent');
     $modeAI && $modeAI.classList.remove('accent');
   });
-
   $modeAI && $modeAI.addEventListener('click', ()=>{
     if (animLock || aiThinking) return;
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
-    if (G.turn()==='b') setTimeout(aiPlay, 20);
+    if (G.turn()==='b') setTimeout(aiPlay, 10);
   });
 
-  // ---------- AI Settings ----------
-  const AI_SETTINGS = {
-    timeMs: 6000,   // 6 detik pikir (ubah 10000+ untuk “dewa”)
-    qDepth: 12,
-    nullMove: true,
-    useTT: true,
-    lmr: true,
-    pvs: true,
-    asp: true
-  };
-
-  // ---------- AI Call ----------
+  // ---------- AI Play ----------
+  const AI_TIME_MS = 7000; // lebih tinggi = lebih kuat
   function aiPlay(){
     if (aiThinking) return;
     aiThinking = true;
-    try {
-      const best = AzAI.getBestMove(G, AI_SETTINGS);
-      if (best) playMove(best);
-    } finally {
-      aiThinking = false;
-    }
+    setTimeout(()=>{
+      try{
+        if (!window.AzbryAI || typeof AzbryAI.chooseMove!=='function'){
+          const ms = G.moves();
+          if (ms && ms.length) playMove(ms[0]);
+          aiThinking=false;
+          return;
+        }
+        const best = AzbryAI.chooseMove(G, { timeMs: AI_TIME_MS });
+        if (best){ playMove(best); }
+        else render();
+      }catch(e){
+        console.error('[AI ERROR]', e);
+        const ms = G.moves();
+        if (ms && ms.length) playMove(ms[0]);
+      }finally{
+        aiThinking=false;
+      }
+    }, 0);
   }
 
-  // ---------- Boot ----------
   render();
 })();
