@@ -1,4 +1,3 @@
-<script>
 /* =========================================================
    Azbry Chess — main.js (No-Animation, Human Instant, AI 2s)
    ========================================================= */
@@ -12,8 +11,8 @@
   const $btnFlip  = document.getElementById('btnFlip');
   const $modeHuman= document.getElementById('modeHuman');
   const $modeAI   = document.getElementById('modeAI');
-  const $capBlack = document.getElementById('capBlack'); // tray atas (bidak hitam mati)
-  const $capWhite = document.getElementById('capWhite'); // tray bawah (bidak putih mati)
+  const $capBlack = document.getElementById('capBlack'); // tray atas (hitam mati)
+  const $capWhite = document.getElementById('capWhite'); // tray bawah (putih mati)
   if (!$board) return;
 
   // ---------- Engine & UI ----------
@@ -21,17 +20,17 @@
   const UI = new ChessUI($board, onSquareClick);
 
   // ---------- AI ----------
-  const AI_DELAY_MS = 2000;  // total delay yg terlihat user (tetap 2 detik)
-  const SEARCH_BUDGET_MS = 1700; // porsi buat mikir (sisanya dipakai nunggu biar pas 2s)
-  const AI = AzbryAI(G);      // from chess-ai.js
+  const AI_DELAY_MS = 2000;        // total delay yg terlihat user (2 detik)
+  const SEARCH_BUDGET_MS = 1700;   // waktu mikir sebenarnya (~1.7s)
+  const AI = AzbryAI(G);           // from chess-ai.js
 
   // ---------- State ----------
-  let mode = 'human';                    // 'human' | 'ai'
-  let selected = null;                   // algebraic: 'e2'
-  let legalForSelected = [];             // legal moves for selected square
-  let lastMove = null;                   // {from,to}
-  let aiThinking = false;                // lock agar gak dobel
-  let inputLock = false;                 // lock sementara saat AI eksekusi
+  let mode = 'human';              // 'human' | 'ai'
+  let selected = null;             // algebraic: 'e2'
+  let legalForSelected = [];       // legal moves utk square terpilih
+  let lastMove = null;             // {from,to}
+  let aiThinking = false;          // supaya AI gak dobel mikir
+  let inputLock = false;           // kunci input saat AI eksekusi
 
   // ---------- Helpers ----------
   const FILES = "abcdefgh";
@@ -48,7 +47,7 @@
   function stampCoordinates(){
     for (let i=0;i<64;i++){
       const cell = UI.cells[i];
-      const file = i%8, rank=(i/8)|0; // 0..7 (atas ke bawah)
+      const file = i%8, rank=(i/8)|0;
       const visFile = UI.flip ? (7-file) : file;
       const visRank = UI.flip ? rank : (7-rank);
       cell.dataset.file = FILES.charAt(visFile);
@@ -83,7 +82,7 @@
   }
 
   function renderHistory(){
-    const H = G.history(); // ["e2 → e4", ...]
+    const H = G.history();
     if (!H.length){ $hist.textContent = '_'; return; }
     let out = '';
     for (let i=0;i<H.length;i+=2){
@@ -123,11 +122,9 @@
   }
 
   // ---------- Input ----------
-  function onSquareClick(a){ // algebraic 'e2'
+  function onSquareClick(a){
     if (inputLock || aiThinking) return;
-
-    // player = putih saat mode AI (AI selalu hitam)
-    if (mode==='ai' && G.turn()==='b') return;
+    if (mode==='ai' && G.turn()==='b') return; // AI (hitam) gilirannya, manusia tunggu
 
     const side = G.turn();
     const p = pieceAtAlg(a);
@@ -141,7 +138,6 @@
       return;
     }
 
-    // ganti seleksi ke bidak sendiri lain
     if (p && p.color===side && a!==selected){
       selected = a;
       legalForSelected = G.moves({square:a});
@@ -150,9 +146,8 @@
       return;
     }
 
-    // eksekusi jika a tujuan legal
     const mv = legalForSelected.find(m=>m.to===a);
-    if (!mv){ // batal seleksi
+    if (!mv){
       clearSelection();
       render();
       return;
@@ -188,7 +183,6 @@
     const status = G.gameStatus();
     if (status==='checkmate' || status==='stalemate'){ showResult(status); return; }
 
-    // Jika mode AI dan sekarang giliran hitam → AI mikir 2 detik total
     if (mode==='ai' && G.turn()==='b'){
       thinkAndPlayAI();
     }
@@ -212,10 +206,8 @@
     inputLock = true;
 
     const t0 = performance.now();
-    // Cari langkah terbaik dengan budget ~1.7s
     let best = AI.chooseBest(SEARCH_BUDGET_MS);
-    const t1 = performance.now();
-    const elapsed = t1 - t0;
+    const elapsed = performance.now() - t0;
     const remain = Math.max(0, AI_DELAY_MS - elapsed);
 
     setTimeout(()=>{
@@ -255,7 +247,6 @@
   $btnReset && $btnReset.addEventListener('click', ()=>{
     if (aiThinking) return;
     G.reset(); lastMove=null; clearSelection(); render();
-    // Tidak auto-jalankan AI di posisi awal.
   });
 
   $btnFlip && $btnFlip.addEventListener('click', ()=>{
@@ -275,10 +266,9 @@
     mode='ai';
     $modeAI.classList.add('accent');
     $modeHuman && $modeHuman.classList.remove('accent');
-    // Posisi awal: putih jalan dulu. AI baru mikir setelah kamu gerak.
+    // AI baru jalan setelah langkah putih pertama.
   });
 
   // ---------- Boot ----------
   render();
 })();
-</script>
