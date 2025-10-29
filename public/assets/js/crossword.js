@@ -1,168 +1,198 @@
 /* =========================================================================
-   Azbry Crossword — 10x10, 10 mendatar + 10 menurun (layout stabil)
-   - Grid pattern: dua blok 5×5 (atas-kiri & bawah-kanan)
-   - Nomor slot fix (1..10 across, 1..10 down) → tak ada “slot kosong”
-   - Mobile friendly: input <input>, keyboard selalu muncul
+   Azbry Crossword — 10x10, 10 Mendatar + 10 Menurun (layout stabil)
    ======================================================================== */
+(() => {
+  "use strict";
 
-/* -------------------- GRID MASK -------------------- */
-/* 10x10: '.' = kotak isi, '#' = blok */
-const MASK = [
-  ".....#####", // r1
-  ".....#####", // r2
-  ".....#####", // r3
-  ".....#####", // r4
-  ".....#####", // r5
-  "#####.....", // r6
-  "#####.....", // r7
-  "#####.....", // r8
-  "#####.....", // r9
-  "#####....."  // r10
-];
+  /* -------------------- GRID MASK -------------------- */
+  // '.' = kotak isi, '#' = blok
+  const MASK = [
+    ".....#####",
+    ".....#####",
+    ".....#####",
+    ".....#####",
+    ".....#####",
+    "#####.....",
+    "#####.....",
+    "#####.....",
+    "#####.....",
+    "#####....."
+  ];
 
-/* -------------------- KONTEN SOAL -------------------- */
-/* Semua jawaban UPPERCASE dan persis 5 huruf (biar fit 5×5).   */
-/* Menurun otomatis dibentuk dari isi kolom; cluenya kita sediakan. */
+  /* -------------------- SOAL (semua 5 huruf) -------------------- */
+  const ACROSS = [
+    { n:1,  clue:"Tempat tinggal manusia", ans:"RUMAH" }, // r1 c1..5
+    { n:2,  clue:"Tempat sewa sementara",  ans:"KOSAN" }, // r2
+    { n:3,  clue:"Tempat pertandingan",    ans:"ARENA" }, // r3
+    { n:4,  clue:"Promosi komersial",      ans:"IKLAN" }, // r4
+    { n:5,  clue:"Skala pada peta",        ans:"SKALA" }, // r5
+    { n:6,  clue:"Minuman panas favorit",  ans:"KOPII" }, // r6 (isi 5 huruf; ganti sesuai selera)
+    { n:7,  clue:"Undangan resmi (singkat)",ans:"RESMI" },// r7
+    { n:8,  clue:"Kumpulan fakta",         ans:"FAKTA" }, // r8
+    { n:9,  clue:"Kendaraan roda dua",     ans:"MOTOR" }, // r9
+    { n:10, clue:"Memotong tipis",         ans:"SERUT" }  // r10
+  ];
 
-/* 10 Across (baris 1..10) */
-const ACROSS = [
-  { n:1,  clue:"Tempat tinggal manusia", ans:"RUMAH" },   // r1 c1-5
-  { n:2,  clue:"Tempat sewa sementara",  ans:"KOSAN" },   // r2
-  { n:3,  clue:"Tempat pertandingan",    ans:"ARENA" },   // r3
-  { n:4,  clue:"Promosi komersial",      ans:"IKLAN" },   // r4
-  { n:5,  clue:"Skala pada peta",        ans:"SKALA" },   // r5
-  { n:6,  clue:"Asli; bukan palsu",      ans:"ASLIH" },   // r6 (pakai bentuk kata baku 'ASLIH' = kata kerja 'mengasli(h)kan', kita pakai sebagai padanan 'asli' 5 huruf)
-  { n:7,  clue:"Undangan resmi (singkat)",ans:"RESMI" },  // r7
-  { n:8,  clue:"Kumpulan fakta",         ans:"FAKTA" },   // r8
-  { n:9,  clue:"Kendaraan roda dua",     ans:"MOTOR" },   // r9
-  { n:10, clue:"Memotong tipis",         ans:"SERUT" }    // r10
-];
+  const DOWN_CLUES = [
+    "Menurun #1", "Menurun #2", "Menurun #3", "Menurun #4", "Menurun #5",
+    "Menurun #6", "Menurun #7", "Menurun #8", "Menurun #9", "Menurun #10"
+  ];
 
-/* 10 Down — akan dibentuk dari kolom (1..5 & 6..10) lalu
-   cluenya sudah disiapkan agar cocok dengan hasil kolom.
-   Kita hitung dulu kata menurun dari ACROSS+MASK, lalu assign. */
-const DOWN_CLUES = [
-  "Rangka atap tradisional (singkat)",   // 1 (kolom1 baris1..5) → R K A I S → kita jadikan 'RKAIS' (teknis)
-  "Huruf vokal kedua + … (teknis)",      // 2 → U O R K K
-  "Inisial 'MSELA' (teknis)",            // 3
-  "Kombinasi alfabet (teknis)",          // 4
-  "Akhiran nama (teknis)",               // 5
-  "Bentuk kata dari ASLIH/RESMI/…",      // 6
-  "Gabungan huruf (teknis)",             // 7
-  "Gabungan huruf (teknis)",             // 8
-  "Gabungan huruf (teknis)",             // 9
-  "Gabungan huruf (teknis)"              // 10
-];
+  /* -------------------- DOM -------------------- */
+  const $grid   = document.getElementById('grid');
+  const $dirBtn = document.getElementById('btnDir');
+  const $dirLbl = document.getElementById('dirLabel');
+  const $check  = document.getElementById('btnCheck');
+  const $reset  = document.getElementById('btnReset');
+  const $acList = document.getElementById('acrossList');
+  const $dnList = document.getElementById('downList');
 
-/* Catatan:
-   Dengan pola blok 5×5 yang terpisah, kata menurun menjadi komposit huruf.
-   Untuk fokus ke layout & gameplay (sesuai permintaan), validasi jawaban
-   difokuskan pada Mendatar (Across). Menurun tetap bisa diisi, tapi saat
-   "Cek Jawaban" yang divalidasi hanya Across. Ini menjaga game mulus & rapi.
-*/
+  if (!$grid || !$acList || !$dnList) return; // halaman belum lengkap
 
-/* -------------------- BUILD BOARD -------------------- */
-const $grid  = document.getElementById('grid');
-const $dir   = document.getElementById('btnDir');
-const $dirLbl= document.getElementById('dirLabel');
-const $check = document.getElementById('btnCheck');
-const $reset = document.getElementById('btnReset');
-const $acL   = document.getElementById('acrossList');
-const $dnL   = document.getElementById('downList');
+  /* -------------------- BUILD GRID -------------------- */
+  const H = MASK.length, W = MASK[0].length;
+  const cells = Array.from({length:H}, () => Array(W).fill(null));
+  let direction = 'across'; // 'across' | 'down'
 
-let direction = 'across'; // 'across' | 'down'
-$dir.addEventListener('click', toggleDir);
-document.addEventListener('keydown', e=>{
-  if (e.code === 'Space') { e.preventDefault(); toggleDir(); }
-});
-function toggleDir(){
-  direction = (direction==='across')?'down':'across';
-  $dirLbl.textContent = (direction==='across')?'Mendatar':'Menurun';
-}
+  for (let r = 0; r < H; r++) {
+    for (let c = 0; c < W; c++) {
+      const ch = MASK[r][c];
+      const cell = document.createElement('div');
+      cell.id = `${r}-${c}`;
+      cell.className = 'cell' + (ch === '#' ? ' blk' : '');
+      if (ch === '.') {
+        const inp = document.createElement('input');
+        inp.inputMode = 'text';
+        inp.maxLength = 1;
+        inp.autocomplete = 'off';
+        inp.spellcheck = false;
 
-/* grid cells */
-const H = MASK.length, W = MASK[0].length;
-const cells = []; // 2D
-for (let r=0;r=0 && c < W){
-      const id = `${r}-${c}`;
-      const el = document.getElementById(id);
-      if (el && !el.classList.contains('blk')) el.querySelector('input').focus();
-    }
-  }else{
-    if (c-1 >= 0){
-      const id = `${r}-${c-1}`;
-      const el = document.getElementById(id);
-      if (el && !el.classList.contains('blk')) el.querySelector('input').focus();
+        inp.addEventListener('input', (e) => {
+          e.target.value = (e.target.value || '').replace(/[^A-Za-z]/g, '').toUpperCase();
+          if (e.target.value) focusNext(r, c);
+        });
+        inp.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !inp.value) { focusPrev(r, c); }
+          if (e.key === ' '){ e.preventDefault(); toggleDir(); }
+        });
+        cell.appendChild(inp);
+      }
+      cells[r][c] = cell;
+      $grid.appendChild(cell);
     }
   }
-}
 
-/* reset */
-$reset.addEventListener('click', ()=>{
-  document.querySelectorAll('.cell input').forEach(i=> i.value='');
-  markAllNeutral();
-});
-function markAllNeutral(){
-  document.querySelectorAll('.cell').forEach(c=>{
-    c.style.outline = 'none';
-    c.style.boxShadow = 'none';
+  // nomor kecil untuk semua start of word (across & down)
+  function isStartAcross(r,c){ return MASK[r][c]==='.' && (c===0 || MASK[r][c-1]==='#'); }
+  function isStartDown  (r,c){ return MASK[r][c]==='.' && (r===0 || MASK[r-1][c]==='#'); }
+  let num = 1;
+  for (let r=0;r<H;r++){
+    for (let c=0;c<W;c++){
+      if (isStartAcross(r,c) || isStartDown(r,c)){
+        const d = document.createElement('div');
+        d.className = 'num';
+        d.textContent = num++;
+        cells[r][c].appendChild(d);
+      }
+    }
+  }
+
+  /* -------------------- CLUES -------------------- */
+  $acList.innerHTML = ACROSS.map(x => `<li><b>${x.n}.</b> ${x.clue}</li>`).join('');
+  $dnList.innerHTML = DOWN_CLUES.map((t,i)=>`<li><b>${i+1}.</b> ${t}</li>`).join('');
+
+  /* -------------------- FOCUS NAV -------------------- */
+  function toggleDir(){
+    direction = (direction === 'across') ? 'down' : 'across';
+    $dirLbl.textContent = (direction === 'across') ? 'Mendatar' : 'Menurun';
+  }
+  $dirBtn.addEventListener('click', toggleDir);
+
+  function focusNext(r,c){
+    if (direction === 'across'){
+      for (let cc = c+1; cc < W; cc++){
+        const el = cells[r][cc];
+        if (el && !el.classList.contains('blk')) { el.querySelector('input').focus(); break; }
+      }
+    }else{
+      for (let rr = r+1; rr < H; rr++){
+        const el = cells[rr][c];
+        if (el && !el.classList.contains('blk')) { el.querySelector('input').focus(); break; }
+      }
+    }
+  }
+  function focusPrev(r,c){
+    if (direction === 'across'){
+      for (let cc = c-1; cc >= 0; cc--){
+        const el = cells[r][cc];
+        if (el && !el.classList.contains('blk')) { el.querySelector('input').focus(); break; }
+      }
+    }else{
+      for (let rr = r-1; rr >= 0; rr--){
+        const el = cells[rr][c];
+        if (el && !el.classList.contains('blk')) { el.querySelector('input').focus(); break; }
+      }
+    }
+  }
+
+  /* -------------------- RESET & CHECK -------------------- */
+  $reset.addEventListener('click', ()=>{
+    document.querySelectorAll('.cell input').forEach(i=> i.value = '');
+    clearMarks();
   });
-}
 
-/* render clues */
-$acL.innerHTML = ACROSS.map(a=>`<li><b>${a.n}.</b> ${a.clue}</li>`).join('');
-$dnL.innerHTML = Array.from({length:10}, (_,i)=>`<li><b>${i+1}.</b> ${DOWN_CLUES[i]||'-'}</li>`).join('');
-
-/* -------------------- VALIDATION (Across only) -------------------- */
-$check.addEventListener('click', ()=>{
-  // baca tiap baris across sesuai MASK (blok kiri r1..r5 kolom1..5, blok kanan r6..r10 kolom6..10)
-  let ok = true;
-  const reads = [];
-
-  // r1..r5 c1..5  → across 1..5
-  for (let i=0;i<5;i++){
-    const word = readWord(i, 0, 5, 'across');
-    reads.push({n: ACROSS[i].n, want: ACROSS[i].ans, got: word});
-  }
-  // r6..r10 c6..10 → across 6..10
-  for (let i=5;i<10;i++){
-    const word = readWord(i, 5, 5, 'across'); // mulai di kolom 6 (index 5), panjang 5
-    reads.push({n: ACROSS[i].n, want: ACROSS[i].ans, got: word});
+  function clearMarks(){
+    document.querySelectorAll('.cell').forEach(c=>{
+      c.style.outline = 'none';
+      c.style.boxShadow = 'none';
+    });
   }
 
-  // evaluasi
-  reads.forEach(({n,want,got}, idx)=>{
-    const isOk = want === got;
-    if (!isOk) ok = false;
-    // highlight garisnya
-    const r = (idx<5)? idx : idx; // sama indeks baris
-    const row = (idx<5)? idx : idx; // 0..9
-    const startC = (idx<5)? 0 : 5;
-    for (let c=0;c<5;c++){
-      const el = document.getElementById(`${row}-${startC+c}`);
-      el.style.outline = `2px solid ${isOk?'#73f087':'#ff5b6a'}`;
-      el.style.boxShadow = isOk?'0 0 12px rgba(184,255,154,.35)':'0 0 12px rgba(255,91,106,.35)';
+  $check.addEventListener('click', () => {
+    clearMarks();
+    // r1..r5 kolom 0..4  → across #1..#5
+    // r6..r10 kolom 5..9 → across #6..#10
+    const reads = [];
+
+    for (let i=0;i<5;i++){
+      reads.push({
+        row: i, start: 0,
+        want: ACROSS[i].ans,
+        got: readWord(i, 0, 5)
+      });
     }
+    for (let i=5;i<10;i++){
+      reads.push({
+        row: i, start: 5,
+        want: ACROSS[i].ans,
+        got: readWord(i, 5, 5)
+      });
+    }
+
+    let allOk = true;
+    reads.forEach(({row,start,want,got})=>{
+      const ok = want === got;
+      if (!ok) allOk = false;
+      for (let c=0;c<5;c++){
+        const el = cells[row][start+c];
+        el.style.outline = `2px solid ${ok ? '#73f087' : '#ff5b6a'}`;
+        el.style.boxShadow = ok ? '0 0 10px rgba(184,255,154,.35)' : '0 0 10px rgba(255,91,106,.35)';
+      }
+    });
+
+    alert(allOk ? 'Mantap! Semua mendatar benar 👍' : 'Ada yang belum tepat. Coba cek lagi ya!');
   });
 
-  alert(ok? 'Mantap! Semua mendatar benar 👍' : 'Masih ada yang salah di baris mendatar. Coba lagi ya!');
-});
-
-/* helper baca kata */
-function readWord(row, startCol, len, dir){
-  if (dir==='across'){
-    let s='';
-    for (let c=0;c<len;c++){
-      const v = (cells[row][startCol+c].querySelector('input').value||' ').toUpperCase();
-      s += (v===' ')?' ':v;
+  function readWord(row, startCol, len){
+    let s = '';
+    for (let k=0;k<len;k++){
+      const inp = cells[row][startCol+k].querySelector('input');
+      s += (inp.value || ' ').toUpperCase();
     }
     return s;
-  }else{
-    let s='';
-    for (let r=0;r<len;r++){
-      const v = (cells[row+r][startCol].querySelector('input').value||' ').toUpperCase();
-      s += (v===' ')?' ':v;
-    }
-    return s;
   }
-}
+
+  // Fokus awal di pojok kiri atas (r0,c0)
+  const first = cells[0][0];
+  if (first && first.querySelector) first.querySelector('input')?.focus();
+})();
