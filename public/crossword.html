@@ -14,37 +14,42 @@ body{
   padding:20px;
   text-align:center;
 }
-h1{color:var(--azbry-accent,#b8ff9a);text-shadow:0 0 10px rgba(184,255,154,.3);}
+h1{
+  color:var(--azbry-accent,#b8ff9a);
+  text-shadow:0 0 10px rgba(184,255,154,.3);
+  margin-bottom:14px;
+}
 #cwGrid{
   display:grid;
   grid-template-columns:repeat(10,1fr);
-  width:400px;
+  width:min(92vw,520px);
   aspect-ratio:1/1;
-  margin:20px auto;
+  margin:16px auto 12px;
   gap:2px;
 }
 .cell{
-  background:#222;
-  border:1px solid #333;
+  background:#1b1f24;
+  border:1px solid #2a3036;
+  color:#eaf1e9;
+  font-weight:800;
+  font-size:clamp(12px,2.6vw,18px);
   display:flex;
   align-items:center;
   justify-content:center;
-  font-weight:bold;
-  font-size:18px;
-  color:#b8ff9a;
+  border-radius:6px;
 }
-.cell.block{
-  background:#111;
-  border-color:#000;
-}
-.cell.active{
-  outline:2px solid var(--azbry-accent,#b8ff9a);
-}
+.cell.block{background:#0f1317;border-color:#0a0d10;}
+.cell.active{outline:2px solid var(--azbry-accent,#b8ff9a);outline-offset:-2px;}
+.cell.word{background:rgba(184,255,154,.08);}
+.cell.wrong{background:#5a1d2a!important;}
+.cell.ok{background:#244e2e!important;}
+
 .controls{
   display:flex;
   justify-content:center;
   gap:10px;
   margin-bottom:15px;
+  flex-wrap:wrap;
 }
 button{
   padding:8px 14px;
@@ -62,30 +67,34 @@ button:hover{background:#1a1a1a;}
   padding:0;
 }
 #listAcross li,#listDown li{margin:6px 0;list-style:none;}
+#listAcross li.active,#listDown li.active{
+  color:var(--azbry-accent,#b8ff9a);
+  font-weight:800;
+}
+p.note{
+  font-size:13px;
+  opacity:.7;
+  margin-top:20px;
+}
 </style>
 </head>
 <body>
   <h1>Teka-Teki Silang — Azbry</h1>
 
-  <!-- papan -->
   <div id="cwGrid"></div>
 
-  <!-- tombol kontrol -->
   <div class="controls">
     <span id="dirLabel">Arah: Mendatar</span>
     <button id="btnCheck">Cek Jawaban</button>
     <button id="btnReset">Reset</button>
   </div>
 
-  <!-- daftar soal -->
   <h3>Mendatar</h3>
   <ul id="listAcross"></ul>
   <h3>Menurun</h3>
   <ul id="listDown"></ul>
 
-  <p style="font-size:13px;opacity:.7">
-    Klik kotak → ketik huruf • Spasi: ganti arah
-  </p>
+  <p class="note">Klik kotak → ketik huruf • Spasi: ganti arah • Backspace: hapus</p>
 
   <script src="assets/js/crossword.js"></script>
 </body>
