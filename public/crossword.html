@@ -1,184 +1,92 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Teka-Teki Silang — Azbry</title>
-
-<link rel="stylesheet" href="assets/css/azbry.css?v=23"/>
-
+<link rel="stylesheet" href="assets/css/azbry.css">
 <style>
-  :root{
-    --sheet-w: 980px;         /* lebar kanvas desktop */
-    --grid-max: 720px;        /* lebar maksimum papan */
-  }
-
-  body{ margin:0; color:#eaf1e9; background:linear-gradient(180deg,var(--azbry-bg-1),var(--azbry-bg-2)); }
-
-  /* ===== Shell ===== */
-  .sheet{
-    max-width:var(--sheet-w);
-    margin:0 auto;
-    padding:18px 16px 80px;
-  }
-
-  .header{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    margin-bottom:12px;
-  }
-  .header h1{
-    margin:0; font-weight:900;
-    font-size: clamp(24px, 4.6vw, 40px);
-    color: var(--azbry-accent);
-    text-shadow:0 0 16px var(--azbry-ring);
-  }
-  .menu a{
-    display:inline-flex; gap:8px; align-items:center;
-    padding:10px 14px; border-radius:12px;
-    background:var(--panel-bg-1); border:1px solid var(--panel-bd);
-    color:#cfd8e6; font-weight:800; text-decoration:none;
-  }
-
-  /* ===== Board (center) ===== */
-  .board-wrap{
-    margin:10px auto 12px;
-    max-width:min(var(--grid-max), 96vw);
-    background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
-    border:1px solid var(--panel-bd);
-    border-radius:18px;
-    box-shadow:0 12px 36px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
-    padding:14px;
-  }
-  #cwGrid{
-    width:100%;
-    aspect-ratio: 1 / 1;           /* papan tetap persegi */
-    display:grid; gap:4px;         /* grid sel akan diisi JS */
-    background:transparent;
-  }
-  .cell{
-    display:grid; place-items:center;
-    font: 900 clamp(14px,2.2vw,18px)/1 Inter, system-ui, sans-serif;
-    color:#eaf1e9;
-    border-radius:6px;
-    background:var(--panel-bg-1);
-    border:1px solid var(--panel-bd);
-    user-select:none;
-  }
-  .cell.block{ background:#20262d; border-color:#1a1f25; }
-
-  /* ===== Controls (under board) ===== */
-  .controls{
-    margin:10px auto 18px;
-    max-width:min(var(--grid-max), 96vw);
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
-  }
-  .dir-pill{
-    padding:8px 12px; border-radius:999px; font-weight:800; letter-spacing:.2px;
-    background:var(--panel-bg-1); border:1px solid var(--panel-bd); color:#dbe4ee;
-  }
-  .btn{
-    padding:10px 14px; border-radius:12px; font-weight:800; cursor:pointer;
-    border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#e8f0fb;
-  }
-  .btn.accent{
-    background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
-    color:var(--azbry-ink); border-color:transparent; box-shadow:0 0 12px rgba(184,255,154,.25);
-  }
-
-  /* ===== Clues (below) ===== */
-  .clues{
-    max-width:min(var(--grid-max), 96vw);
-    margin:0 auto;
-  }
-  .clues h2{
-    margin:6px 0 10px; font-size: clamp(18px,3.2vw,22px); color:#dbe4ee;
-  }
-  .clist{
-    display:grid; grid-template-columns: 1fr 1fr; gap:16px;
-  }
-  @media (max-width:720px){ .clist{ grid-template-columns: 1fr; } }
-
-  .cl{ background:var(--panel-bg-2); border:1px solid var(--panel-bd); border-radius:14px; padding:12px; }
-  .cl ol{ margin:0; padding-left:20px; }
-  .cl li{ margin:6px 0; color:#cbd6e4; }
-
-  /* hint teks kecil */
-  .tips{
-    max-width:min(var(--grid-max), 96vw);
-    margin:8px auto 0; color:#9fb0c7; font-size:13px; opacity:.9;
-  }
+body{
+  font-family: system-ui, sans-serif;
+  background:#0b0f12;
+  color:#eaf1e9;
+  margin:0;
+  padding:20px;
+  text-align:center;
+}
+h1{color:var(--azbry-accent,#b8ff9a);text-shadow:0 0 10px rgba(184,255,154,.3);}
+#cwGrid{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  width:400px;
+  aspect-ratio:1/1;
+  margin:20px auto;
+  gap:2px;
+}
+.cell{
+  background:#222;
+  border:1px solid #333;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  font-size:18px;
+  color:#b8ff9a;
+}
+.cell.block{
+  background:#111;
+  border-color:#000;
+}
+.cell.active{
+  outline:2px solid var(--azbry-accent,#b8ff9a);
+}
+.controls{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:15px;
+}
+button{
+  padding:8px 14px;
+  border-radius:8px;
+  border:1px solid #333;
+  background:#111;
+  color:#eaf1e9;
+  cursor:pointer;
+}
+button:hover{background:#1a1a1a;}
+#listAcross,#listDown{
+  text-align:left;
+  max-width:420px;
+  margin:10px auto;
+  padding:0;
+}
+#listAcross li,#listDown li{margin:6px 0;list-style:none;}
 </style>
 </head>
 <body>
-  <main class="sheet">
-    <div class="header">
-      <h1>Teka-Teki Silang — Azbry</h1>
-      <div class="menu"><a href="./index.html">← Menu</a></div>
-    </div>
+  <h1>Teka-Teki Silang — Azbry</h1>
 
-    <!-- BOARD CENTER -->
-    <section class="board-wrap">
-      <div id="cwGrid" aria-label="Papan TTS"><!-- Sel-sel diisi via JS --></div>
-    </section>
+  <!-- papan -->
+  <div id="cwGrid"></div>
 
-    <!-- CONTROLS UNDER BOARD -->
-    <div class="controls">
-      <span id="dirLabel" class="dir-pill">Arah: Mendatar</span>
-      <div style="display:flex; gap:10px;">
-        <button id="btnCheck" class="btn accent">Cek Jawaban</button>
-        <button id="btnReset" class="btn">Reset</button>
-      </div>
-    </div>
+  <!-- tombol kontrol -->
+  <div class="controls">
+    <span id="dirLabel">Arah: Mendatar</span>
+    <button id="btnCheck">Cek Jawaban</button>
+    <button id="btnReset">Reset</button>
+  </div>
 
-    <!-- SOAL DI BAWAH (2 kolom) -->
-    <section class="clues">
-      <div class="clist">
-        <div class="cl">
-          <h2>Mendatar</h2>
-          <ol id="listAcross"><!-- isi via JS --></ol>
-        </div>
-        <div class="cl">
-          <h2>Menurun</h2>
-          <ol id="listDown"><!-- isi via JS --></ol>
-        </div>
-      </div>
-      <div class="tips">
-        Klik kotak → ketik huruf • Panah/Spasi: pindah & ganti arah • Backspace: hapus
-      </div>
-    </section>
-  </main>
+  <!-- daftar soal -->
+  <h3>Mendatar</h3>
+  <ul id="listAcross"></ul>
+  <h3>Menurun</h3>
+  <ul id="listDown"></ul>
 
-  <!-- ===== Hook minimal agar kompatibel dengan engine kamu ===== -->
-  <script>
-  // Contoh API minimal: panggil fungsi ini dari engine kamu setelah puzzle siap
-  // window.renderCrossword({size:15, blocks:[...], across:[{n, clue}], down:[{n, clue}]})
-  window.renderCrossword = function(model){
-    const g = document.getElementById('cwGrid');
-    const N = model.size;
-    g.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
-    g.style.gridTemplateRows    = `repeat(${N}, 1fr)`;
-    g.innerHTML = '';
-    for (let i=0;i<N*N;i++){
-      const d = document.createElement('div');
-      d.className = 'cell' + (model.blocks?.includes(i) ? ' block':'');
-      d.dataset.i = i;
-      g.appendChild(d);
-    }
-    // isi daftar
-    const A = document.getElementById('listAcross');
-    const D = document.getElementById('listDown');
-    A.innerHTML = model.across.map(it=>`<li><b>${it.n}.</b> ${it.clue}</li>`).join('');
-    D.innerHTML = model.down  .map(it=>`<li><b>${it.n}.</b> ${it.clue}</li>`).join('');
-  };
+  <p style="font-size:13px;opacity:.7">
+    Klik kotak → ketik huruf • Spasi: ganti arah
+  </p>
 
-  // Label arah (opsional, toggle dari engine-mu)
-  window.setDirection = (isAcross=true)=>{
-    document.getElementById('dirLabel').textContent = 'Arah: ' + (isAcross?'Mendatar':'Menurun');
-  };
-
-  // Tombol (serahkan ke engine-mu)
-  document.getElementById('btnCheck').addEventListener('click', ()=> window.checkAnswers?.());
-  document.getElementById('btnReset').addEventListener('click', ()=> window.resetCrossword?.());
-  </script>
+  <script src="assets/js/crossword.js"></script>
 </body>
 </html>
