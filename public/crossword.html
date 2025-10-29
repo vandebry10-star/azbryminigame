@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Azbry Crossword</title>
+
+  <!-- Azbry theme -->
+  <link rel="stylesheet" href="assets/css/azbry.css?v=1"/>
+
+  <style>
+    body{max-width:1080px;margin:0 auto;padding:16px;background:#0b0f12;color:#e8f0fb;font-family:system-ui,Segoe UI,Roboto,Arial}
+    .hero{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 0 12px}
+    .hero h1{margin:0;font-weight:900;color:var(--azbry-accent);text-shadow:0 0 16px var(--azbry-ring)}
+    .wrap{display:grid;grid-template-columns:1fr min(420px,42vw);gap:14px}
+    .board-wrap{
+      padding:12px;border-radius:16px;background:var(--panel-bg-2);border:1px solid var(--panel-bd);
+      box-shadow:0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    .board{--N:10;display:grid;grid-template-columns:repeat(var(--N),1fr);gap:4px}
+    .cell{
+      position:relative; aspect-ratio:1/1; border-radius:10px; display:grid; place-items:center;
+      background:var(--panel-bg-1); border:1px solid var(--panel-bd); font-weight:900; font-size:clamp(16px,3.8vw,22px);
+      color:#eaf1e9; user-select:none;
+    }
+    .cell.block{background:#0e1318;border-color:#131a21}
+    .cell.active{outline:2px solid var(--azbry-accent); box-shadow:0 0 12px rgba(184,255,154,.25) inset}
+    .cell.hl{background:rgba(184,255,154,.10)}
+    .num{position:absolute;left:6px;top:4px;font:700 11px/1 system-ui;color:#9fb1c3;opacity:.85}
+    .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .btn{padding:10px 12px;border-radius:12px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);color:#eaf1e9;font-weight:800;cursor:pointer}
+    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:#0b0f12;border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.25)}
+    .clues{padding:12px;border-radius:16px;background:var(--panel-bg-2);border:1px solid var(--panel-bd)}
+    .clues h3{margin:6px 0 8px;color:#cfd8e6}
+    .clues ol{margin:0;padding-left:18px;display:grid;gap:6px}
+    .legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;opacity:.85}
+    .tag{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--panel-bd);font-weight:800;font-size:12px}
+    .status{min-height:20px;margin-top:6px;color:#cfd8e6}
+    .ok{background:#6aaa64;color:#0b0f12}
+    .bad{background:#c94c4c;color:#0b0f12}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>Teka-Teki Silang — Azbry</h1>
+    <a class="btn" href="./index.html">← Menu</a>
+  </header>
+
+  <main class="wrap">
+    <!-- BOARD -->
+    <section class="board-wrap">
+      <div id="board" class="board" aria-label="Crossword Board"></div>
+      <div class="controls">
+        <button id="btnDir" class="btn">Arah: Mendatar</button>
+        <button id="btnCheck" class="btn accent">Cek Jawaban</button>
+        <button id="btnReset" class="btn">Reset</button>
+      </div>
+      <div id="status" class="status"></div>
+      <div class="legend">
+        <span class="tag">Klik kotak → ketik huruf</span>
+        <span class="tag">Panah/Spasi: pindah & ganti arah</span>
+        <span class="tag">Backspace: hapus</span>
+      </div>
+    </section>
+
+    <!-- CLUES -->
+    <aside class="clues">
+      <h3>Mendatar</h3>
+      <ol id="cluesAcross"></ol>
+      <h3>Menurun</h3>
+      <ol id="cluesDown"></ol>
+    </aside>
+  </main>
+
+  <script src="assets/js/crossword.js?v=1"></script>
+</body>
+</html>
