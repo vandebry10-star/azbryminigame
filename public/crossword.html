@@ -3,9 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Teka-Teki Silang — Azbry (Mask Grid)</title>
+<title>Teka-Teki Silang — Azbry</title>
+<link rel="stylesheet" href="assets/css/azbry.css?v=24"/>
 <style>
-  :root{--bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;--panel:rgba(255,255,255,.05);--bd:rgba(255,255,255,.10)}
+  :root{
+    --bg:#0b0f12;--ink:#e8f0fb;--accent:#b8ff9a;
+    --panel:rgba(255,255,255,.05);--bd:rgba(255,255,255,.10);
+  }
   html,body{margin:0;background:var(--bg);color:var(--ink);font:600 14px/1.35 system-ui,Segoe UI,Roboto,Arial}
   main{max-width:980px;margin:0 auto;padding:18px 16px}
   h1{margin:0 0 14px;font-weight:900;font-size:clamp(22px,4.6vw,36px);color:var(--accent);text-shadow:0 0 16px rgba(184,255,154,.25)}
@@ -25,273 +29,27 @@
   .clues ol{margin:0;padding-left:22px}
   .clues li{margin:6px 0}
   .hint{opacity:.8}
-  @media (min-width:980px){.shell{grid-template-columns: 540px 1fr}.cell{width:46px}}
+  @media (min-width:980px){.shell{grid-template-columns:540px 1fr}.cell{width:46px}}
 </style>
 </head>
 <body>
 <main>
   <h1>Teka-Teki Silang — Azbry</h1>
-
   <div class="shell">
     <div class="boardwrap"><div id="grid" class="grid"></div></div>
-
     <div class="cols">
       <div class="toolbar">
         <span id="dir" class="btn">Arah: Mendatar</span>
         <button id="btnCheck" class="btn accent">Cek Jawaban</button>
         <button id="btnReset" class="btn">Reset</button>
       </div>
-
       <div class="clues"><h3>Mendatar</h3><ol id="across"></ol></div>
       <div class="clues"><h3>Menurun</h3><ol id="down"></ol></div>
       <div class="hint">Klik kotak → ketik huruf • Spasi: ganti arah • Backspace: hapus</div>
     </div>
   </div>
-
   <input id="hid" type="text" autocomplete="off" style="opacity:0;position:absolute;z-index:-1"/>
 </main>
-
-<script>
-/* =============== MASK GRID ===============
- * X = blok (hitam), . = sel huruf
- * Susun baris agar bentuk papan NGEPAS sesuai gambar.
- * (Contoh di bawah ini pola tak beraturan “berlengan”. Silakan sesuaikan.)
- */
-const MASK = [
-  ".....XXX.....X..",   // row 0
-  ".....X..X....X..",   // row 1
-  "....XXX..XXXXX..",   // row 2
-  ".X..X....X..X...",   // row 3
-  ".....XXXXX.....X",   // row 4
-  "....X...X...X...",   // row 5
-  "..XXXXX.X.XXXXX.",   // row 6
-  "....X...X...X...",   // row 7
-  "X.....XXXXX.....",   // row 8
-  "...X..X....X..X.",   // row 9
-  "..XXXXX..XXX...."    // row10
-];
-// ==========================================
-
-/* Petunjuk & Jawaban (huruf kapital, tanpa spasi).
- * Panjang jawaban HARUS sama dengan jumlah '.' pada entri yang dinomori otomatis.
- * Nomor across 1..N diurutkan L→R, atas→bawah; down 1..N diurutkan atas→bawah, L→R.
- */
-const ACROSS_ANS = [
-  // 1..10 mendatar (ganti sesuai kebutuhan)
-  {ans:"RUMAH", clue:"Tempat tinggal manusia"},
-  {ans:"SEWA",  clue:"Disewa sementara"},
-  {ans:"ARENA", clue:"Tempat pertandingan"},
-  {ans:"IKLAN", clue:"Promosi komersial"},
-  {ans:"KOMPAS",clue:"Penunjuk arah di peta"},
-  {ans:"ASAL",  clue:"Berasal"},
-  {ans:"UNDANG",clue:"Meminta hadir secara resmi"},
-  {ans:"DATA",  clue:"Kumpulan fakta"},
-  {ans:"SEPEDA",clue:"Kendaraan beroda dua"},
-  {ans:"POTONG",clue:"Memotong tipis"}
-];
-
-const DOWN_ANS = [
-  // 1..10 menurun (ganti sesuai kebutuhan)
-  {ans:"MATA",  clue:"Bagian tubuh untuk melihat"},
-  {ans:"PENA",  clue:"Benda untuk menulis"},
-  {ans:"SUARA", clue:"Bunyi; vokal"},
-  {ans:"TANAM", clue:"Menanam bibit"},
-  {ans:"INTI",  clue:"Pusat; inti"},
-  {ans:"ALAMI", clue:"Berasal dari alam"},
-  {ans:"AKTIF", clue:"Banyak bergerak"},
-  {ans:"HOBI",  clue:"Kegemaran"},
-  {ans:"RAMAH", clue:"Sikap bersahabat"},
-  {ans:"LIRIK", clue:"Kata-kata pada lagu"}
-];
-
-// ---- dari mask → deteksi slot across & down
-const H = MASK.length, W = MASK[0].length;
-const gridInfo = Array.from({length:H}, (_,r)=>Array.from({length:W},(_,c)=>({
-  block: MASK[r][c]==='X', char:'', num:0
-})));
-
-function findAcross(){
-  const slots=[];
-  for(let r=0;r<H;r++){
-    let c=0;
-    while(c<W){
-      if(gridInfo[r][c].block){c++;continue;}
-      const start = (c===0 || gridInfo[r][c-1].block);
-      if(start){
-        let len=0, k=c;
-        while(k<W && !gridInfo[r][k].block){len++;k++;}
-        slots.push({r,c,len});
-        c=k;
-      }else c++;
-    }
-  }
-  return slots;
-}
-
-function findDown(){
-  const slots=[];
-  for(let c=0;c<W;c++){
-    let r=0;
-    while(r<H){
-      if(gridInfo[r][c].block){r++;continue;}
-      const start = (r===0 || gridInfo[r-1][c].block);
-      if(start){
-        let len=0, k=r;
-        while(k<H && !gridInfo[k][c].block){len++;k++;}
-        slots.push({r,c,len});
-        r=k;
-      }else r++;
-    }
-  }
-  return slots;
-}
-
-const acrossSlots = findAcross();
-const downSlots   = findDown();
-
-// Validasi panjang jawaban
-function ensureLengths(slots, list, kind){
-  if(slots.length!==list.length){
-    console.warn(kind, 'slots:', slots.length, 'answers:', list.length);
-  }
-  const n = Math.min(slots.length, list.length);
-  for(let i=0;i<n;i++){
-    if(list[i].ans.length !== slots[i].len){
-      console.warn(`${kind} #${i+1} length mismatch: need ${slots[i].len}, got ${list[i].ans.length}`);
-    }
-  }
-}
-ensureLengths(acrossSlots, ACROSS_ANS, 'Across');
-ensureLengths(downSlots,   DOWN_ANS,   'Down');
-
-// Nomori & simpan metadata
-acrossSlots.forEach((s,i)=>s.no=i+1);
-downSlots.forEach((s,i)=>s.no=i+1);
-
-const $grid = document.getElementById('grid');
-$grid.style.gridTemplateColumns = `repeat(${W}, 1fr)`;
-
-// gambar papan + nomor kecil (hanya untuk start sel)
-for(let r=0;r<H;r++){
-  for(let c=0;c<W;c++){
-    const d = gridInfo[r][c];
-    const el = document.createElement('div');
-    el.className = 'cell' + (d.block?' block':'');
-    el.dataset.r=r; el.dataset.c=c;
-    $grid.appendChild(el);
-  }
-}
-// beri nomor start across
-for(const s of acrossSlots){
-  const el = $grid.children[s.r*W + s.c];
-  const b=document.createElement('div'); b.className='num'; b.textContent=s.no;
-  el.appendChild(b);
-}
-// beri nomor start down
-for(const s of downSlots){
-  const el = $grid.children[s.r*W + s.c];
-  if(!el.querySelector('.num')){
-    const b=document.createElement('div'); b.className='num'; b.textContent=s.no;
-    el.appendChild(b);
-  }
-}
-
-// render petunjuk
-function renderClues(){
-  const A=document.getElementById('across'), D=document.getElementById('down');
-  A.innerHTML=''; D.innerHTML='';
-  ACROSS_ANS.forEach((x,i)=>{ const li=document.createElement('li'); li.textContent=x.clue; A.appendChild(li);});
-  DOWN_ANS.forEach((x,i)=>{ const li=document.createElement('li'); li.textContent=x.clue; D.appendChild(li);});
-}
-renderClues();
-
-// —— input & navigasi
-let dir='A', cur={r:acrossSlots[0].r, c:acrossSlots[0].c};
-const $dir=document.getElementById('dir'); const $hid=document.getElementById('hid');
-function setDir(d){dir=d; $dir.textContent=`Arah: ${d==='A'?'Mendatar':'Menurun'}`;}
-setDir('A');
-function cellAt(r,c){return $grid.children[r*W+c];}
-function isLetter(r,c){return !gridInfo[r][c].block;}
-
-function focusCell(r,c){
-  if(!isLetter(r,c)) return;
-  document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));
-  cellAt(r,c).classList.add('active'); cur={r,c}; $hid.focus();
-}
-// fokus awal
-focusCell(cur.r,cur.c);
-
-function step(r,c,delta){
-  let rr=r, cc=c;
-  do{
-    rr += (dir==='D'? delta:0);
-    cc += (dir==='A'? delta:0);
-  } while(rr>=0&&rr<H&&cc>=0&&cc<W && gridInfo[rr][cc].block===true);
-  if(rr<0||rr>=H||cc<0||cc>=W) return null;
-  return {r:rr,c:cc};
-}
-function put(ch){
-  if(!isLetter(cur.r,cur.c)) return;
-  cellAt(cur.r,cur.c).textContent = ch;
-  const nx = step(cur.r,cur.c,1);
-  if(nx) focusCell(nx.r,nx.c);
-}
-function back(){
-  if(!isLetter(cur.r,cur.c)) return;
-  if(!cellAt(cur.r,cur.c).textContent){
-    const pv = step(cur.r,cur.c,-1);
-    if(pv) focusCell(pv.r,pv.c);
-  }
-  cellAt(cur.r,cur.c).textContent='';
-}
-
-document.addEventListener('keydown',e=>{
-  if(e.key===' '){ setDir(dir==='A'?'D':'A'); e.preventDefault(); return; }
-  if(e.key==='Backspace'){ back(); e.preventDefault(); return; }
-  const k=e.key.toUpperCase();
-  if(k.length===1 && k>='A'&&k<='Z'){ put(k); }
-});
-
-$grid.addEventListener('click',e=>{
-  const t=e.target.closest('.cell'); if(!t) return;
-  const r=+t.dataset.r, c=+t.dataset.c; if(!isLetter(r,c)) return;
-  focusCell(r,c);
-});
-$hid.addEventListener('input',e=>{
-  const v=e.target.value.slice(-1).toUpperCase();
-  if(v>='A'&&v<='Z') put(v); e.target.value='';
-});
-$hid.addEventListener('keydown',e=>{
-  if(e.key==='Backspace'){ back(); e.preventDefault(); }
-});
-
-// cek jawaban sesuai slot
-function readAcross(slot){
-  let s=''; for(let i=0;i<slot.len;i++){ s += (cellAt(slot.r,slot.c+i).textContent||''); } return s;
-}
-function readDown(slot){
-  let s=''; for(let i=0;i<slot.len;i++){ s += (cellAt(slot.r+i,slot.c).textContent||''); } return s;
-}
-document.getElementById('btnCheck').onclick=()=>{
-  let ok=true;
-  for(let i=0;i<acrossSlots.length&&i<ACROSS_ANS.length;i++){
-    if(readAcross(acrossSlots[i])!==ACROSS_ANS[i].ans){ ok=false; break; }
-  }
-  if(ok){
-    for(let i=0;i<downSlots.length&&i<DOWN_ANS.length;i++){
-      if(readDown(downSlots[i])!==DOWN_ANS[i].ans){ ok=false; break; }
-    }
-  }
-  alert(ok?'Mantap! Semua benar. 🎉':'Masih ada yang salah, cek lagi ya.');
-};
-document.getElementById('btnReset').onclick=()=>{
-  [...$grid.children].forEach(el=>{
-    if(!el.classList.contains('block')){
-      const n=el.querySelector('.num'); el.textContent=''; if(n) el.appendChild(n);
-    }
-  });
-  setDir('A'); focusCell(acrossSlots[0].r, acrossSlots[0].c);
-};
-</script>
+<script src="crossword.js"></script>
 </body>
 </html>
