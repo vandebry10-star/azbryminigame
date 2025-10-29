@@ -15,8 +15,31 @@
   h1{margin:0 0 14px;font-weight:900;font-size:clamp(22px,4.6vw,36px);color:var(--accent);text-shadow:0 0 16px rgba(184,255,154,.25)}
   .shell{display:grid;grid-template-columns:1fr;gap:16px}
   .boardwrap{display:flex;justify-content:center}
-  .grid{display:grid;gap:6px;padding:16px;border-radius:16px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));border:1px solid var(--bd);box-shadow:0 10px 32px rgba(0,0,0,.35)}
-  .cell{width:min(54px,6.6vw);aspect-ratio:1/1;border-radius:10px;display:grid;place-items:center;position:relative;background:var(--panel);border:1px solid var(--bd);font-weight:900;font-size:clamp(14px,3.6vw,22px);user-select:none}
+
+  /* ✅ BOARD FIX */
+  .grid{
+    display:grid;
+    gap:6px;
+    padding:16px;
+    border-radius:16px;
+    background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+    border:1px solid var(--bd);
+    box-shadow:0 10px 32px rgba(0,0,0,.35);
+    width:min(92vw, 560px);
+  }
+  @media (min-width:980px){.grid{width:560px;}}
+
+  .cell{
+    aspect-ratio:1/1;
+    border-radius:10px;
+    display:grid;place-items:center;
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--bd);
+    font-weight:900;
+    font-size:clamp(14px,3.6vw,22px);
+    user-select:none;
+  }
   .block{background:rgba(255,255,255,.08)}
   .cell.active{outline:2px solid var(--accent);outline-offset:2px}
   .num{position:absolute;left:6px;top:4px;font-size:11px;opacity:.85;font-weight:800;color:#cfe7d0}
