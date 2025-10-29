@@ -1,139 +1,184 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Teka-Teki Silang — Azbry</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Teka-Teki Silang — Azbry</title>
 
-  <link rel="stylesheet" href="assets/css/azbry.css?v=1"/>
+<link rel="stylesheet" href="assets/css/azbry.css?v=23"/>
 
-  <style>
-    /* ===== Sheet-style layout (besar, desktop) ===== */
-    :root{
-      --sheet-w: 1200px;      /* lebar kanvas “kertas” */
-      --board-cell: 52px;     /* ukuran sel (grid 10x10 => ~520px) */
-      --gap: 6px;
-    }
-    html,body{background:#0b0f12;color:#e8f0fb;margin:0;padding:0;font-family:system-ui,Segoe UI,Roboto,Arial}
-    .sheet{
-      width:var(--sheet-w);
-      margin:24px auto 80px;
-      padding:24px;
-      border-radius:24px;
-      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
-      border:1px solid rgba(255,255,255,.06);
-      box-shadow:0 30px 90px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
-    }
-    .head{
-      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px
-    }
-    .head h1{
-      margin:0;font-weight:900;font-size:48px;line-height:1;
-      color:var(--azbry-accent);text-shadow:0 0 20px var(--azbry-ring)
-    }
-    .head .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);font-weight:800;color:#e8f0fb}
+<style>
+  :root{
+    --sheet-w: 980px;         /* lebar kanvas desktop */
+    --grid-max: 720px;        /* lebar maksimum papan */
+  }
 
-    .sheet-grid{
-      display:grid;
-      grid-template-columns: auto 1fr;
-      gap:24px;
-      align-items:start;
-    }
+  body{ margin:0; color:#eaf1e9; background:linear-gradient(180deg,var(--azbry-bg-1),var(--azbry-bg-2)); }
 
-    /* Board panel (besar) */
-    .board-panel{
-      padding:16px;border-radius:20px;background:var(--panel-bg-2);border:1px solid var(--panel-bd);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
-    }
-    .board{--N:10;display:grid;grid-template-columns:repeat(var(--N),var(--board-cell));gap:var(--gap)}
-    .cell{
-      width:var(--board-cell);height:var(--board-cell);border-radius:12px;display:grid;place-items:center;
-      background:var(--panel-bg-1);border:1px solid var(--panel-bd);font-weight:900;font-size:22px;color:#eaf1e9;user-select:none
-    }
-    .cell.block{background:#0e1318;border-color:#131a21}
-    .cell.active{outline:3px solid var(--azbry-accent);box-shadow:0 0 16px rgba(184,255,154,.3) inset}
-    .cell.hl{background:rgba(184,255,154,.10)}
-    .num{position:absolute;left:8px;top:6px;font:700 12px/1 system-ui;color:#9fb1c3;opacity:.9}
+  /* ===== Shell ===== */
+  .sheet{
+    max-width:var(--sheet-w);
+    margin:0 auto;
+    padding:18px 16px 80px;
+  }
 
-    .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-    .btn{
-      padding:10px 14px;border-radius:12px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);font-weight:800;color:#e8f0fb;cursor:pointer
-    }
-    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:#0b0f12;border-color:transparent;box-shadow:0 0 16px rgba(184,255,154,.28)}
-    .status{min-height:22px;margin-top:8px;color:#cfd8e6}
-    .ok{background:#6aaa64;color:#0b0f12}
-    .bad{background:#c94c4c;color:#0b0f12}
+  .header{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    margin-bottom:12px;
+  }
+  .header h1{
+    margin:0; font-weight:900;
+    font-size: clamp(24px, 4.6vw, 40px);
+    color: var(--azbry-accent);
+    text-shadow:0 0 16px var(--azbry-ring);
+  }
+  .menu a{
+    display:inline-flex; gap:8px; align-items:center;
+    padding:10px 14px; border-radius:12px;
+    background:var(--panel-bg-1); border:1px solid var(--panel-bd);
+    color:#cfd8e6; font-weight:800; text-decoration:none;
+  }
 
-    /* Clues panel di kanan (seperti contoh) */
-    .clues{
-      padding:16px;border-radius:20px;background:var(--panel-bg-2);border:1px solid var(--panel-bd)
-    }
-    .clues h2{margin:4px 0 12px;font-size:28px;color:#cfd8e6}
-    .clues h3{margin:12px 0 8px;color:#cfd8e6}
-    .clues ol{margin:0;padding-left:22px;display:grid;gap:8px;font-size:18px}
-    .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;opacity:.8}
-    .tag{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--panel-bd);font-weight:800;font-size:12px}
+  /* ===== Board (center) ===== */
+  .board-wrap{
+    margin:10px auto 12px;
+    max-width:min(var(--grid-max), 96vw);
+    background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
+    border:1px solid var(--panel-bd);
+    border-radius:18px;
+    box-shadow:0 12px 36px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    padding:14px;
+  }
+  #cwGrid{
+    width:100%;
+    aspect-ratio: 1 / 1;           /* papan tetap persegi */
+    display:grid; gap:4px;         /* grid sel akan diisi JS */
+    background:transparent;
+  }
+  .cell{
+    display:grid; place-items:center;
+    font: 900 clamp(14px,2.2vw,18px)/1 Inter, system-ui, sans-serif;
+    color:#eaf1e9;
+    border-radius:6px;
+    background:var(--panel-bg-1);
+    border:1px solid var(--panel-bd);
+    user-select:none;
+  }
+  .cell.block{ background:#20262d; border-color:#1a1f25; }
 
-    /* ===== Desktop-only gate: kalau layar < 1024px, tampilkan overlay suruh pakai desktop ===== */
-    .gate{
-      position:fixed;inset:0;background:#0b0f12;display:none;align-items:center;justify-content:center;z-index:99999;padding:24px;text-align:center
-    }
-    .gate .card{
-      max-width:680px;border-radius:20px;padding:24px;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.08);box-shadow:0 30px 90px rgba(0,0,0,.5)
-    }
-    .gate h2{margin:0 0 8px;color:var(--azbry-accent)}
-    @media (max-width:1023px){
-      .sheet{filter:blur(2px);pointer-events:none}
-      .gate{display:flex}
-    }
-  </style>
+  /* ===== Controls (under board) ===== */
+  .controls{
+    margin:10px auto 18px;
+    max-width:min(var(--grid-max), 96vw);
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+  }
+  .dir-pill{
+    padding:8px 12px; border-radius:999px; font-weight:800; letter-spacing:.2px;
+    background:var(--panel-bg-1); border:1px solid var(--panel-bd); color:#dbe4ee;
+  }
+  .btn{
+    padding:10px 14px; border-radius:12px; font-weight:800; cursor:pointer;
+    border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04); color:#e8f0fb;
+  }
+  .btn.accent{
+    background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
+    color:var(--azbry-ink); border-color:transparent; box-shadow:0 0 12px rgba(184,255,154,.25);
+  }
+
+  /* ===== Clues (below) ===== */
+  .clues{
+    max-width:min(var(--grid-max), 96vw);
+    margin:0 auto;
+  }
+  .clues h2{
+    margin:6px 0 10px; font-size: clamp(18px,3.2vw,22px); color:#dbe4ee;
+  }
+  .clist{
+    display:grid; grid-template-columns: 1fr 1fr; gap:16px;
+  }
+  @media (max-width:720px){ .clist{ grid-template-columns: 1fr; } }
+
+  .cl{ background:var(--panel-bg-2); border:1px solid var(--panel-bd); border-radius:14px; padding:12px; }
+  .cl ol{ margin:0; padding-left:20px; }
+  .cl li{ margin:6px 0; color:#cbd6e4; }
+
+  /* hint teks kecil */
+  .tips{
+    max-width:min(var(--grid-max), 96vw);
+    margin:8px auto 0; color:#9fb0c7; font-size:13px; opacity:.9;
+  }
+</style>
 </head>
 <body>
-  <!-- Desktop-only overlay -->
-  <div class="gate" id="gate">
-    <div class="card">
-      <h2>Buka di Komputer/Mode Desktop</h2>
-      <p>Game Teka-Teki Silang ini dirancang untuk layar lebar agar petunjuk dan papan terlihat jelas seperti lembar kerja.</p>
-      <p style="opacity:.85">Tip: di HP, aktifkan “Situs desktop” di menu browser.</p>
-    </div>
-  </div>
-
-  <div class="sheet">
-    <header class="head">
+  <main class="sheet">
+    <div class="header">
       <h1>Teka-Teki Silang — Azbry</h1>
-      <a class="btn" href="./index.html">← Menu</a>
-    </header>
+      <div class="menu"><a href="./index.html">← Menu</a></div>
+    </div>
 
-    <section class="sheet-grid">
-      <!-- BOARD BESAR (kiri) -->
-      <div class="board-panel">
-        <div id="board" class="board" aria-label="Crossword Board"></div>
-        <div class="controls">
-          <button id="btnDir" class="btn">Arah: Mendatar</button>
-          <button id="btnCheck" class="btn accent">Cek Jawaban</button>
-          <button id="btnReset" class="btn">Reset</button>
+    <!-- BOARD CENTER -->
+    <section class="board-wrap">
+      <div id="cwGrid" aria-label="Papan TTS"><!-- Sel-sel diisi via JS --></div>
+    </section>
+
+    <!-- CONTROLS UNDER BOARD -->
+    <div class="controls">
+      <span id="dirLabel" class="dir-pill">Arah: Mendatar</span>
+      <div style="display:flex; gap:10px;">
+        <button id="btnCheck" class="btn accent">Cek Jawaban</button>
+        <button id="btnReset" class="btn">Reset</button>
+      </div>
+    </div>
+
+    <!-- SOAL DI BAWAH (2 kolom) -->
+    <section class="clues">
+      <div class="clist">
+        <div class="cl">
+          <h2>Mendatar</h2>
+          <ol id="listAcross"><!-- isi via JS --></ol>
         </div>
-        <div id="status" class="status"></div>
-        <div class="legend">
-          <span class="tag">Klik kotak → ketik huruf</span>
-          <span class="tag">Panah/Spasi: pindah & ganti arah</span>
-          <span class="tag">Backspace: hapus</span>
+        <div class="cl">
+          <h2>Menurun</h2>
+          <ol id="listDown"><!-- isi via JS --></ol>
         </div>
       </div>
-
-      <!-- PETUNJUK (kanan) -->
-      <aside class="clues">
-        <h2>Petunjuk</h2>
-        <h3>Mendatar</h3>
-        <ol id="cluesAcross"></ol>
-        <h3 style="margin-top:18px">Menurun</h3>
-        <ol id="cluesDown"></ol>
-      </aside>
+      <div class="tips">
+        Klik kotak → ketik huruf • Panah/Spasi: pindah & ganti arah • Backspace: hapus
+      </div>
     </section>
-  </div>
+  </main>
 
-  <!-- JS sama seperti sebelumnya -->
-  <script src="assets/js/crossword.js?v=1"></script>
+  <!-- ===== Hook minimal agar kompatibel dengan engine kamu ===== -->
+  <script>
+  // Contoh API minimal: panggil fungsi ini dari engine kamu setelah puzzle siap
+  // window.renderCrossword({size:15, blocks:[...], across:[{n, clue}], down:[{n, clue}]})
+  window.renderCrossword = function(model){
+    const g = document.getElementById('cwGrid');
+    const N = model.size;
+    g.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+    g.style.gridTemplateRows    = `repeat(${N}, 1fr)`;
+    g.innerHTML = '';
+    for (let i=0;i<N*N;i++){
+      const d = document.createElement('div');
+      d.className = 'cell' + (model.blocks?.includes(i) ? ' block':'');
+      d.dataset.i = i;
+      g.appendChild(d);
+    }
+    // isi daftar
+    const A = document.getElementById('listAcross');
+    const D = document.getElementById('listDown');
+    A.innerHTML = model.across.map(it=>`<li><b>${it.n}.</b> ${it.clue}</li>`).join('');
+    D.innerHTML = model.down  .map(it=>`<li><b>${it.n}.</b> ${it.clue}</li>`).join('');
+  };
+
+  // Label arah (opsional, toggle dari engine-mu)
+  window.setDirection = (isAcross=true)=>{
+    document.getElementById('dirLabel').textContent = 'Arah: ' + (isAcross?'Mendatar':'Menurun');
+  };
+
+  // Tombol (serahkan ke engine-mu)
+  document.getElementById('btnCheck').addEventListener('click', ()=> window.checkAnswers?.());
+  document.getElementById('btnReset').addEventListener('click', ()=> window.resetCrossword?.());
+  </script>
 </body>
 </html>
