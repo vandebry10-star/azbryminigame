@@ -1,324 +1,166 @@
-/* Azbry Crossword — smooth UX (mobile/desktop)
-   - highlight kata aktif
-   - kursor auto maju & skip blok
-   - sinkron ke clue
-   - spasi ganti arah; panah navigasi
-*/
-(() => {
-  // ====== DATA SAMPLE (bebas kamu ganti) ======
-  // 10x10 grid; "." = blok
-  const GRID_SIZE = 10;
-  const MASK = [
-    "...#......",
-    ".....#....",
-    "..#....#..",
-    "......#..#",
-    ".#....#...",
-    "....#.....",
-    "..#....#..",
-    ".#......#.",
-    "....#.....",
-    "......#..."
-  ];
-  // Clues & answers (HARUS uppercase tanpa spasi/aksen)
-  const ACROSS = [
-    { no: 1,  row:0, col:3, ans:"RUMAH", clue:"Tempat tinggal manusia" },
-    { no: 2,  row:1, col:0, ans:"MATAHARI", clue:"Sumber cahaya alami" },
-    { no: 3,  row:3, col:0, ans:"JALAN", clue:"Rute untuk kendaraan" },
-    { no: 4,  row:4, col:2, ans:"BUKU", clue:"Benda untuk membaca" },
-  ];
-  const DOWN = [
-    { no: 1,  row:0, col:3, ans:"MATA", clue:"Bagian tubuh untuk melihat" },
-    { no: 2,  row:0, col:5, ans:"PENA", clue:"Benda yang digunakan untuk menulis" },
-    { no: 3,  row:2, col:8, ans:"LAMPU", clue:"Sumber cahaya buatan" },
-    { no: 4,  row:1, col:1, ans:"TAMAN", clue:"Area hijau umum" },
-  ];
+// ================= CONFIG =====================
+const MASK = [
+  ".....XXX.....X..",
+  ".....X..X....X..",
+  "....XXX..XXXXX..",
+  ".X..X....X..X...",
+  ".....XXXXX.....X",
+  "....X...X...X...",
+  "..XXXXX.X.XXXXX.",
+  "....X...X...X...",
+  "X.....XXXXX.....",
+  "...X..X....X..X.",
+  "..XXXXX..XXX...."
+];
 
-  // ====== DOM ======
-  const $grid = document.getElementById('cwGrid');
-  const $dirLabel = document.getElementById('dirLabel');
-  const $btnCheck = document.getElementById('btnCheck');
-  const $btnReset = document.getElementById('btnReset');
-  const $listAcross = document.getElementById('listAcross');
-  const $listDown = document.getElementById('listDown');
+const ACROSS_ANS = [
+  {ans:"RUMAH", clue:"Tempat tinggal manusia"},
+  {ans:"SEWA", clue:"Disewa sementara"},
+  {ans:"ARENA", clue:"Tempat pertandingan"},
+  {ans:"IKLAN", clue:"Promosi komersial"},
+  {ans:"KOMPAS", clue:"Penunjuk arah di peta"},
+  {ans:"ASAL", clue:"Berasal"},
+  {ans:"UNDANG", clue:"Meminta hadir secara resmi"},
+  {ans:"DATA", clue:"Kumpulan fakta"},
+  {ans:"SEPEDA", clue:"Kendaraan beroda dua"},
+  {ans:"POTONG", clue:"Memotong tipis"}
+];
+const DOWN_ANS = [
+  {ans:"MATA", clue:"Bagian tubuh untuk melihat"},
+  {ans:"PENA", clue:"Benda untuk menulis"},
+  {ans:"SUARA", clue:"Bunyi; vokal"},
+  {ans:"TANAM", clue:"Menanam bibit"},
+  {ans:"INTI", clue:"Pusat; inti"},
+  {ans:"ALAMI", clue:"Berasal dari alam"},
+  {ans:"AKTIF", clue:"Banyak bergerak"},
+  {ans:"HOBI", clue:"Kegemaran"},
+  {ans:"RAMAH", clue:"Sikap bersahabat"},
+  {ans:"LIRIK", clue:"Kata-kata pada lagu"}
+];
+// =============================================
 
-  // ====== STATE ======
-  const CELLS = []; // array of {el,row,col,block,letter}
-  let dir = 'across'; // 'across' | 'down'
-  let cur = {row:0, col:0}; // posisi kursor
-  let wordCells = []; // daftar cell untuk kata aktif sekarang
-  const answers = new Map(); // key "r,c" -> char
+const H = MASK.length, W = MASK[0].length;
+const gridInfo = Array.from({length:H},(_,r)=>
+  Array.from({length:W},(_,c)=>({block:MASK[r][c]==='X',char:'',num:0}))
+);
 
-  // ====== BUILD GRID ======
-  function buildGrid(){
-    $grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
-    $grid.innerHTML = '';
-    CELLS.length = 0;
-
-    for(let r=0;r<GRID_SIZE;r++){
-      for(let c=0;c<GRID_SIZE;c++){
-        const ch = MASK[r].charAt(c);
-        const block = (ch === '#');
-        const el = document.createElement('div');
-        el.className = 'cell' + (block ? ' block' : '');
-        el.dataset.r = r; el.dataset.c = c;
-
-        if(!block){
-          el.tabIndex = 0;
-          el.addEventListener('click', () => {
-            setCursor(r,c,true);
-          });
-        }
-
-        $grid.appendChild(el);
-        CELLS.push({el, row:r, col:c, block, letter:''});
-      }
+// -------- find slots --------
+function findAcross(){
+  const s=[];
+  for(let r=0;r<H;r++){
+    let c=0;
+    while(c<W){
+      if(gridInfo[r][c].block){c++;continue;}
+      const start=(c===0||gridInfo[r][c-1].block);
+      if(start){
+        let len=0,k=c;
+        while(k<W&&!gridInfo[r][k].block){len++;k++;}
+        s.push({r,c,len});
+        c=k;
+      }else c++;
     }
   }
-
-  // ====== HELPERS ======
-  const idx = (r,c) => r*GRID_SIZE + c;
-  const inBoard = (r,c) => r>=0 && r<GRID_SIZE && c>=0 && c<GRID_SIZE;
-  function cell(r,c){ return inBoard(r,c) ? CELLS[idx(r,c)] : null; }
-
-  function setDir(d){
-    dir = d;
-    $dirLabel.textContent = `Arah: ${dir==='across'?'Mendatar':'Menurun'}`;
-    highlightWord();
-  }
-
-  function setCursor(r,c,keepDir=false){
-    const ce = cell(r,c);
-    if(!ce || ce.block) return;
-    cur.row=r; cur.col=c;
-    // jika datang dari klik blok atau cell tunggal, pilih arah yang paling masuk akal
-    if(!keepDir){
-      // pilih otomatis: cek ada huruf di kiri/atas untuk continuity
-      if(dir==='across'){
-        if(cell(r,c-1)?.block && cell(r,c+1)?.block) setDir('down');
-      }else{
-        if(cell(r-1,c)?.block && cell(r+1,c)?.block) setDir('across');
-      }
-    }
-    highlightWord();
-    focusCell();
-  }
-
-  function focusCell(){
-    document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));
-    cell(cur.row,cur.col)?.el.classList.add('active');
-  }
-
-  function getWordCells(r,c,d=dir){
-    const list=[];
-    // cari awal kata
-    if(d==='across'){
-      let cc=c; while(inBoard(r,cc-1) && !cell(r,cc-1).block) cc--;
-      while(inBoard(r,cc) && !cell(r,cc).block){ list.push(cell(r,cc)); cc++; }
-    }else{
-      let rr=r; while(inBoard(rr-1,c) && !cell(rr-1,c).block) rr--;
-      while(inBoard(rr,c) && !cell(rr,c).block){ list.push(cell(rr,c)); rr++; }
-    }
-    return list;
-  }
-
-  function highlightWord(){
-    document.querySelectorAll('.cell.word').forEach(e=>e.classList.remove('word'));
-    wordCells = getWordCells(cur.row,cur.col,dir);
-    wordCells.forEach(c=>c.el.classList.add('word'));
-    focusCell();
-    highlightClue();
-  }
-
-  function moveNext(){
-    const i = wordCells.findIndex(c=>c.row===cur.row && c.col===cur.col);
-    if(i>=0 && i<wordCells.length-1){
-      setCursor(wordCells[i+1].row, wordCells[i+1].col, true);
-    }else{
-      // di ujung kata, tidak pindah
-      focusCell();
+  return s;
+}
+function findDown(){
+  const s=[];
+  for(let c=0;c<W;c++){
+    let r=0;
+    while(r<H){
+      if(gridInfo[r][c].block){r++;continue;}
+      const start=(r===0||gridInfo[r-1][c].block);
+      if(start){
+        let len=0,k=r;
+        while(k<H&&!gridInfo[k][c].block){len++;k++;}
+        s.push({r,c,len});
+        r=k;
+      }else r++;
     }
   }
-  function movePrev(){
-    const i = wordCells.findIndex(c=>c.row===cur.row && c.col===cur.col);
-    if(i>0){
-      setCursor(wordCells[i-1].row, wordCells[i-1].col, true);
-    }else{
-      focusCell();
+  return s;
+}
+
+let A=findAcross(), D=findDown();
+// === prune 10 slot masing2 ===
+A=A.slice(0,10).map((x,i)=>({...x,no:i+1,type:'A'}));
+D=D.slice(0,10).map((x,i)=>({...x,no:i+1,type:'D'}));
+const used=new Set();
+for(const s of [...A,...D]){
+  if(s.type==='A')for(let k=0;k<s.len;k++)used.add(`${s.r},${s.c+k}`);
+  else for(let k=0;k<s.len;k++)used.add(`${s.r+k},${s.c}`);
+}
+for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+  if(!used.has(`${r},${c}`))gridInfo[r][c].block=true;
+}
+const acrossSlots=A, downSlots=D;
+
+// ---------- build board ----------
+const $g=document.getElementById('grid');
+$g.style.gridTemplateColumns=`repeat(${W},1fr)`;
+for(let r=0;r<H;r++){
+  for(let c=0;c<W;c++){
+    const d=gridInfo[r][c];
+    const el=document.createElement('div');
+    el.className='cell'+(d.block?' block':'');
+    el.dataset.r=r;el.dataset.c=c;
+    $g.appendChild(el);
+  }
+}
+for(const s of acrossSlots){
+  const el=$g.children[s.r*W+s.c];
+  const n=document.createElement('div');n.className='num';n.textContent=s.no;
+  el.appendChild(n);
+}
+for(const s of downSlots){
+  const el=$g.children[s.r*W+s.c];
+  if(!el.querySelector('.num')){
+    const n=document.createElement('div');n.className='num';n.textContent=s.no;
+    el.appendChild(n);
+  }
+}
+
+// render clue lists
+const Aol=document.getElementById('across'), Dol=document.getElementById('down');
+ACROSS_ANS.forEach(x=>{const li=document.createElement('li');li.textContent=x.clue;Aol.appendChild(li);});
+DOWN_ANS.forEach(x=>{const li=document.createElement('li');li.textContent=x.clue;Dol.appendChild(li);});
+
+// -------- interaksi --------
+let dir='A';let cur={r:acrossSlots[0].r,c:acrossSlots[0].c};
+const $dir=document.getElementById('dir'),$hid=document.getElementById('hid');
+function setDir(d){dir=d;$dir.textContent=`Arah: ${d==='A'?'Mendatar':'Menurun'}`;}
+setDir('A');
+function cellAt(r,c){return $g.children[r*W+c];}
+function isLetter(r,c){return !gridInfo[r][c].block;}
+function focusCell(r,c){
+  if(!isLetter(r,c))return;
+  document.querySelectorAll('.cell.active').forEach(e=>e.classList.remove('active'));
+  cellAt(r,c).classList.add('active');cur={r,c};$hid.focus();
+}
+focusCell(cur.r,cur.c);
+function step(r,c,d){let rr=r,cc=c;do{rr+=(dir==='D'?d:0);cc+=(dir==='A'?d:0);}while(rr>=0&&rr<H&&cc>=0&&cc<W&&!isLetter(rr,cc));if(rr<0||rr>=H||cc<0||cc>=W)return null;return{r:rr,c:cc};}
+function put(ch){if(!isLetter(cur.r,cur.c))return;cellAt(cur.r,cur.c).textContent=ch;const nx=step(cur.r,cur.c,1);if(nx)focusCell(nx.r,nx.c);}
+function back(){if(!isLetter(cur.r,cur.c))return;if(!cellAt(cur.r,cur.c).textContent){const pv=step(cur.r,cur.c,-1);if(pv)focusCell(pv.r,pv.c);}cellAt(cur.r,cur.c).textContent='';}
+document.addEventListener('keydown',e=>{if(e.key===' '){setDir(dir==='A'?'D':'A');e.preventDefault();return;}if(e.key==='Backspace'){back();e.preventDefault();return;}const k=e.key.toUpperCase();if(k>='A'&&k<='Z')put(k);});
+$g.addEventListener('click',e=>{const t=e.target.closest('.cell');if(!t)return;const r=+t.dataset.r,c=+t.dataset.c;if(!isLetter(r,c))return;focusCell(r,c);});
+$hid.addEventListener('input',e=>{const v=e.target.value.slice(-1).toUpperCase();if(v>='A'&&v<='Z')put(v);e.target.value='';});
+$hid.addEventListener('keydown',e=>{if(e.key==='Backspace'){back();e.preventDefault();}});
+
+// --- check & reset ---
+function readAcross(s){let str='';for(let i=0;i<s.len;i++)str+=(cellAt(s.r,s.c+i).textContent||'');return str;}
+function readDown(s){let str='';for(let i=0;i<s.len;i++)str+=(cellAt(s.r+i,s.c).textContent||'');return str;}
+document.getElementById('btnCheck').onclick=()=>{
+  let ok=true;
+  for(let i=0;i<acrossSlots.length&&i<ACROSS_ANS.length;i++)
+    if(readAcross(acrossSlots[i])!==ACROSS_ANS[i].ans){ok=false;break;}
+  if(ok)for(let i=0;i<downSlots.length&&i<DOWN_ANS.length;i++)
+    if(readDown(downSlots[i])!==DOWN_ANS[i].ans){ok=false;break;}
+  alert(ok?'Mantap! Semua benar 🎉':'Masih ada yang salah 😅');
+};
+document.getElementById('btnReset').onclick=()=>{
+  [...$g.children].forEach(el=>{
+    if(!el.classList.contains('block')){
+      const n=el.querySelector('.num');el.textContent='';if(n)el.appendChild(n);
     }
-  }
-
-  function putChar(ch){
-    ch = ch.toUpperCase();
-    const ce = cell(cur.row,cur.col);
-    if(!ce || ce.block) return;
-    ce.letter = ch;
-    ce.el.textContent = ch;
-    answers.set(`${ce.row},${ce.col}`, ch);
-    moveNext();
-  }
-
-  function backspace(){
-    const ce = cell(cur.row,cur.col);
-    if(!ce || ce.block) return;
-    if(ce.letter){
-      ce.letter = '';
-      ce.el.textContent = '';
-      answers.delete(`${ce.row},${ce.col}`);
-    }else{
-      movePrev();
-      const ce2 = cell(cur.row,cur.col);
-      if(ce2 && ce2.letter){
-        ce2.letter='';
-        ce2.el.textContent='';
-        answers.delete(`${ce2.row},${ce2.col}`);
-      }
-    }
-  }
-
-  // ====== CLUES ======
-  function renderClues(){
-    $listAcross.innerHTML = '';
-    ACROSS.forEach((cl,i)=>{
-      const li=document.createElement('li');
-      li.innerHTML = `<strong>${cl.no}.</strong> ${cl.clue}`;
-      li.dataset.r = cl.row; li.dataset.c = cl.col; li.dataset.d='across';
-      li.addEventListener('click', ()=>{
-        setDir('across');
-        setCursor(cl.row, cl.col, true);
-      });
-      $listAcross.appendChild(li);
-    });
-
-    $listDown.innerHTML = '';
-    DOWN.forEach((cl,i)=>{
-      const li=document.createElement('li');
-      li.innerHTML = `<strong>${cl.no}.</strong> ${cl.clue}`;
-      li.dataset.r = cl.row; li.dataset.c = cl.col; li.dataset.d='down';
-      li.addEventListener('click', ()=>{
-        setDir('down');
-        setCursor(cl.row, cl.col, true);
-      });
-      $listDown.appendChild(li);
-    });
-  }
-
-  function sameRun(a,b){
-    return a && b && a.row===b.row && a.col===b.col;
-  }
-  function highlightClue(){
-    document.querySelectorAll('#listAcross li.active, #listDown li.active')
-      .forEach(li=>li.classList.remove('active'));
-
-    const head = wordCells[0];
-    if(!head) return;
-
-    let found = [...$listAcross.children].find(li =>
-      Number(li.dataset.r)===head.row &&
-      Number(li.dataset.c)===head.col &&
-      li.dataset.d==='across'
-    );
-    if(!found){
-      found = [...$listDown.children].find(li =>
-        Number(li.dataset.r)===head.row &&
-        Number(li.dataset.c)===head.col &&
-        li.dataset.d==='down'
-      );
-    }
-    found && found.classList.add('active');
-  }
-
-  // ====== CHECK & RESET ======
-  function checkAll(){
-    // validasi dari daftar ACROSS & DOWN
-    let ok = true;
-
-    function checkEntry(list, dkey){
-      for(const cl of list){
-        const arr = getWordFrom(cl.row, cl.col, dkey);
-        const got = arr.map(c=>c.letter||'_').join('');
-        if(got !== cl.ans){
-          ok = false;
-          // highlight merah sementara
-          arr.forEach(c=>{
-            c.el.classList.add('wrong');
-            setTimeout(()=>c.el.classList.remove('wrong'), 500);
-          });
-        }
-      }
-    }
-    checkEntry(ACROSS,'across');
-    checkEntry(DOWN,'down');
-
-    if(ok){
-      flashOK();
-    }
-  }
-
-  function flashOK(){
-    wordCells.forEach(c=>c.el.classList.add('ok'));
-    setTimeout(()=>wordCells.forEach(c=>c.el.classList.remove('ok')), 600);
-  }
-
-  function getWordFrom(r,c,d){
-    // seperti getWordCells tapi titik awal spesifik
-    const list=[];
-    if(d==='across'){
-      let cc=c; while(inBoard(r,cc-1) && !cell(r,cc-1).block) cc--;
-      while(inBoard(r,cc) && !cell(r,cc).block){ list.push(cell(r,cc)); cc++; }
-    }else{
-      let rr=r; while(inBoard(rr-1,c) && !cell(rr-1,c).block) rr--;
-      while(inBoard(rr,c) && !cell(rr,c).block){ list.push(cell(rr,c)); rr++; }
-    }
-    return list;
-  }
-
-  function resetBoard(){
-    CELLS.forEach(c=>{
-      if(!c.block){
-        c.letter = '';
-        c.el.textContent = '';
-      }
-    });
-    answers.clear();
-    setDir('across');
-    // cari cell playable pertama
-    outer: for(let r=0;r<GRID_SIZE;r++){
-      for(let c=0;c<GRID_SIZE;c++){
-        if(!cell(r,c).block){ setCursor(r,c,true); break outer; }
-      }
-    }
-  }
-
-  // ====== KEYS ======
-  function onKey(e){
-    const k = e.key;
-    if(k === ' '){
-      e.preventDefault();
-      setDir(dir==='across'?'down':'across');
-      return;
-    }
-    if(k === 'ArrowLeft'){ e.preventDefault(); setCursor(cur.row, Math.max(0,cur.col-1), true); return; }
-    if(k === 'ArrowRight'){ e.preventDefault(); setCursor(cur.row, Math.min(GRID_SIZE-1,cur.col+1), true); return; }
-    if(k === 'ArrowUp'){ e.preventDefault(); setCursor(Math.max(0,cur.row-1), cur.col, true); return; }
-    if(k === 'ArrowDown'){ e.preventDefault(); setCursor(Math.min(GRID_SIZE-1,cur.row+1), cur.col, true); return; }
-    if(k === 'Backspace'){ e.preventDefault(); backspace(); return; }
-
-    if(k.length === 1){
-      const ch = k.toUpperCase();
-      if(ch >= 'A' && ch <= 'Z'){
-        e.preventDefault();
-        putChar(ch);
-      }
-    }
-  }
-
-  // ====== INIT ======
-  buildGrid();
-  renderClues();
-  resetBoard();
-
-  document.addEventListener('keydown', onKey);
-  $btnCheck?.addEventListener('click', checkAll);
-  $btnReset?.addEventListener('click', resetBoard);
-})();
+  });
+  setDir('A');focusCell(acrossSlots[0].r,acrossSlots[0].c);
+};
