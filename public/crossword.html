@@ -2,95 +2,89 @@
 <html lang="id">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Teka-Teki Silang — Azbry</title>
 
-  <!-- Azbry global theme -->
-  <link rel="stylesheet" href="assets/css/azbry.css" />
+  <link rel="stylesheet" href="assets/css/azbry.css?v=24" />
 
   <style>
-    /* --- papan & sel --- */
-    .wrap{max-width:980px;margin:0 auto;padding:16px}
-    .headline{color:var(--azbry-accent);font-weight:900;font-size:clamp(22px,5vw,36px);margin:6px 0 14px}
-
-    .board{
-      position:relative;
-      width:100%;
-      max-width:780px;
-      margin:10px auto 14px;
-      aspect-ratio:1/1;
-      display:grid;
-      gap:6px;
-      background:var(--panel-bg-2);
-      border:1px solid var(--panel-bd);
-      border-radius:16px;
-      padding:12px;
+    :root{
+      --cell: 42px;               /* ukuran kotak */
+      --gap: 6px;
+      --bd: rgba(255,255,255,.08);
+      --bg1: rgba(255,255,255,.03);
+      --ink: #e8f0fb;
+      --accent: #b8ff9a;
     }
+    body{max-width:980px;margin:0 auto;padding:16px;color:var(--ink);}
+
+    .title{font-weight:900;font-size:clamp(22px,5.2vw,36px);
+      color:var(--accent);text-shadow:0 0 16px rgba(184,255,154,.28);margin:6px 0 14px}
+
+    .wrap{display:grid;gap:14px}
+    .board-card{
+      border:1px solid var(--bd); border-radius:16px; padding:14px;
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      box-shadow:0 10px 36px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    /* GRID */
+    #grid{display:grid;grid-template-columns:repeat(10, var(--cell));
+      grid-auto-rows:var(--cell); gap:var(--gap); justify-content:center}
     .cell{
-      position:relative;
-      display:grid;place-items:center;
-      border-radius:6px;
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      color:#eaf1e9;
-      font-weight:900;
-      font-size:clamp(16px,2.8vw,24px);
-      user-select:none;
+      position:relative; border-radius:10px; display:grid; place-items:center;
+      font-weight:900; font-size:18px; letter-spacing:.5px;
+      color:#101; background:#dfe8f2; user-select:none;
     }
-    .cell.block{
-      background:#111;border-color:#222;
+    .blk{background:#0f141a;border:1px solid var(--bd)}
+    .cell input{
+      width:100%;height:100%;border:0;background:transparent;outline:0;
+      text-align:center;font:inherit;color:#101;caret-color:#69f;
     }
-    .cell .num{
-      position:absolute;left:6px;top:4px;
-      font-size:11px;opacity:.9;font-weight:800;color:#cfd8e3;
-    }
-    .cell.focus{outline:3px solid var(--azbry-accent);outline-offset:-3px}
-    .cell.hlite{box-shadow:inset 0 0 0 2px rgba(184,255,154,.35)}
+    .cell .num{position:absolute;left:6px;top:4px;font-size:11px;color:#334;opacity:.9}
 
-    /* toolbar */
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:8px 0 16px}
-    .btn{padding:10px 14px;border-radius:12px;font-weight:800;border:1px solid var(--panel-bd);background:var(--panel-bg-1);color:#eaf1e9}
-    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:#0b0d10;border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.25)}
+    /* Panel kontrol */
+    .controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid var(--bd);
+         background:var(--bg1);font-weight:800;color:var(--ink)}
+    .btn.accent{background:linear-gradient(180deg,#b8ff9a,#a3f07f);color:#101;border-color:transparent}
 
-    /* panel clue */
+    /* Clues */
     .clues{display:grid;gap:12px}
-    .panel{border:1px solid var(--panel-bd);border-radius:16px;background:var(--panel-bg-2);padding:14px}
-    .panel h3{margin:0 0 8px}
-    .panel ol{margin:0;padding-left:20px;display:grid;gap:6px}
-    .hint{opacity:.8;margin-top:8px}
+    .pane{border:1px solid var(--bd);border-radius:14px;padding:12px;background:var(--bg1)}
+    .pane h3{margin:0 0 8px}
+    ol{margin:0;padding-left:18px;display:grid;gap:6px}
+    li{line-height:1.35}
+
+    /* Responsive sedikit mengecil kotak */
+    @media (max-width:420px){ :root{ --cell: 36px; --gap: 5px; } }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <h1 class="headline">Teka-Teki Silang — Azbry</h1>
+  <h1 class="title">Teka-Teki Silang — Azbry</h1>
 
-    <!-- papan -->
-    <div id="board" class="board" aria-label="Papan TTS"></div>
-
-    <!-- keyboard trigger (untuk HP) -->
-    <input id="softkey" inputmode="latin" autocomplete="off" autocapitalize="characters"
-           style="position:absolute;opacity:0;pointer-events:none;height:0;width:0" />
-
-    <!-- kontrol -->
-    <div class="toolbar">
-      <button id="btnDir" class="btn">Arah: <b id="dirLabel">Mendatar</b></button>
-      <button id="btnCheck" class="btn accent">Cek Jawaban</button>
-      <button id="btnReset" class="btn">Reset</button>
+  <section class="wrap">
+    <div class="board-card">
+      <div id="grid" aria-label="papan tts"></div>
+      <div class="controls" style="margin-top:12px">
+        <button id="btnDir" class="btn">Arah: <b id="dirLabel">Mendatar</b></button>
+        <button id="btnCheck" class="btn accent">Cek Jawaban</button>
+        <button id="btnReset" class="btn">Reset</button>
+      </div>
     </div>
 
-    <!-- clues -->
-    <section class="clues">
-      <div class="panel">
+    <div class="clues">
+      <div class="pane">
         <h3>Mendatar</h3>
         <ol id="acrossList"></ol>
       </div>
-      <div class="panel">
+      <div class="pane">
         <h3>Menurun</h3>
         <ol id="downList"></ol>
       </div>
-      <div class="hint">Klik kotak → ketik huruf • Spasi: ganti arah • Backspace: hapus</div>
-    </section>
-  </main>
+      <div style="opacity:.8">Klik kotak → ketik huruf • Spasi: ganti arah • Backspace: hapus</div>
+    </div>
+  </section>
 
   <script src="assets/js/crossword.js" defer></script>
 </body>
