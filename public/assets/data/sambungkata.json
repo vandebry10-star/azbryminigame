@@ -1,0 +1,27 @@
+[
+  {
+    "q": "Sambung kata: 'Rumah __'",
+    "a": ["Sakit", "Makan", "Tangga", "Adat", "Api"],
+    "hint": "Tempat atau benda yang biasa disebut setelah 'Rumah'"
+  },
+  {
+    "q": "Sambung kata: 'Buku __'",
+    "a": ["Tulis", "Gambar", "Harian", "Cerita"],
+    "hint": "Biasanya digunakan di sekolah"
+  },
+  {
+    "q": "Sambung kata: 'Kartu __'",
+    "a": ["Identitas", "Nama", "Undangan", "Kredit", "ATM"],
+    "hint": "Bentuknya persegi panjang"
+  },
+  {
+    "q": "Sambung kata: 'Air __'",
+    "a": ["Putih", "Terjun", "Mata", "Hujan"],
+    "hint": "Cairan penting untuk hidup"
+  },
+  {
+    "q": "Sambung kata: 'Anak __'",
+    "a": ["Kucing", "Sekolah", "Tangga", "Ayam"],
+    "hint": "Kata depan untuk menyebut sesuatu yang kecil"
+  }
+]
