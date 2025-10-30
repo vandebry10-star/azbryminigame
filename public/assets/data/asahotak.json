@@ -1,0 +1,27 @@
+[
+  {
+    "q": "5 + 7 = ?",
+    "a": ["12"],
+    "hint": "Penjumlahan dasar"
+  },
+  {
+    "q": "Benda apakah yang punya jarum tapi bukan alat jahit?",
+    "a": ["Jam", "Arloji"],
+    "hint": "Selalu berdetak"
+  },
+  {
+    "q": "Jika kamu memecahku, aku berhenti bekerja. Apakah aku?",
+    "a": ["Telur", "Egg"],
+    "hint": "Rapuh dan bisa dimasak"
+  },
+  {
+    "q": "Aku bisa terbang tanpa sayap dan menangis tanpa mata. Apakah aku?",
+    "a": ["Awan"],
+    "hint": "Sering muncul di langit"
+  },
+  {
+    "q": "Apa yang memiliki kepala dan ekor tetapi tidak memiliki tubuh?",
+    "a": ["Koin", "Uang logam"],
+    "hint": "Dua sisi"
+  }
+]
