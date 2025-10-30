@@ -1,4 +1,4 @@
-/* GameTebak Engine (Azbry) */
+/* GameTebak Engine (Azbry) + Splash Screen */
 (() => {
   const modes = [
     { id: 'tebakkata', name: 'Tebak Kata', data: 'assets/data/tebakkata.json' },
@@ -27,6 +27,11 @@
     best: document.getElementById('best'),
     timer: document.getElementById('timer'),
   };
+
+  // Splash elements
+  const splash = document.getElementById('splash');
+  const splashPlay = document.getElementById('splashPlay');
+  const splashHow = document.getElementById('splashHow');
 
   let state = {
     mode: null,
@@ -91,9 +96,9 @@
       for (let j=1;j<=n;j++){
         const cost = a[i-1]===b[j-1]?0:1;
         dp[i][j] = Math.min(
-          dp[i-1][j]+1,        // deletion
-          dp[i][j-1]+1,        // insertion
-          dp[i-1][j-1]+cost    // substitution
+          dp[i-1][j]+1,
+          dp[i][j-1]+1,
+          dp[i-1][j-1]+cost
         );
       }
     }
@@ -111,6 +116,18 @@
     return false;
   }
 
+  // Splash helpers
+  function showSplash() {
+    if (!splash) return;
+    splash.classList.remove('hidden');
+    splash.classList.add('visible');
+  }
+  function hideSplash() {
+    if (!splash) return;
+    splash.classList.remove('visible');
+    splash.classList.add('hidden');
+  }
+
   // Data loading
   async function loadMode(mode) {
     state.mode = mode;
@@ -121,7 +138,6 @@
       const res = await fetch(mode.data, { cache: 'no-store' });
       if (!res.ok) throw new Error(res.statusText);
       const raw = await res.json();
-      // Normalize to {q, a[], hint}
       state.data = raw.map(item => {
         if (typeof item === 'string') return { q: item, a: [item], hint: '' };
         let q = item.q || item.question || item.pertanyaan || '';
@@ -186,15 +202,31 @@
     });
   }
 
+  // Splash wiring
+  if (splash && splashPlay) {
+    splashPlay.addEventListener('click', () => {
+      hideSplash();
+      if (!state.mode) loadMode(modes[0]);
+      el.btnStart.focus();
+    });
+  }
+  if (splash && splashHow) {
+    splashHow.addEventListener('click', () => {
+      log('Cara main: Pilih mode ➜ Tekan Mulai ➜ Ketik jawaban ➜ Enter atau tombol Jawab. Tombol Hint/Skip tersedia.');
+    });
+  }
+  window.addEventListener('keydown', (e) => {
+    if (!splash) return;
+    const visible = splash.classList.contains('visible');
+    if (!visible) return;
+    if (e.key.toLowerCase() === 'enter') splashPlay?.click();
+    else if (e.key.toLowerCase() === 'h') splashHow?.click();
+  });
+
+  // Buttons
   el.btnStart.addEventListener('click', () => {
-    if (!state.mode) {
-      log('Pilih mode dulu.');
-      return;
-    }
-    if (!state.data.length) {
-      log('Data belum termuat.');
-      return;
-    }
+    if (!state.mode) return log('Pilih mode dulu.');
+    if (!state.data.length) return log('Data belum termuat.');
     state.score = 0;
     el.score.textContent = '0';
     setButtonsPlaying(true);
@@ -204,10 +236,7 @@
     log('Mulai!');
   });
 
-  el.btnNext.addEventListener('click', () => {
-    nextQuestion();
-  });
-
+  el.btnNext.addEventListener('click', () => nextQuestion());
   el.btnSkip.addEventListener('click', () => {
     const cur = state.data[state.idx];
     if (cur) log(`Lewat. Jawaban: ${cur.a[0]}`);
@@ -216,9 +245,8 @@
 
   el.btnHint.addEventListener('click', () => {
     const cur = state.data[state.idx];
-    if (cur?.hint) {
-      log(`Hint: ${cur.hint}`);
-    } else {
+    if (cur?.hint) log(`Hint: ${cur.hint}`);
+    else {
       const ans = cur?.a?.[0] || '';
       log(`Hint: ${ans.slice(0,1)}${'*'.repeat(Math.max(0, ans.length-2))}${ans.slice(-1)}`);
     }
@@ -235,15 +263,11 @@
       log(`Benar! Jawaban: ${cur.a[0]}`);
       commitBest();
       nextQuestion();
-    } else {
-      log(`Salah. Coba lagi!`);
-    }
+    } else log(`Salah. Coba lagi!`);
   }
 
   el.btnAnswer.addEventListener('click', submitAnswer);
-  el.input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') submitAnswer();
-  });
+  el.input.addEventListener('keydown', e => e.key === 'Enter' && submitAnswer());
 
   el.btnReset.addEventListener('click', () => {
     stopTimer();
@@ -260,6 +284,6 @@
   });
 
   buildModeButtons();
-  // Auto-load first mode so user bisa langsung Mulai
-  loadMode(modes[0]);
+  // Show splash on load
+  showSplash();
 })();
