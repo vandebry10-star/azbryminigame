@@ -74,13 +74,13 @@ small.muted{color:var(--az-muted)}
   <section class="grid">
     <article class="card">
       <h3>💚 Tes Persentase Jodoh</h3>
-      <p>Masukkan dua nama. Hasil persentase bersifat fun & deterministik (nama yang sama → hasil sama).</p>
+      <p>Masukkan dua nama. Hasil persentase bersifat fun & deterministik.</p>
       <button class="btn" data-open="panel-jodoh">Mulai Tes</button>
     </article>
 
     <article class="card">
       <h3>🫶 Kecocokan Teman</h3>
-      <p>Lihat seberapa klop kalian dalam hal gaya ngobrol & kebiasaan.</p>
+      <p>Lihat seberapa klop kalian dalam gaya ngobrol & kebiasaan.</p>
       <button class="btn" data-open="panel-teman">Mulai Tes</button>
     </article>
 
@@ -92,8 +92,21 @@ small.muted{color:var(--az-muted)}
 
     <article class="card">
       <h3>🍜 Wibu Level Check</h3>
-      <p>Cek level per-wibuan kamu dari daftar judul populer. Bercanda doang ya!</p>
+      <p>Cek level per-wibuan kamu dari daftar judul populer (for fun).</p>
       <button class="btn" data-open="panel-wibu">Mulai Tes</button>
+    </article>
+
+    <!-- ⬇️ Tambahan dari zip: jadikan game web -->
+    <article class="card">
+      <h3>🔮 Cek Khodam (Fun)</h3>
+      <p>Masukkan nama kamu. Hasil nama & “arti” khodam dibuat deterministik.</p>
+      <button class="btn" data-open="panel-khodam">Mulai Tes</button>
+    </article>
+
+    <article class="card">
+      <h3>💞 Cek Pacar (Fun)</h3>
+      <p>Masukkan dua nama untuk lihat status “jadian / HTS / bestie only”.</p>
+      <button class="btn" data-open="panel-cekpacar">Mulai Tes</button>
     </article>
   </section>
 
@@ -217,6 +230,42 @@ small.muted{color:var(--az-muted)}
     </div>
     <div id="out-wibu" class="result" hidden></div>
   </section>
+
+  <!-- 🔮 KHODAM (baru) -->
+  <section id="panel-khodam" class="panel" aria-hidden="true">
+    <h2>🔮 Cek Khodam (Fun)</h2>
+    <div class="row">
+      <div style="grid-column:1/-1">
+        <label>Nama</label>
+        <input id="khodam-name" type="text" placeholder="cth: Febry" />
+      </div>
+    </div>
+    <div class="control">
+      <button class="btn" id="btn-khodam">Cek</button>
+      <button class="btn btn-ghost" data-close>↩ Kembali</button>
+    </div>
+    <div id="out-khodam" class="result" hidden>
+      <strong id="khodam-title">Hasil:</strong>
+      <p id="khodam-mean" style="margin:.6rem 0 0"></p>
+    </div>
+  </section>
+
+  <!-- 💞 CEK PACAR (baru) -->
+  <section id="panel-cekpacar" class="panel" aria-hidden="true">
+    <h2>💞 Cek Pacar (Fun)</h2>
+    <div class="row">
+      <div><label>Nama 1</label><input id="cp-a" type="text" placeholder="cth: Dita" /></div>
+      <div><label>Nama 2</label><input id="cp-b" type="text" placeholder="cth: Raka" /></div>
+    </div>
+    <div class="control">
+      <button class="btn" id="btn-cekpacar">Cek Status</button>
+      <button class="btn btn-ghost" data-close>↩ Kembali</button>
+    </div>
+    <div id="out-cekpacar" class="result" hidden>
+      <strong id="cp-status">Hasil:</strong>
+      <p id="cp-msg" style="margin:.6rem 0 0"></p>
+    </div>
+  </section>
 </div>
 
 <!-- Footer Azbry (otomatis, sesuai kebijakan kamu) -->
@@ -273,14 +322,13 @@ document.getElementById('btn-jodoh').onclick = ()=>{
   out.hidden=false;
 };
 
-/* ===== Teman: mirip jodoh tapi dengan bumbu kecil ===== */
+/* ===== Teman ===== */
 document.getElementById('btn-friend').onclick = ()=>{
   const a = document.getElementById('f-a').value.trim();
   const b = document.getElementById('f-b').value.trim();
   const out = document.getElementById('out-friend');
   if(!a || !b){ out.hidden=true; return; }
   let pct = pctFromNames(a,b);
-  // bonus kecil kalau huruf awal sama
   if(a[0] && b[0] && a[0].toLowerCase()===b[0].toLowerCase()) pct = Math.min(100, pct+7);
   document.getElementById('friend-bar').style.width = pct + '%';
   let msg='Teman ngobrol asik saat minum es teh.';
@@ -292,13 +340,13 @@ document.getElementById('btn-friend').onclick = ()=>{
   out.hidden=false;
 };
 
-/* ===== Kepribadian fun (5 item) ===== */
+/* ===== Kepribadian fun ===== */
 document.getElementById('form-psik').addEventListener('submit', e=>{
   e.preventDefault();
   const v = n => Number((new FormData(e.target)).get(n)||0);
   const q1=v('q1'), q2=v('q2'), q3=v('q3'), q4=v('q4'), q5=v('q5');
-  const E = q1;                 // sosialis
-  const T = q2;                 // logika
+  const E = q1;
+  const T = q2;
   const J = q3>=4 ? 'Planner' : (q5>=4 ? 'Spontan' : 'Seimbang');
 
   const EI = E>=4 ? 'Ekstrovert' : (E<=2 ? 'Introvert' : 'Ambivert');
@@ -326,5 +374,8 @@ document.getElementById('btn-wibu').onclick = ()=>{
   out.hidden=false;
 };
 </script>
+
+<!-- 🔌 Tambahan game dari zip (versi browser) -->
+<script src="assets/js/tests-extra.js"></script>
 </body>
-</html>
+        </html>
