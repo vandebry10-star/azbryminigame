@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GameTebak • Azbry</title>
+
+  <!-- Tema global Azbry -->
+  <link rel="stylesheet" href="/assets/azbry.css">
+</head>
+<body>
+  <main class="container">
+    <header class="top-header">
+      <div class="title">
+        <h1>GameTebak</h1>
+        <div>
+          <span class="tag">Azbry-MD</span>
+          <span class="tag">Have Fun!</span>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <div class="mode-picker" id="modePicker">
+        <!-- Tombol mode akan muncul dari JS -->
+      </div>
+
+      <div class="board-wrap">
+        <div class="board" style="display:flex;align-items:center;justify-content:center;">
+          <div style="padding:16px;text-align:center;">
+            <h3 id="questionTitle" style="margin:0 0 8px;">Pilih mode, lalu tekan Mulai</h3>
+            <p id="questionText" style="opacity:.85;margin:0;"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <button class="btn accent" id="btnStart">Mulai</button>
+          <button class="btn" id="btnNext" disabled>Next</button>
+          <button class="btn" id="btnHint" disabled>Hint</button>
+          <button class="btn" id="btnSkip" disabled>Skip</button>
+          <button class="btn dark" id="btnReset">Reset</button>
+          <div style="margin-left:auto;font-weight:800;">
+            Skor: <span id="score">0</span> &nbsp;•&nbsp; Best: <span id="best">0</span> &nbsp;•&nbsp; Timer: <span id="timer">00:00</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <input id="answerInput" type="text" placeholder="Jawaban kamu..." style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#e8f0fb;outline:none;">
+          <button class="btn accent" id="btnAnswer" disabled>Jawab</button>
+        </div>
+
+        <div class="move-log">
+          <h4>Log</h4>
+          <pre id="log" style="max-height:200px;overflow:auto;"></pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="license">
+      <div>© <span id="year"></span> FebryWesker — Azbry-MD</div>
+      <a class="cta" href="/" rel="home">Kembali ke Home</a>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+  <script src="assets/js/gametebak.js" defer></script>
+</body>
+</html>
