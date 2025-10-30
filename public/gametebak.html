@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GameTebak • Azbry</title>
+  <title>Azbry Minigame • GameTebak</title>
+  <meta name="theme-color" content="#0b0d10" />
 
-  <!-- Tema global Azbry -->
+  <!-- Tema global Azbry (path final) -->
   <link rel="stylesheet" href="/assets/css/azbry.css">
 </head>
 <body>
@@ -14,7 +15,7 @@
   <div id="splash" class="splash hidden" role="dialog" aria-modal="true">
     <div class="splash-card">
       <h1 class="splash-title">GameTebak</h1>
-      <p class="splash-sub">Collection by <strong>FebryWesker</strong></p>
+      <p class="splash-sub">Mini game collection by <strong>FebryWesker</strong> • Azbry-MD</p>
 
       <div class="splash-actions">
         <button id="splashPlay" class="btn accent splash-play">Play Game</button>
@@ -33,14 +34,15 @@
         <h1>GameTebak</h1>
         <div>
           <span class="tag">Azbry</span>
-          <span class="tag">Multi-Device</span>
+          <span class="tag">Neon Dark</span>
+          <span class="tag">Azbry Minigame</span>
         </div>
       </div>
     </header>
 
     <section>
       <div class="mode-picker" id="modePicker">
-        <!-- Tombol mode akan muncul dari JS -->
+        <!-- Tombol mode muncul dari JS -->
       </div>
 
       <div class="board-wrap">
@@ -73,13 +75,14 @@
 
         <div class="move-log">
           <h4>Log</h4>
-          <pre id="log" style="max-height:200px;overflow:auto;"></pre>
+          <pre id="log" style="max-height:220px;overflow:auto;"></pre>
         </div>
       </div>
     </section>
 
+    <!-- License & Portfolio (default Azbry) -->
     <div class="license">
-      <div>© <span id="year"></span> FebryWesker — Azbry-MD</div>
+      <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>
       <a class="cta" href="/" rel="home">Kembali ke Home</a>
     </div>
   </main>
