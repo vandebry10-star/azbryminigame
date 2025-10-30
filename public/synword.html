@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Azbry SynWord — Tebak Sinonim</title>
+  <link rel="stylesheet" href="assets/css/azbry.css?v=24"/>
+  <style>
+    .wrap{max-width:720px;margin:0 auto}
+    .topbar{display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px}
+    .title{margin:0;color:var(--azbry-accent);font-weight:900;letter-spacing:.3px}
+    .panel{border:1px solid var(--panel-bd);background:var(--panel-bg-2);border-radius:16px;padding:12px}
+    .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .inp{flex:1;min-width:180px;padding:11px 12px;border-radius:12px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);color:#eaf1e9;font-weight:800}
+    .btn{padding:11px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#eaf1e9;font-weight:800;cursor:pointer}
+    .btn.accent{background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));color:var(--azbry-ink);border-color:transparent;box-shadow:0 0 12px rgba(184,255,154,.25)}
+    .btn.ghost{background:rgba(255,255,255,.04)}
+    .hint{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .chip{padding:6px 10px;border-radius:999px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);font-weight:800;color:#cfd8e6}
+    .scorebar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
+    .scorebar > span{display:block;height:100%;background:linear-gradient(90deg,#ff6a6a,#ffc04d,#b8ff9a)}
+    .log{display:grid;gap:8px;margin-top:12px}
+    .card{display:grid;gap:8px;border:1px solid var(--panel-bd);background:var(--panel-bg-1);border-radius:12px;padding:10px}
+    .guessline{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+    .guess{font-weight:900;letter-spacing:.6px}
+    .stat{opacity:.85}
+    .badge{padding:4px 8px;border-radius:8px;font-weight:900}
+    .ok{background:#6aaa64;color:#0b0f12}
+    .near{background:#c9b458;color:#0b0f12}
+    .far{background:rgba(255,255,255,.15)}
+    .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+    .mini{opacity:.8}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .center{display:flex;justify-content:center}
+  </style>
+</head>
+<body>
+  <main class="container wrap">
+    <div class="topbar">
+      <h1 class="title">Azbry SynWord</h1>
+      <div class="row">
+        <button id="btnNew" class="btn accent">Soal Baru</button>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="row" style="margin-bottom:8px">
+        <input id="guess" class="inp" type="text" inputmode="latin" autocomplete="off" placeholder="Ketik tebakan (contoh: SENANG)"/>
+        <button id="btnSubmit" class="btn accent">Tebak</button>
+        <button id="btnGiveUp" class="btn ghost">Menyerah</button>
+      </div>
+      <div id="hints" class="hint"></div>
+    </section>
+
+    <section class="panel" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <strong>Progress</strong>
+        <span class="mini">Skor menunjukkan kedekatan makna (0–100)</span>
+      </div>
+      <div class="scorebar"><span id="bar" style="width:0%"></span></div>
+      <div class="foot">
+        <div class="mini">Tebakan terbaik: <b id="best">0</b></div>
+        <div class="mini">Percobaan: <b id="tries">0</b></div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:10px">
+      <div class="row" style="justify-content:space-between;margin-bottom:6px">
+        <strong>Riwayat Tebakan</strong>
+        <span class="mini">terbaru di atas</span>
+      </div>
+      <div id="log" class="log"></div>
+    </section>
+
+    <div class="center" style="margin-top:12px">
+      <a class="btn ghost" href="./index.html">← Kembali ke Menu</a>
+    </div>
+  </main>
+
+  <script src="assets/js/synword.js" defer></script>
+</body>
+</html>
