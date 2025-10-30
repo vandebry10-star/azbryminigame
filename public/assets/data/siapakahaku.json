@@ -1,0 +1,27 @@
+[
+  {
+    "q": "Aku hewan bertaring dan disebut raja hutan. Siapakah aku?",
+    "a": ["Singa"],
+    "hint": "Raja rimba"
+  },
+  {
+    "q": "Aku benda bulat yang bisa memantul. Siapakah aku?",
+    "a": ["Bola"],
+    "hint": "Dipakai untuk bermain"
+  },
+  {
+    "q": "Aku benda yang digunakan untuk menulis di kertas. Siapakah aku?",
+    "a": ["Pulpen", "Pena"],
+    "hint": "Berisi tinta"
+  },
+  {
+    "q": "Aku memiliki jarum tapi tidak untuk menjahit. Siapakah aku?",
+    "a": ["Jam", "Arloji"],
+    "hint": "Menunjukkan waktu"
+  },
+  {
+    "q": "Aku berwarna hijau, hidup di tanah, dan suka air. Siapakah aku?",
+    "a": ["Katak"],
+    "hint": "Suka melompat"
+  }
+]
