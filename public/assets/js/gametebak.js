@@ -1,4 +1,4 @@
-/* GameTebak Engine (Azbry) + Splash Screen */
+/* GameTebak Engine (Azbry) + Splash Screen + Replay + Random 10 Soal */
 (() => {
   const modes = [
     { id: 'tebakkata', name: 'Tebak Kata', data: 'assets/data/tebakkata.json' },
@@ -10,7 +10,6 @@
     { id: 'tebakpemainbola', name: 'Tebak Pemain Bola', data: 'assets/data/tebakpemainbola.json' },
   ];
 
-  // Elements
   const el = {
     modePicker: document.getElementById('modePicker'),
     btnStart: document.getElementById('btnStart'),
@@ -35,18 +34,19 @@
 
   let state = {
     mode: null,
-    data: [], // {q, a: [..], hint}
+    data: [],
     idx: -1,
     score: 0,
     startTs: 0,
     timerIvt: null,
   };
 
-  // UI helpers
+  // Utils
   function log(msg) {
     const time = new Date().toLocaleTimeString();
     el.log.textContent = `[${time}] ${msg}\n` + el.log.textContent;
   }
+
   function setButtonsPlaying(playing) {
     el.btnNext.disabled = !playing;
     el.btnHint.disabled = !playing;
@@ -54,34 +54,37 @@
     el.btnAnswer.disabled = !playing;
     el.input.disabled = !playing;
   }
+
   function setModeActive(id) {
     [...el.modePicker.querySelectorAll('.seg')].forEach(b => {
       b.classList.toggle('active', b.dataset.id === id);
     });
   }
+
   function fmtTime(s) {
-    const m = Math.floor(s/60).toString().padStart(2,'0');
-    const ss = Math.floor(s%60).toString().padStart(2,'0');
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const ss = Math.floor(s % 60).toString().padStart(2, '0');
     return `${m}:${ss}`;
   }
+
   function startTimer() {
     state.startTs = Date.now();
     clearInterval(state.timerIvt);
     state.timerIvt = setInterval(() => {
-      const sec = (Date.now() - state.startTs)/1000;
+      const sec = (Date.now() - state.startTs) / 1000;
       el.timer.textContent = fmtTime(sec);
     }, 500);
   }
+
   function stopTimer() {
     clearInterval(state.timerIvt);
   }
 
-  // String utils
-  const norm = s => (s||'').toString().toLowerCase()
+  const norm = s => (s || '').toString().toLowerCase()
     .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9 ]+/g,' ')
-    .replace(/\s+/g,' ')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   function levenshtein(a, b) {
@@ -89,17 +92,13 @@
     const m = a.length, n = b.length;
     if (m === 0) return n;
     if (n === 0) return m;
-    const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
-    for (let i=0;i<=m;i++) dp[i][0]=i;
-    for (let j=0;j<=n;j++) dp[0][j]=j;
-    for (let i=1;i<=m;i++){
-      for (let j=1;j<=n;j++){
-        const cost = a[i-1]===b[j-1]?0:1;
-        dp[i][j] = Math.min(
-          dp[i-1][j]+1,
-          dp[i][j-1]+1,
-          dp[i-1][j-1]+cost
-        );
+    const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
       }
     }
     return dp[m][n];
@@ -116,29 +115,28 @@
     return false;
   }
 
-  // Splash helpers
   function showSplash() {
-    if (!splash) return;
-    splash.classList.remove('hidden');
-    splash.classList.add('visible');
+    splash?.classList.add('visible');
+    splash?.classList.remove('hidden');
   }
   function hideSplash() {
-    if (!splash) return;
-    splash.classList.remove('visible');
-    splash.classList.add('hidden');
+    splash?.classList.remove('visible');
+    splash?.classList.add('hidden');
   }
 
-  // Data loading
+  // 🔀 Ambil 10 soal acak per sesi
   async function loadMode(mode) {
     state.mode = mode;
     setModeActive(mode.id);
     el.title.textContent = `${mode.name}`;
     el.text.textContent = `Memuat soal...`;
+
     try {
       const res = await fetch(mode.data, { cache: 'no-store' });
       if (!res.ok) throw new Error(res.statusText);
       const raw = await res.json();
-      state.data = raw.map(item => {
+
+      let parsed = raw.map(item => {
         if (typeof item === 'string') return { q: item, a: [item], hint: '' };
         let q = item.q || item.question || item.pertanyaan || '';
         let a = item.a || item.answer || item.jawaban || item.answers || [];
@@ -146,6 +144,11 @@
         let hint = item.hint || item.petunjuk || '';
         return { q, a, hint };
       }).filter(x => x.q && x.a && x.a.length);
+
+      // acak urutan dan ambil maksimal 10
+      parsed = parsed.sort(() => Math.random() - 0.5).slice(0, 10);
+
+      state.data = parsed;
       state.idx = -1;
       state.score = 0;
       el.score.textContent = '0';
@@ -154,22 +157,21 @@
       el.btnStart.disabled = false;
       el.btnAnswer.disabled = true;
       updateBest();
-      el.text.textContent = `Ditemukan ${state.data.length} soal. Tekan Mulai.`;
-      log(`Mode ${mode.name} dimuat (${state.data.length} soal).`);
+      el.text.textContent = `Tersedia ${raw.length} soal, diambil acak 10 untuk sesi ini.`;
+      log(`Mode ${mode.name} dimuat (${state.data.length} soal acak).`);
     } catch (e) {
-      console.error(e);
-      el.text.textContent = `Gagal memuat data untuk ${mode.name}. Pastikan file JSON tersedia.`;
+      el.text.textContent = `Gagal memuat data untuk ${mode.name}.`;
       log(`Gagal memuat data: ${e.message}`);
     }
   }
 
   function updateBest() {
-    const key = `azbry-best-${state.mode?.id||'default'}`;
-    const v = Number(localStorage.getItem(key) || 0);
-    el.best.textContent = v;
+    const key = `azbry-best-${state.mode?.id || 'default'}`;
+    el.best.textContent = Number(localStorage.getItem(key) || 0);
   }
+
   function commitBest() {
-    const key = `azbry-best-${state.mode?.id||'default'}`;
+    const key = `azbry-best-${state.mode?.id || 'default'}`;
     const v = Number(localStorage.getItem(key) || 0);
     if (state.score > v) {
       localStorage.setItem(key, String(state.score));
@@ -178,53 +180,85 @@
     }
   }
 
+  // ✅ Game selesai & replay
   function nextQuestion() {
     if (!state.data.length) return;
-    state.idx = (state.idx + 1) % state.data.length;
+
+    state.idx++;
+    if (state.idx >= state.data.length) {
+      stopTimer();
+      setButtonsPlaying(false);
+      el.btnStart.disabled = true;
+      el.input.disabled = true;
+      el.btnAnswer.disabled = true;
+
+      el.title.textContent = "Selesai 🎉";
+      el.text.textContent = `Kamu sudah menjawab semua soal!\nSkor akhir: ${state.score}`;
+      log(`Game selesai. Total skor: ${state.score}`);
+      commitBest();
+
+      const replayBtn = document.createElement("button");
+      replayBtn.textContent = "Main Lagi 🔁";
+      replayBtn.className = "btn accent";
+      replayBtn.style.marginTop = "16px";
+      replayBtn.onclick = () => {
+        state.idx = -1;
+        state.score = 0;
+        el.score.textContent = "0";
+        el.input.value = "";
+        setButtonsPlaying(true);
+        el.btnStart.disabled = true;
+        el.input.disabled = false;
+        el.btnAnswer.disabled = false;
+        startTimer();
+        nextQuestion();
+        replayBtn.remove();
+        log("Mulai ulang game!");
+      };
+
+      el.text.appendChild(document.createElement("br"));
+      el.text.appendChild(replayBtn);
+      return;
+    }
+
     const cur = state.data[state.idx];
-    el.title.textContent = `${state.mode.name} — Soal ${state.idx+1}/${state.data.length}`;
+    el.title.textContent = `${state.mode.name} — Soal ${state.idx + 1}/${state.data.length}`;
     el.text.textContent = cur.q;
-    el.input.value = '';
+    el.input.value = "";
     el.input.focus();
   }
 
-  // Wire UI
+  // UI setup
   function buildModeButtons() {
     el.modePicker.innerHTML = '';
     modes.forEach(m => {
       const b = document.createElement('button');
       b.className = 'seg';
       b.dataset.id = m.id;
-      b.type = 'button';
       b.textContent = m.name;
-      b.addEventListener('click', () => loadMode(m));
+      b.onclick = () => loadMode(m);
       el.modePicker.appendChild(b);
     });
   }
 
-  // Splash wiring
-  if (splash && splashPlay) {
-    splashPlay.addEventListener('click', () => {
-      hideSplash();
-      if (!state.mode) loadMode(modes[0]);
-      el.btnStart.focus();
-    });
-  }
-  if (splash && splashHow) {
-    splashHow.addEventListener('click', () => {
-      log('Cara main: Pilih mode ➜ Tekan Mulai ➜ Ketik jawaban ➜ Enter atau tombol Jawab. Tombol Hint/Skip tersedia.');
-    });
-  }
-  window.addEventListener('keydown', (e) => {
+  // Splash events
+  splashPlay?.addEventListener('click', () => {
+    hideSplash();
+    if (!state.mode) loadMode(modes[0]);
+    el.btnStart.focus();
+  });
+  splashHow?.addEventListener('click', () => {
+    log('Cara main: Pilih mode ➜ Tekan Mulai ➜ Ketik jawaban ➜ Enter atau tombol Jawab. Tombol Hint/Skip tersedia.');
+  });
+  window.addEventListener('keydown', e => {
     if (!splash) return;
-    const visible = splash.classList.contains('visible');
-    if (!visible) return;
+    if (!splash.classList.contains('visible')) return;
     if (e.key.toLowerCase() === 'enter') splashPlay?.click();
     else if (e.key.toLowerCase() === 'h') splashHow?.click();
   });
 
   // Buttons
-  el.btnStart.addEventListener('click', () => {
+  el.btnStart.onclick = () => {
     if (!state.mode) return log('Pilih mode dulu.');
     if (!state.data.length) return log('Data belum termuat.');
     state.score = 0;
@@ -234,23 +268,23 @@
     startTimer();
     nextQuestion();
     log('Mulai!');
-  });
+  };
 
-  el.btnNext.addEventListener('click', () => nextQuestion());
-  el.btnSkip.addEventListener('click', () => {
+  el.btnNext.onclick = () => nextQuestion();
+  el.btnSkip.onclick = () => {
     const cur = state.data[state.idx];
     if (cur) log(`Lewat. Jawaban: ${cur.a[0]}`);
     nextQuestion();
-  });
+  };
 
-  el.btnHint.addEventListener('click', () => {
+  el.btnHint.onclick = () => {
     const cur = state.data[state.idx];
     if (cur?.hint) log(`Hint: ${cur.hint}`);
     else {
       const ans = cur?.a?.[0] || '';
-      log(`Hint: ${ans.slice(0,1)}${'*'.repeat(Math.max(0, ans.length-2))}${ans.slice(-1)}`);
+      log(`Hint: ${ans.slice(0, 1)}${'*'.repeat(Math.max(0, ans.length - 2))}${ans.slice(-1)}`);
     }
-  });
+  };
 
   function submitAnswer() {
     if (!state.data.length) return;
@@ -258,7 +292,7 @@
     const val = el.input.value.trim();
     if (!val) return;
     if (isCorrect(val, cur.a)) {
-      state.score += 1;
+      state.score++;
       el.score.textContent = String(state.score);
       log(`Benar! Jawaban: ${cur.a[0]}`);
       commitBest();
@@ -266,10 +300,10 @@
     } else log(`Salah. Coba lagi!`);
   }
 
-  el.btnAnswer.addEventListener('click', submitAnswer);
+  el.btnAnswer.onclick = submitAnswer;
   el.input.addEventListener('keydown', e => e.key === 'Enter' && submitAnswer());
 
-  el.btnReset.addEventListener('click', () => {
+  el.btnReset.onclick = () => {
     stopTimer();
     el.timer.textContent = '00:00';
     setButtonsPlaying(false);
@@ -281,9 +315,8 @@
     el.score.textContent = '0';
     el.input.value = '';
     log('Game direset.');
-  });
+  };
 
   buildModeButtons();
-  // Show splash on load
   showSplash();
 })();
