@@ -1,0 +1,52 @@
+[
+  {
+    "q": "Siapa pemain Argentina yang sering disebut GOAT dan memakai nomor 10?",
+    "a": ["Messi", "Lionel Messi"],
+    "hint": "Legenda Barcelona dan Argentina"
+  },
+  {
+    "q": "Siapa pemain Portugal yang terkenal dengan selebrasi 'Siuuu'?",
+    "a": ["Ronaldo", "Cristiano Ronaldo", "CR7"],
+    "hint": "Sekarang main di Al Nassr"
+  },
+  {
+    "q": "Siapa kiper legendaris Italia yang bermain lama di Juventus?",
+    "a": ["Buffon", "Gianluigi Buffon"],
+    "hint": "Kiper dengan pengalaman puluhan tahun"
+  },
+  {
+    "q": "Siapa pemain Prancis yang membawa negaranya juara Piala Dunia 2018?",
+    "a": ["Mbappe", "Kylian Mbappe"],
+    "hint": "Pemain muda cepat dan eksplosif"
+  },
+  {
+    "q": "Siapa pemain asal Brasil yang dikenal dengan gaya rambut unik dan skill freestyle?",
+    "a": ["Neymar", "Neymar Jr"],
+    "hint": "Eks pemain Barcelona dan PSG"
+  },
+  {
+    "q": "Siapa pemain Kroasia yang menjadi pemenang Ballon d’Or 2018?",
+    "a": ["Modric", "Luka Modric"],
+    "hint": "Gelandang Real Madrid"
+  },
+  {
+    "q": "Siapa pemain asal Norwegia yang dikenal produktif di Manchester City?",
+    "a": ["Haaland", "Erling Haaland"],
+    "hint": "Striker tinggi besar dan tajam"
+  },
+  {
+    "q": "Siapa pemain legendaris yang dijuluki 'El Fenomeno' dari Brasil?",
+    "a": ["Ronaldo Nazario", "Ronaldo Luís Nazário de Lima", "Ronaldo"],
+    "hint": "Main di Inter Milan & Real Madrid"
+  },
+  {
+    "q": "Siapa bek asal Belanda yang jadi kapten Liverpool?",
+    "a": ["Van Dijk", "Virgil van Dijk"],
+    "hint": "Bek tengah tangguh"
+  },
+  {
+    "q": "Siapa pemain Argentina selain Messi yang jadi bintang di Manchester City?",
+    "a": ["Aguero", "Sergio Aguero"],
+    "hint": "Pernah cetak gol juara EPL 2012"
+  }
+]
