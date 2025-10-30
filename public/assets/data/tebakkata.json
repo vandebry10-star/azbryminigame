@@ -1,0 +1,27 @@
+[
+  {
+    "q": "Ibu kota Indonesia?",
+    "a": ["Jakarta", "DKI Jakarta"],
+    "hint": "Kota Metropolitan"
+  },
+  {
+    "q": "Hewan tercepat di darat?",
+    "a": ["Cheetah", "Cita"],
+    "hint": "Kucing besar berbintik"
+  },
+  {
+    "q": "Planet terbesar di tata surya?",
+    "a": ["Jupiter"],
+    "hint": "Punya bintik merah besar"
+  },
+  {
+    "q": "Bahasa resmi Jepang?",
+    "a": ["Jepang", "Nihongo"],
+    "hint": "Digunakan di Tokyo"
+  },
+  {
+    "q": "Gunung tertinggi di dunia?",
+    "a": ["Everest", "Mount Everest"],
+    "hint": "Terletak di Himalaya"
+  }
+]
