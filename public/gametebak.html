@@ -6,16 +6,34 @@
   <title>GameTebak • Azbry</title>
 
   <!-- Tema global Azbry -->
-  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <link rel="stylesheet" href="/assets/azbry.css">
 </head>
 <body>
+
+  <!-- Splash Screen (Azbry) -->
+  <div id="splash" class="splash hidden" role="dialog" aria-modal="true">
+    <div class="splash-card">
+      <h1 class="splash-title">GameTebak</h1>
+      <p class="splash-sub">Collection by <strong>FebryWesker</strong></p>
+
+      <div class="splash-actions">
+        <button id="splashPlay" class="btn accent splash-play">Play Game</button>
+        <button id="splashHow" class="btn dark">Cara Main</button>
+      </div>
+
+      <div class="splash-hint">
+        Tekan <kbd>Enter</kbd> untuk mulai • <kbd>H</kbd> untuk lihat cara main
+      </div>
+    </div>
+  </div>
+
   <main class="container">
     <header class="top-header">
       <div class="title">
         <h1>GameTebak</h1>
         <div>
-          <span class="tag">Azbry-MD</span>
-          <span class="tag">Have Fun!</span>
+          <span class="tag">Azbry</span>
+          <span class="tag">Multi-Device</span>
         </div>
       </div>
     </header>
@@ -42,7 +60,9 @@
           <button class="btn" id="btnSkip" disabled>Skip</button>
           <button class="btn dark" id="btnReset">Reset</button>
           <div style="margin-left:auto;font-weight:800;">
-            Skor: <span id="score">0</span> &nbsp;•&nbsp; Best: <span id="best">0</span> &nbsp;•&nbsp; Timer: <span id="timer">00:00</span>
+            Skor: <span id="score">0</span> &nbsp;•&nbsp;
+            Best: <span id="best">0</span> &nbsp;•&nbsp;
+            Timer: <span id="timer">00:00</span>
           </div>
         </div>
 
