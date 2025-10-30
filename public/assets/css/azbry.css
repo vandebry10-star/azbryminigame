@@ -139,3 +139,68 @@ body.board-only .panel,
 body.board-only .footer { display:none; }
 body.board-only .board-wrap{ max-width:min(98vw,1100px); padding:10px; }
 body.board-only main.container{ padding-bottom:32px; }
+
+/* =======================
+   Azbry Splash Screen
+   ======================= */
+.splash{
+  position: fixed; inset: 0;
+  display: grid; place-items: center;
+  background: radial-gradient(1200px 800px at 50% 30%, rgba(184,255,154,.08), transparent 60%),
+              linear-gradient(180deg, var(--azbry-bg-1) 0%, var(--azbry-bg-2) 100%);
+  z-index: 99;
+  opacity: 0; pointer-events: none;
+  transition: opacity .28s ease;
+  backdrop-filter: blur(2px);
+}
+.splash.visible{
+  opacity: 1; pointer-events: auto;
+}
+.splash.hidden{
+  opacity: 0; pointer-events: none;
+}
+
+.splash-card{
+  width: min(680px, 92vw);
+  border-radius: var(--radius-20);
+  padding: 28px 22px;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border: 1px solid var(--panel-bd);
+  box-shadow: 0 20px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  text-align: center;
+}
+
+.splash-title{
+  margin: 0 0 6px;
+  font-size: clamp(28px, 6.4vw, 54px);
+  font-weight: 900;
+  color: var(--azbry-accent);
+  text-shadow: 0 0 20px var(--azbry-ring);
+  letter-spacing: .5px;
+}
+
+.splash-sub{
+  margin: 0 0 18px;
+  color: #cdd6e3;
+  opacity: .9;
+}
+
+.splash-actions{
+  display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  margin: 12px 0 8px;
+}
+
+.splash-play{
+  font-size: 16px;
+  padding: 12px 18px;
+  box-shadow: 0 0 18px rgba(184,255,154,.28);
+}
+
+.splash-hint{
+  margin-top: 10px; font-size: 12px; color: #aeb9c8; opacity: .9;
+}
+kbd{
+  background: rgba(255,255,255,.08);
+  border: 1px solid var(--panel-bd);
+  padding: 2px 6px; border-radius: 6px; font-weight: 800;
+}
