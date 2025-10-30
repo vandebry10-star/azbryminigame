@@ -1,0 +1,27 @@
+[
+  {
+    "q": "Sebutkan buah berwarna kuning!",
+    "a": ["Pisang", "Nanas", "Lemon", "Mangga", "Pepaya"],
+    "hint": "Buah tropis yang cerah warnanya"
+  },
+  {
+    "q": "Sebutkan benda yang ada di kamar tidur!",
+    "a": ["Kasur", "Bantal", "Selimut", "Lemari", "Lampu"],
+    "hint": "Tempat kamu tidur"
+  },
+  {
+    "q": "Sebutkan hewan yang bisa terbang!",
+    "a": ["Burung", "Kelelawar", "Lalat", "Lebah", "Nyamuk"],
+    "hint": "Bisa melayang di udara"
+  },
+  {
+    "q": "Sebutkan minuman panas!",
+    "a": ["Kopi", "Teh", "Coklat", "Susu panas", "Wedang jahe"],
+    "hint": "Biasa diseduh dengan air mendidih"
+  },
+  {
+    "q": "Sebutkan alat musik dengan senar!",
+    "a": ["Gitar", "Biola", "Bass", "Ukulele", "Harp"],
+    "hint": "Dipetik atau digesek"
+  }
+]
