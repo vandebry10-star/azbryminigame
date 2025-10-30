@@ -1,0 +1,27 @@
+[
+  {
+    "q": "Susun kata dari huruf: G-A-R-I-B (nama pulau)",
+    "a": ["Bali"],
+    "hint": "Pulau wisata terkenal"
+  },
+  {
+    "q": "Susun kata dari huruf: A-M-S-A-J (nama minuman)",
+    "a": ["Sajam", "Jamas", "Sama"], 
+    "hint": "Ups! Cari yang lebih logis ya, biasanya ini 'JAMAS' bukan kata umum."
+  },
+  {
+    "q": "Susun kata dari huruf: T-A-B-A-K (nama benda dapur)",
+    "a": ["Kabat", "Batak", "Tabak"],
+    "hint": "Bisa dipakai untuk menaruh makanan"
+  },
+  {
+    "q": "Susun kata dari huruf: N-U-L-I-S (aktivitas sehari-hari)",
+    "a": ["Menulis", "Tulis"],
+    "hint": "Biasanya memakai pena"
+  },
+  {
+    "q": "Susun kata dari huruf: R-A-M-A-D-A (nama bulan suci)",
+    "a": ["Ramadan", "Ramadhan"],
+    "hint": "Bulan penuh berkah bagi umat Islam"
+  }
+]
