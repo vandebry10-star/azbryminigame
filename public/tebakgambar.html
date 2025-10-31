@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azbry Minigame • Tebak Gambar (API)</title>
+  <meta name="theme-color" content="#0b0d10" />
+  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <style>
+    .img-stage{width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid var(--panel-bd);display:grid;place-items:center;position:relative}
+    .img-stage img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+    .loading{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#cdd6e3;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01))}
+  </style>
+</head>
+<body>
+
+  <!-- Splash -->
+  <div id="splash" class="splash visible" role="dialog" aria-modal="true">
+    <div class="splash-card">
+      <h1 class="splash-title">Tebak Gambar</h1>
+      <p class="splash-sub">Sumber soal: BotCahx API • by <strong>FebryWesker</strong> — Azbry-MD</p>
+      <div class="splash-actions">
+        <button id="splashPlay" class="btn accent splash-play">Play</button>
+        <a class="btn dark" href="/GameTebak.html">Kembali ke GameTebak</a>
+      </div>
+      <div class="splash-hint">Tekan <kbd>Enter</kbd> untuk mulai</div>
+    </div>
+  </div>
+
+  <main class="container">
+    <header class="top-header">
+      <div class="title">
+        <h1>Tebak Gambar (API)</h1>
+        <div>
+          <span class="tag">Azbry</span>
+          <span class="tag">Neon Dark</span>
+          <span class="tag">Azbry Minigame</span>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <div class="board-wrap">
+        <div class="board" style="padding:12px;">
+          <div class="img-stage">
+            <div class="loading" id="imgLoading">Memuat gambar…</div>
+            <img id="quizImg" alt="Soal tebakan" src="" style="display:none;">
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <button class="btn accent" id="btnStart">Mulai</button>
+          <button class="btn" id="btnNext" disabled>Next</button>
+          <button class="btn" id="btnHint" disabled>Hint</button>
+          <button class="btn" id="btnSkip" disabled>Skip</button>
+          <button class="btn dark" id="btnReset">Reset</button>
+          <div style="margin-left:auto;font-weight:800;">
+            Skor: <span id="score">0</span> • Best: <span id="best">0</span> • Timer: <span id="timer">00:00</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <input id="answerInput" type="text" placeholder="Jawaban kamu…" style="flex:1;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#e8f0fb;outline:none;">
+          <button class="btn accent" id="btnAnswer" disabled>Jawab</button>
+        </div>
+
+        <div class="move-log">
+          <h4>Log</h4>
+          <pre id="log" style="max-height:220px;overflow:auto;"></pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="license">
+      <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>
+      <a class="cta" href="/" rel="home">Kembali ke Home</a>
+    </div>
+  </main>
+
+  <!-- taruh API key di sini -->
+  <script>
+    // Kalau langsung call API (tanpa proxy), isi key-nya di sini
+    window.BTC_API_KEY = 'bijikepala67';
+    // Kalau pakai proxy Vercel, biarkan string di atas kosong (''), dan set proxy di JS.
+  </script>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="assets/js/tebakgambar.js" defer></script>
+</body>
+</html>
