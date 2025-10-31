@@ -1,15 +1,21 @@
-/* Tebak Gambar (via BotCahx API → proxy Vercel) — FIX */
+/* Tebak Gambar (via BotCahx API → proxy Vercel) — FINAL FIX */
 (() => {
   // ===== KONFIG =====
-  const TIMEOUT_MS = 100_000;     // 100 detik per soal
+  const TIMEOUT_MS = 100_000; // 100 detik
   const BONUS = 10_000;
-  const USE_PROXY = true;         // ambil dari /api/tebakgambar
-  const API_ENDPOINT = () =>
-    USE_PROXY ? '/api/tebakgambar'
-              : `https://api.botcahx.eu.org/api/game/tebakgambar?apikey=${encodeURIComponent(window.BTC_API_KEY||'')}`;
+  const USE_PROXY = true; // ambil dari /api/tebakgambar
 
-  // Fallback lokal opsional (jika mau sediakan):
-  const LOCAL_URL = 'assets/data/tebakgambar.json'; // [{img, deskripsi, jawaban}]
+  const API_ENDPOINT = () =>
+    USE_PROXY
+      ? '/api/tebakgambar'
+      : `https://api.botcahx.eu.org/api/game/tebakgambar?apikey=${encodeURIComponent(window.BTC_API_KEY||'')}`;
+
+  // proxy gambar → cegah mixed content / CORS error
+  const IMAGE_PROXY = '/api/proxy-image?url=';
+  const prox = (u) => (!u ? '' : `${IMAGE_PROXY}${encodeURIComponent(u)}`);
+
+  // fallback lokal opsional
+  const LOCAL_URL = 'assets/data/tebakgambar.json';
 
   // ===== ELEMENTS =====
   const el = {
@@ -35,8 +41,8 @@
 
   // ===== STATE =====
   const state = {
-    batch: [],   // cache batch dari API (mirip "src" di plugin)
-    cur: null,   // {img, deskripsi, jawaban}
+    batch: [],
+    cur: null,
     score: 0,
     timerIvt: null,
     endAt: 0,
@@ -47,19 +53,30 @@
     .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
 
-  function log(m){ el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent; }
+  function log(m){
+    el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent;
+  }
+
   function setPlaying(b){
-    el.btnNext.disabled = !b; el.btnHint.disabled = !b;
-    el.btnSkip.disabled = !b; el.btnAnswer.disabled = !b;
+    el.btnNext.disabled = !b;
+    el.btnHint.disabled = !b;
+    el.btnSkip.disabled = !b;
+    el.btnAnswer.disabled = !b;
     el.input.disabled = !b;
   }
+
   function startCountdown(ms){
     state.endAt = Date.now() + ms;
     clearInterval(state.timerIvt);
     tick();
     state.timerIvt = setInterval(tick, 250);
   }
-  function stopCountdown(){ clearInterval(state.timerIvt); el.timer.textContent = '00:00'; }
+
+  function stopCountdown(){
+    clearInterval(state.timerIvt);
+    el.timer.textContent = '00:00';
+  }
+
   function tick(){
     const left = Math.max(0, state.endAt - Date.now());
     const s = Math.ceil(left/1000);
@@ -71,39 +88,41 @@
       timesUp();
     }
   }
+
   function updateBest(){
     const key = 'azbry-best-tebakgambar-api';
     el.best.textContent = Number(localStorage.getItem(key) || 0);
   }
+
   function commitBest(){
     const key = 'azbry-best-tebakgambar-api';
     const v = Number(localStorage.getItem(key) || 0);
-    if (state.score > v){ localStorage.setItem(key, String(state.score)); el.best.textContent = state.score; log(`Best baru: ${state.score}`); }
+    if (state.score > v){
+      localStorage.setItem(key, String(state.score));
+      el.best.textContent = state.score;
+      log(`Best baru: ${state.score}`);
+    }
   }
 
-  // ===== LOADER ROBUST =====
+  // ===== LOAD DATA (robust) =====
   async function loadBatch() {
     const url = API_ENDPOINT();
     try {
       const r = await fetch(url, { cache: 'no-store' });
-      const text = await r.text();               // raw untuk debug
+      const text = await r.text();
       if (!r.ok) throw new Error(`HTTP ${r.status}: ${text?.slice(0,200)}`);
 
       let data;
       try { data = JSON.parse(text); } catch { throw new Error('JSON parse error'); }
 
-      // array langsung atau {result:[]}/{data:[]}/{items:[]}
+      // bisa {result:[]}, {data:[]}, {items:[]}, atau array langsung
       const arr = Array.isArray(data) ? data : (data.result || data.data || data.items || []);
-      if (!Array.isArray(arr) || !arr.length) {
-        throw new Error('Empty payload: tidak ada soal di response');
-      }
+      if (!Array.isArray(arr) || !arr.length) throw new Error('Empty payload');
 
       state.batch = arr;
       log(`Batch OK (${arr.length} soal) dari ${USE_PROXY ? '/api/tebakgambar' : 'BotCahx'}.`);
     } catch (e) {
       log(`Gagal load API: ${e.message}`);
-
-      // Fallback lokal opsional
       try {
         const r2 = await fetch(LOCAL_URL, { cache: 'no-store' });
         const local = await r2.json();
@@ -119,26 +138,26 @@
     }
   }
 
-  // alias field fleksibel
   function pickRandom(){
     if (!state.batch.length) return null;
     const x = state.batch[Math.floor(Math.random() * state.batch.length)];
 
-    const img = x.img || x.image || x.url || x.link;
+    let img = x.img || x.image || x.url || x.link;
     const deskripsi = x.deskripsi || x.description || x.hint || '';
     const jawaban = x.jawaban || x.answer || x.a || x.key;
+
+    // semua gambar lewat proxy agar aman dari CORS/mixed content
+    if (img) img = prox(img);
 
     return { img, deskripsi, jawaban };
   }
 
-  // tampilkan dan auto-skip kalau gagal
   function showCurrent(){
     const cur = state.cur; if (!cur) return;
     el.img.style.display = 'none';
     el.imgLoading.style.display = 'grid';
     el.imgLoading.textContent = 'Memuat gambar…';
 
-    // paksa gagal jika lama (10s) → auto-skip
     let failTimer = setTimeout(() => {
       el.img.onerror?.();
     }, 10000);
@@ -148,6 +167,7 @@
       el.imgLoading.style.display = 'none';
       el.img.style.display = 'block';
     };
+
     el.img.onerror = () => {
       clearTimeout(failTimer);
       el.imgLoading.style.display = 'grid';
@@ -155,6 +175,7 @@
       log('Gambar gagal dimuat — auto-skip.');
       setTimeout(() => { stopCountdown(); nextQuestion(); }, 800);
     };
+
     el.img.src = cur.img;
   }
 
@@ -167,7 +188,7 @@
     setPlaying(true);
     showCurrent();
 
-    log(`SOAL: ${state.cur.deskripsi || '-'} • Timeout ${(TIMEOUT_MS/1000).toFixed(0)} dtk • Bonus ${BONUS}.`);
+    log(`SOAL: ${state.cur.deskripsi || '-'} • Timeout ${(TIMEOUT_MS/1000).toFixed(0)} dtk • Bonus ${BONUS}`);
     startCountdown(TIMEOUT_MS);
   }
 
@@ -183,7 +204,6 @@
     const t = norm(raw);
     if (!t) return false;
     if (s === t) return true;
-    // toleransi typo kecil
     if (Math.abs(s.length - t.length) <= 1){
       let diff = 0;
       for (let i=0;i<Math.min(s.length,t.length);i++){ if (s[i]!==t[i]) diff++; }
@@ -225,7 +245,7 @@
     log('Reset.');
   };
 
-  // Splash
+  // Splash screen
   el.splashPlay?.addEventListener('click', () => {
     el.splash.classList.remove('visible');
     el.splash.classList.add('hidden');
