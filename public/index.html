@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Azbry-MD • Mini Games</title>
-<meta name="description" content="Koleksi mini game bertema Azbry: Chess, Tap Runner, Morse Suite, Popbry, TicTacToe, GameHack, Aim Mafia, dan lainnya.">
+<meta name="description" content="Koleksi mini game bertema Azbry: Tap Runner, Tebak Gambar, Azbry Chess.com, Ular Tangga, Tebak-tebakan, Game Tebak, Wordle Lite, Tic-Tac-Toe, BrainGood, Mafia Hat, BreakBry, Morse Suite, dan Test Persentase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
@@ -32,62 +32,39 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
   color:#dfffe0;border:1px solid var(--ring);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.3px
 }
 
-/* ===== Special section (2 game spesial) ===== */
+/* ===== Special section ===== */
 .special-grid{
   display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:14px
 }
 .special{
-  position:relative;
-  grid-column:span 12;
-  border-radius:22px;
-  padding:18px 18px 16px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    var(--panel);
+  position:relative; grid-column:span 12; border-radius:22px; padding:18px 18px 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), var(--panel);
   border:1px solid rgba(184,255,154,.45);
-  box-shadow:
-    0 0 0 1px rgba(184,255,154,.18) inset,
-    0 22px 60px rgba(184,255,154,.13),
-    0 8px 26px rgba(0,0,0,.35);
+  box-shadow: 0 0 0 1px rgba(184,255,154,.18) inset, 0 22px 60px rgba(184,255,154,.13), 0 8px 26px rgba(0,0,0,.35);
   overflow:hidden;
 }
 .special:before{
-  content:"";
-  position:absolute; inset:-1px;
-  border-radius:22px;
+  content:""; position:absolute; inset:-1px; border-radius:22px;
   background: radial-gradient(600px 200px at 10% -40%, rgba(184,255,154,.18), transparent 50%),
               radial-gradient(600px 200px at 110% 140%, rgba(184,255,154,.12), transparent 40%);
   pointer-events:none;
 }
-.special h3{
-  margin:2px 0 10px; font-size:clamp(20px,3.6vw,24px); font-weight:900;
-  letter-spacing:.2px; color:#e9ffef; text-shadow:0 0 14px var(--ring)
-}
+.special h3{ margin:2px 0 10px; font-size:clamp(20px,3.6vw,24px); font-weight:900;
+  letter-spacing:.2px; color:#e9ffef; text-shadow:0 0 14px var(--ring) }
 .special p{margin:0 0 14px;color:var(--muted)}
 .special .btn{
   display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:800;text-decoration:none;cursor:pointer;
   color:#0b0d10;background:linear-gradient(180deg,var(--accent),var(--accent2));border:0;
   box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)
 }
-.special .tagline{
-  position:absolute; right:14px; bottom:14px; font-size:12px; font-weight:800; letter-spacing:.25px;
-  color:#cfead0; opacity:.85;
-}
-.special.chess{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    linear-gradient(120deg, rgba(40,50,64,.65), rgba(17,20,24,.8));
-}
-.special.runner{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    linear-gradient(120deg, rgba(22,28,24,.75), rgba(12,15,14,.88));
-}
-@media (min-width:860px){
-  .special{grid-column:span 6}
-}
+.special .tagline{ position:absolute; right:14px; bottom:14px; font-size:12px; font-weight:800; letter-spacing:.25px; color:#cfead0; opacity:.85; }
+.special.chess{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(40,50,64,.65), rgba(17,20,24,.8)); }
+.special.runner{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(22,28,24,.75), rgba(12,15,14,.88)); }
+.special.tg{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(24,32,20,.75), rgba(12,15,12,.88)); }
 
-/* ===== Cards biasa ===== */
+@media (min-width:860px){ .special{grid-column:span 4} }
+
+/* ===== Cards ===== */
 .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
 .card{
   grid-column:span 6;background:linear-gradient(180deg,rgba(255,255,255,.02),transparent 60%),var(--panel);
@@ -124,102 +101,105 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
       <span class="badge">Have fun!</span>
     </header>
 
-    <!-- ===== 2 GAME SPESIAL ===== -->
+    <!-- ===== SPECIAL (URUTAN SESUAI REQUEST) ===== -->
     <section class="special-grid fade d2">
-      <!-- CHESS -->
-      <article class="special chess">
-        <h3>♟️ Azbry Chess.com</h3>
-        <p>Main catur dengan mode <b>VS Player</b> atau <b>VS Azbry-MD (AI)</b>. Papan neon kontras, undo/redo, board-only, dan hasil akhir dengan taunt khusus.</p>
-        <a class="btn" href="chess.html">Mainkan</a>
-        <div class="tagline">Special</div>
-      </article>
-
-      <!-- TAP RUNNER -->
+      <!-- 1) Tap Runner (Special) -->
       <article class="special runner">
         <h3>🕊️ Tap Runner</h3>
-        <p>Terbang melewati rintangan. Capai skor <b>50</b> untuk membuka <b>reward</b> khusus “x1 Nasi Uduk”. Kontrol sekali tap, fisik ringan, tema neon hijau.</p>
+        <p>Terbang melewati rintangan. Capai skor <b>50</b> untuk membuka reward spesial. Kontrol sekali tap, fisik ringan, tema neon hijau.</p>
         <a class="btn" href="https://azbrymd-nasiuduk.vercel.app/" target="_blank" rel="noopener">Mainkan</a>
         <div class="tagline">Special</div>
       </article>
-    </section>
 
-    <!-- ===== LIST GAME LAIN ===== -->
-    <section class="grid fade d3">
-      <article class="card">
-        <h3>📡 Morse Suite</h3>
-        <p>All-in-one morse: Decode, Type Transmission, & Signal Lock. LED & tone opsional, mode belajar + tantangan.</p>
-        <a class="btn" href="morse.html">Mainkan</a>
+      <!-- 2) Tebak Gambar (Special, API) -->
+      <article class="special tg">
+        <h3>🖼️ Tebak Gambar (API)</h3>
+        <p>Bank soal 1000+ langsung dari server. Hint, timer, dan skor. Gambar full-responsive tanpa kepotong.</p>
+        <a class="btn" href="GameTebakGambar.html">Mainkan</a>
+        <div class="tagline">Special</div>
       </article>
 
+      <!-- 3) Azbry Chess.com (Special) -->
+      <article class="special chess">
+        <h3>♟️ Azbry Chess.com</h3>
+        <p>Main catur <b>VS Player</b> atau <b>VS Azbry-MD (AI)</b>. Papan neon, undo/redo, mode board-only, dan hasil akhir ber-taunt.</p>
+        <a class="btn" href="chess.html">Mainkan</a>
+        <div class="tagline">Special</div>
+      </article>
+    </section>
+
+    <!-- ===== LIST GAME LAIN (URUTAN SESUAI REQUEST) ===== -->
+    <section class="grid fade d3">
+      <!-- 4) Ular Tangga -->
+      <article class="card">
+        <h3>🎲 Ular Tangga</h3>
+        <p>2 pemain, dadu 1-6, tangga & ular klasik. Harus <b>pas 100</b> untuk menang.</p>
+        <a class="btn" href="ulartangga.html">Mainkan</a>
+      </article>
+
+      <!-- 6) Tebak-tebakan -->
       <article class="card">
         <h3>🧩 Tebak-tebakan</h3>
-        <p>1 sesi berisi 5 pertanyaan acak, jawab semua pertanyaan dan dapatkan hadiah!.</p>
+        <p>Satu sesi 5 soal acak. Ringan tapi bikin mikir—cocok buat pemanasan.</p>
         <a class="btn" href="synword.html">Mainkan</a>
       </article>
 
+      <!-- 7) Game Tebak -->
       <article class="card">
-        <h3>🐱 Pop-bry</h3>
-        <p>Tap or Click sebanyak-banyaknya untuk mendapatkan reward.</p>
-        <a class="btn" href="popbry.html">Mainkan</a>
+        <h3>❓ Game Tebak</h3>
+        <p>Kumpulan mode: Tebak Kata, Asah Otak, Family100, Sambung Kata, dan lainnya.</p>
+        <a class="btn" href="gametebak.html">Mainkan</a>
       </article>
 
+      <!-- 8) Wordle Lite -->
+      <article class="card">
+        <h3>🗯️ Wordle Lite</h3>
+        <p>Tebak 5 huruf: Hijau = tepat, Kuning = ada salah posisi, Abu = tidak ada.</p>
+        <a class="btn" href="wordle.html">Mainkan</a>
+      </article>
+
+      <!-- 9) Tic-Tac-Toe (Impossible) -->
       <article class="card">
         <h3>❌⭕ Tic-Tac-Toe (Impossible)</h3>
-        <p>AI minimax tingkat dewa. Pilih siapa duluan, catat skor, dan coba minimal seri lawan algoritma.</p>
+        <p>AI minimax tingkat dewa. Berani coba minimal seri?</p>
         <a class="btn" href="tictactoe.html">Mainkan</a>
       </article>
 
+      <!-- 10) BrainGood -->
       <article class="card">
-        <h3>🤖 BrainGood</h3>
-        <p>Terdapat 15 angka yang akan muncul satu persatu, hafalkan semuanya!</p>
+        <h3>🧠 BrainGood</h3>
+        <p>Ingat 15 angka yang muncul berurutan. Tes memori singkat, seru, dan menantang.</p>
         <a class="btn" href="gamehack.html">Mainkan</a>
       </article>
 
+      <!-- 11) Mafia Hat -->
       <article class="card">
         <h3>🎯 Mafia Hat</h3>
-        <p>Empat orang tampil: <b>3 mafia</b> & <b>1 orang baik</b>. Mereka diacak lalu ditutup topi—tinggal siluet topinya. Kamu punya <b>3 peluru</b> untuk menebak siapa mafia.</p>
+        <p>4 siluet, 3 mafia & 1 orang baik. Kamu punya 3 peluru—tebak yang benar.</p>
         <a class="btn" href="aim.html">Mainkan</a>
       </article>
 
+      <!-- 12) BreakBry -->
       <article class="card">
-        <h3>🧱 Break-Bry</h3>
-        <p>Arahkan Paddle untuk menangkis bola mengenai balok diatasnya!.</p>
+        <h3>🧱 BreakBry</h3>
+        <p>Pantulkan bola dan hancurkan semua balok. Kontrol paddle presisi.</p>
         <a class="btn" href="breakbry.html">Mainkan</a>
       </article>
 
+      <!-- 13) Morse Suite (Learning) -->
       <article class="card">
-        <h3>📝 Test Persentase</h3>
-        <p>Test persentase jodoh dan kepribadianmu.</p>
+        <h3>📡 Morse Suite (Learning)</h3>
+        <p>Decode, Type Transmission, & Signal Lock. Mode belajar + tantangan.</p>
+        <a class="btn" href="morse.html">Mainkan</a>
+      </article>
+
+      <!-- 14) Test Persentase (For Fun) -->
+      <article class="card">
+        <h3>📝 Test Persentase (For Fun)</h3>
+        <p>Hitung persentase “cocok-cocokan” dan kepribadian—fun only.</p>
         <a class="btn" href="tests.html">Mainkan</a>
       </article>
-
-      <article class="card">
-        <h3>🗯️ Wordle Lite</h3>
-        <p>Ketik 5 huruf lalu ENTER. Hijau = benar & posisi tepat, Kuning = huruf ada tapi salah posisi, Abu = tidak ada.</p>
-        <a class="btn" href="wordle.html">Mainkan</a>
-      </article>
     </section>
-
-    <article class="card">
-        <h3>❓ Game Tebak</h3>
-        <p>Tebak kata, Asah otak, Family100, Sambung kata dll.</p>
-        <a class="btn" href="gametebak.html">Mainkan</a>
-      </article>
-  </section>
-
-    <article class="card">
-        <h3>🎲 Ular Tangga</h3>
-        <p>Capai angka 100 dan menangkan hadiahnya! (2 Player)</p>
-        <a class="btn" href="ulartangga.html">Mainkan</a>
-      </article>
-  </section>
-
-    <article class="card">
-        <h3>🖼️ Tebak Gambar</h3>
-        <p>Gambar dan clue! Jawab dengan cepat.</p>
-        <a class="btn" href="tebakgambar.html">Mainkan</a>
-      </article>
-  </section>
 
     <footer class="footer fade d4">
       <span>© <span id="y"></span> Azbry-MD</span>
