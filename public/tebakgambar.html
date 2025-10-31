@@ -6,6 +6,7 @@
   <title>Azbry Minigame • Tebak Gambar (API)</title>
   <meta name="theme-color" content="#0b0d10" />
   <link rel="stylesheet" href="/assets/css/azbry.css">
+
   <style>
     :root {
       --stage-max: 820px;
@@ -31,21 +32,25 @@
       width: 100%;
       max-width: var(--stage-max);
       margin: 0 auto;
-      aspect-ratio: 16/9;
       border-radius: 16px;
       overflow: hidden;
       background: rgba(255,255,255,.03);
       border: 1px solid var(--panel-bd);
-      display: grid;
-      place-items: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       position: relative;
+      min-height: 240px;
     }
 
     .img-stage img {
-      width: 100%;
-      height: 100%;
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: 480px;
       object-fit: contain;
       display: block;
+      margin: auto;
     }
 
     .img-loading {
@@ -113,7 +118,7 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 700px) {
-      .img-stage { aspect-ratio: 4/3; }
+      .img-stage img { max-height: 360px; }
     }
 
     @media (max-width: 520px) {
@@ -124,14 +129,11 @@
       .controls:last-of-type .btn.accent { flex: 0 0 auto; }
     }
 
-    /* Splash center */
-    .splash .splash-card {
-      max-width: 560px;
-    }
+    .splash .splash-card { max-width: 560px; }
   </style>
 </head>
-<body>
 
+<body>
   <!-- Splash -->
   <div id="splash" class="splash visible" role="dialog" aria-modal="true">
     <div class="splash-card">
