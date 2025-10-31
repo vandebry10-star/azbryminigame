@@ -1,18 +1,17 @@
-/* Tebak Gambar (via BotCahx API) — single-question flow ala plugin */
+/* Tebak Gambar (via BotCahx API → proxy Vercel) — FIX */
 (() => {
-  // ====== KONFIG ======
-  const TIMEOUT_MS = 100_000; // 100 detik
+  // ===== KONFIG =====
+  const TIMEOUT_MS = 100_000;     // 100 detik per soal
   const BONUS = 10_000;
-  // set salah satu:
-  const USE_PROXY = true; // true kalau pakai /api/tebakgambar di Vercel
+  const USE_PROXY = true;         // ambil dari /api/tebakgambar
   const API_ENDPOINT = () =>
-    USE_PROXY
-      ? '/api/tebakgambar'
-      : `https://api.botcahx.eu.org/api/game/tebakgambar?apikey=${encodeURIComponent(window.BTC_API_KEY||'')}`;
-  // Fallback lokal opsional:
+    USE_PROXY ? '/api/tebakgambar'
+              : `https://api.botcahx.eu.org/api/game/tebakgambar?apikey=${encodeURIComponent(window.BTC_API_KEY||'')}`;
+
+  // Fallback lokal opsional (jika mau sediakan):
   const LOCAL_URL = 'assets/data/tebakgambar.json'; // [{img, deskripsi, jawaban}]
 
-  // ====== ELEM ======
+  // ===== ELEMENTS =====
   const el = {
     splash: document.getElementById('splash'),
     splashPlay: document.getElementById('splashPlay'),
@@ -34,16 +33,16 @@
     timer: document.getElementById('timer'),
   };
 
-  // ====== STATE ======
+  // ===== STATE =====
   const state = {
-    batch: [],   // cache batch dari API (kayak var src di plugin)
+    batch: [],   // cache batch dari API (mirip "src" di plugin)
     cur: null,   // {img, deskripsi, jawaban}
     score: 0,
     timerIvt: null,
-    endAt: 0,    // timestamp timeout
+    endAt: 0,
   };
 
-  // ====== UTIL ======
+  // ===== UTIL =====
   const norm = s => (s||'').toString().toLowerCase()
     .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
@@ -82,41 +81,80 @@
     if (state.score > v){ localStorage.setItem(key, String(state.score)); el.best.textContent = state.score; log(`Best baru: ${state.score}`); }
   }
 
-  // ====== DATA LOADER (persis konsep plugin) ======
+  // ===== LOADER ROBUST =====
   async function loadBatch() {
+    const url = API_ENDPOINT();
     try {
-      const r = await fetch(API_ENDPOINT(), { cache: 'no-store' });
-      if (!r.ok) throw new Error('API error');
-      const arr = await r.json();
-      if (!Array.isArray(arr) || !arr.length) throw new Error('API empty');
-      state.batch = arr; // simpan cache, mirip "src" di plugin
-      log(`Batch dari BotCahx: ${arr.length} soal.`);
+      const r = await fetch(url, { cache: 'no-store' });
+      const text = await r.text();               // raw untuk debug
+      if (!r.ok) throw new Error(`HTTP ${r.status}: ${text?.slice(0,200)}`);
+
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error('JSON parse error'); }
+
+      // array langsung atau {result:[]}/{data:[]}/{items:[]}
+      const arr = Array.isArray(data) ? data : (data.result || data.data || data.items || []);
+      if (!Array.isArray(arr) || !arr.length) {
+        throw new Error('Empty payload: tidak ada soal di response');
+      }
+
+      state.batch = arr;
+      log(`Batch OK (${arr.length} soal) dari ${USE_PROXY ? '/api/tebakgambar' : 'BotCahx'}.`);
     } catch (e) {
-      // fallback lokal opsional
-      const r2 = await fetch(LOCAL_URL, { cache: 'no-store' });
-      state.batch = await r2.json();
-      log(`API gagal, pakai fallback lokal (${state.batch.length} soal).`);
+      log(`Gagal load API: ${e.message}`);
+
+      // Fallback lokal opsional
+      try {
+        const r2 = await fetch(LOCAL_URL, { cache: 'no-store' });
+        const local = await r2.json();
+        if (Array.isArray(local) && local.length) {
+          state.batch = local;
+          log(`Fallback lokal (${local.length} soal).`);
+        } else {
+          log('Fallback lokal kosong.');
+        }
+      } catch (ee) {
+        log(`Fallback lokal error: ${ee.message}`);
+      }
     }
   }
 
+  // alias field fleksibel
   function pickRandom(){
     if (!state.batch.length) return null;
-    const i = Math.floor(Math.random() * state.batch.length);
-    // Normalisasi ke bentuk {img, deskripsi, jawaban}
-    const x = state.batch[i];
-    const img = x.img || x.image;
-    const deskripsi = x.deskripsi || x.hint || '';
-    const jawaban = x.jawaban || x.answer || x.a;
+    const x = state.batch[Math.floor(Math.random() * state.batch.length)];
+
+    const img = x.img || x.image || x.url || x.link;
+    const deskripsi = x.deskripsi || x.description || x.hint || '';
+    const jawaban = x.jawaban || x.answer || x.a || x.key;
+
     return { img, deskripsi, jawaban };
   }
 
-  function showCurrent() {
+  // tampilkan dan auto-skip kalau gagal
+  function showCurrent(){
     const cur = state.cur; if (!cur) return;
     el.img.style.display = 'none';
     el.imgLoading.style.display = 'grid';
     el.imgLoading.textContent = 'Memuat gambar…';
-    el.img.onload = () => { el.imgLoading.style.display = 'none'; el.img.style.display = 'block'; };
-    el.img.onerror = () => { el.imgLoading.textContent = 'Gambar gagal dimuat.'; log('Cek URL gambar.'); };
+
+    // paksa gagal jika lama (10s) → auto-skip
+    let failTimer = setTimeout(() => {
+      el.img.onerror?.();
+    }, 10000);
+
+    el.img.onload = () => {
+      clearTimeout(failTimer);
+      el.imgLoading.style.display = 'none';
+      el.img.style.display = 'block';
+    };
+    el.img.onerror = () => {
+      clearTimeout(failTimer);
+      el.imgLoading.style.display = 'grid';
+      el.imgLoading.textContent = 'Gambar gagal dimuat. Lewat ke soal berikut…';
+      log('Gambar gagal dimuat — auto-skip.');
+      setTimeout(() => { stopCountdown(); nextQuestion(); }, 800);
+    };
     el.img.src = cur.img;
   }
 
@@ -124,11 +162,12 @@
     if (!state.batch.length) await loadBatch();
     state.cur = pickRandom();
     if (!state.cur) { log('Tidak ada soal.'); return; }
+
     el.input.value = '';
     setPlaying(true);
     showCurrent();
-    // caption/log seperti plugin
-    log(`SOAL: ${state.cur.deskripsi || '-'}. Timeout ${(TIMEOUT_MS/1000).toFixed(0)} detik. Bonus ${BONUS}.`);
+
+    log(`SOAL: ${state.cur.deskripsi || '-'} • Timeout ${(TIMEOUT_MS/1000).toFixed(0)} dtk • Bonus ${BONUS}.`);
     startCountdown(TIMEOUT_MS);
   }
 
@@ -140,7 +179,8 @@
 
   function isCorrect(input, answer) {
     const s = norm(input);
-    const t = norm(Array.isArray(answer) ? answer[0] : answer);
+    const raw = Array.isArray(answer) ? answer[0] : answer;
+    const t = norm(raw);
     if (!t) return false;
     if (s === t) return true;
     // toleransi typo kecil
@@ -153,12 +193,12 @@
     return false;
   }
 
-  // ====== EVENTS ======
+  // ===== EVENTS =====
   el.btnStart.onclick = nextQuestion;
   el.btnNext.onclick = () => { stopCountdown(); nextQuestion(); };
   el.btnSkip.onclick = () => { log(`Lewat. Jawaban: ${state.cur?.jawaban || '-'}`); stopCountdown(); nextQuestion(); };
   el.btnHint.onclick = () => {
-    const ans = String(state.cur?.jawaban || '');
+    const ans = String(Array.isArray(state.cur?.jawaban) ? state.cur.jawaban[0] : (state.cur?.jawaban || ''));
     const vis = ans.slice(0, Math.ceil(ans.length/2));
     log(`Hint: ${vis}…`);
   };
@@ -168,7 +208,7 @@
     if (!v) return;
     if (isCorrect(v, state.cur.jawaban)) {
       state.score += 1; el.score.textContent = String(state.score);
-      log(`✅ Benar! (${state.cur.jawaban}) +${BONUS}`);
+      log(`✅ Benar! (${Array.isArray(state.cur.jawaban) ? state.cur.jawaban[0] : state.cur.jawaban}) +${BONUS}`);
       stopCountdown();
       commitBest();
       nextQuestion();
@@ -178,6 +218,7 @@
   }
   el.btnAnswer.onclick = submit;
   el.input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+
   el.btnReset.onclick = () => {
     stopCountdown(); el.timer.textContent = '00:00';
     setPlaying(false); state.score = 0; el.score.textContent = '0';
