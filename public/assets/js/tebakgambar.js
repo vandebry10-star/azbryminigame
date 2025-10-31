@@ -4,7 +4,7 @@
   const TIMEOUT_MS = 100_000; // 100 detik
   const BONUS = 10_000;
   // set salah satu:
-  const USE_PROXY = false; // true kalau pakai /api/tebakgambar di Vercel
+  const USE_PROXY = true; // true kalau pakai /api/tebakgambar di Vercel
   const API_ENDPOINT = () =>
     USE_PROXY
       ? '/api/tebakgambar'
