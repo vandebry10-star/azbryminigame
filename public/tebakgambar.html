@@ -25,13 +25,17 @@
       display: block;
     }
     .img-loading {
-      position: absolute; inset: 0;
-      display: grid; place-items: center;
-      font-weight: 800; color: #cdd6e3;
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      color: #cdd6e3;
       background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));
     }
     .tiny {
-      font-size: 12px; opacity: .8;
+      font-size: 12px;
+      opacity: .7;
     }
   </style>
 </head>
@@ -41,10 +45,13 @@
   <div id="splash" class="splash visible" role="dialog" aria-modal="true">
     <div class="splash-card">
       <h1 class="splash-title">Tebak Gambar</h1>
-      <p class="splash-sub">Soal diambil dari API BotCahx melalui proxy server • by <strong>FebryWesker</strong> — Azbry-MD</p>
+      <p class="splash-sub">
+        Soal diambil langsung dari API BotCahx melalui server proxy<br>
+        <strong>by FebryWesker — Azbry-MD</strong>
+      </p>
       <div class="splash-actions">
         <button id="splashPlay" class="btn accent splash-play">Play</button>
-        <a class="btn dark" href="/GameTebak.html">Kembali ke GameTebak</a>
+        <a class="btn dark" href="/GameTebak.html">Kembali</a>
       </div>
       <div class="splash-hint">Tekan <kbd>Enter</kbd> untuk mulai</div>
     </div>
@@ -56,7 +63,6 @@
         <h1>Tebak Gambar (API)</h1>
         <div>
           <span class="tag">Azbry</span>
-          <span class="tag">Neon Dark</span>
           <span class="tag">Azbry Minigame</span>
         </div>
       </div>
@@ -92,7 +98,7 @@
         <div class="move-log">
           <h4>Log</h4>
           <pre id="log" style="max-height:220px;overflow:auto;"></pre>
-          <div class="tiny">Sumber soal: <code>/api/tebakgambar</code> (Proxy ke API BotCahx)</div>
+          <div class="tiny">Sumber soal: <code>/api/tebakgambar</code> → <code>/api/proxy-image</code></div>
         </div>
       </div>
     </section>
@@ -103,7 +109,9 @@
     </div>
   </main>
 
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
   <script src="assets/js/tebakgambar.js" defer></script>
 </body>
 </html>
