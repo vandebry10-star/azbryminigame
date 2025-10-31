@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azbry Minigame • Ular Tangga 2P</title>
+  <meta name="theme-color" content="#0b0d10" />
+  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <style>
+    :root { --stage-max: 820px; }
+
+    /* Board wrapper */
+    .board-wrap{ max-width:var(--stage-max); margin:12px auto 16px; border-radius:22px; padding:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--panel-bd); box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    /* Board grid 10x10 */
+    .board{
+      position:relative; width:100%; max-width:var(--stage-max); aspect-ratio:1/1; margin:0 auto;
+      border-radius:16px; overflow:hidden; background:rgba(255,255,255,.02); border:1px solid var(--panel-bd);
+      display:grid; grid-template-columns:repeat(10,1fr); grid-template-rows:repeat(10,1fr);
+    }
+    .cell{
+      position:relative; border:1px solid rgba(255,255,255,.06); display:flex; align-items:flex-start; justify-content:flex-end;
+      padding:4px; font-size:12px; color:#aeb9c8; user-select:none;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.02));
+    }
+    .cell:nth-child(odd){ background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.03)); }
+
+    /* Ladders & snakes as SVG-like stripes */
+    .ladder, .snake{
+      position:absolute; pointer-events:none; opacity:.9; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35));
+    }
+    .ladder{ border-left:6px solid #b8ff9a; border-right:6px solid #94ef89; }
+    .ladder:before, .ladder:after{ content:""; position:absolute; left:-6px; right:-6px; height:6px; background:#b8ff9a; }
+    .ladder:before{ top:15%; } .ladder:after{ bottom:15%; }
+
+    .snake{ height:8px; background: repeating-linear-gradient(90deg, #ff6b6b 0 10px, #ffd166 10px 20px);
+      border-radius:999px;
+    }
+
+    /* Player tokens */
+    .token{
+      position:absolute; width:22px; height:22px; border-radius:50%;
+      border:2px solid rgba(0,0,0,.35); box-shadow:0 2px 6px rgba(0,0,0,.35);
+      display:grid; place-items:center; font-weight:900; color:#0b0d10;
+      transition: transform .18s ease;
+    }
+    .p1{ background:#b8ff9a; }  /* neon green */
+    .p2{ background:#89d5ff; }  /* neon blue-ish */
+    .token.small{ width:18px; height:18px; font-size:12px; }
+
+    /* Dice badge */
+    .dice{
+      display:inline-grid; place-items:center; width:44px; height:44px; border-radius:12px;
+      border:1px solid var(--panel-bd); background:var(--panel-bg-1); font-size:20px; font-weight:800;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    /* Info row */
+    .info{
+      display:flex; gap:10px; align-items:center; justify-content:flex-start; flex-wrap:wrap;
+      margin:8px 0 0;
+    }
+    .badge{
+      display:inline-block; padding:6px 10px; border-radius:999px;
+      background:rgba(255,255,255,.04); border:1px solid var(--panel-bd); color:#dbe4ee; font-weight:800; font-size:12px;
+    }
+    .turn{ color:#0b0d10; background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2)); box-shadow:0 0 12px rgba(184,255,154,.25); }
+
+    @media (max-width:560px){
+      .dice{ width:38px; height:38px; font-size:18px; }
+      .token{ width:20px; height:20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="container">
+    <header class="top-header">
+      <div class="title">
+        <h1>Ular Tangga 2P</h1>
+        <div>
+          <span class="tag">Azbry</span>
+          <span class="tag">Azbry Minigame</span>
+        </div>
+      </div>
+    </header>
+
+    <section>
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+        <div class="info">
+          <div class="dice" id="dice">–</div>
+          <span class="badge" id="turnBadge">Giliran: P1</span>
+          <span class="badge">P1: <strong id="pos1">1</strong></span>
+          <span class="badge">P2: <strong id="pos2">1</strong></span>
+          <span class="badge">Target: 100 (pas)</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <button class="btn accent" id="btnRoll">🎲 Kocok</button>
+          <button class="btn" id="btnAuto">⏩ Auto</button>
+          <button class="btn dark" id="btnReset">Reset</button>
+          <div style="margin-left:auto;font-weight:800;">
+            Langkah: <span id="steps">0</span>
+          </div>
+        </div>
+
+        <div class="move-log">
+          <h4>Log</h4>
+          <pre id="log" style="max-height:220px;overflow:auto;"></pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="license">
+      <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>
+      <a class="cta" href="/" rel="home">Kembali ke Home</a>
+    </div>
+  </main>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="assets/js/ulartangga.js" defer></script>
+</body>
+</html>
