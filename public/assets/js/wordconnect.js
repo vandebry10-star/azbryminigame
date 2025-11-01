@@ -321,4 +321,7 @@
   // ===== INIT =====
   fitCanvas();
   loadLevel(state.level);
+  window.addEventListener("load", () => {
+  setTimeout(() => layoutWheel(LEVELS[state.level - 1].letters), 200);
+});
 })();
