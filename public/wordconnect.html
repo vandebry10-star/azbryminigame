@@ -23,46 +23,38 @@
       background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
     }
-    #board{aspect-ratio:auto !important; display:grid; gap:6px; place-content:center;
-      grid-template-columns:repeat(12,32px); grid-auto-rows:32px;
-      min-height:260px; padding:10px; border-radius:16px;
-      background: rgba(255,255,255,.02); border:1px solid var(--panel-bd); overflow:auto;
+    /* === FIX huruf agar tersusun rapi === */
+    #board {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      padding: 20px;
+      min-height: 220px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid var(--panel-bd);
+      border-radius: 16px;
     }
-    .slot{
-      width:32px;height:32px;border-radius:8px;display:grid;place-items:center;
-      font-weight:900;letter-spacing:.3px;color:#cfe3d4;
-      background:rgba(184,255,154,.06); border:1px dashed rgba(184,255,154,.25);
-      box-shadow:0 0 10px rgba(184,255,154,.12)
+    #board .letter {
+      position: static !important;
+      width: 60px; height: 60px;
+      border-radius: 999px;
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 22px;
+      color: var(--azbry-ink);
+      background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+      box-shadow: 0 0 18px rgba(184,255,154,.25);
+      cursor: pointer;
     }
-    .slot.revealed{
-      color:#0b0d10; background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
-      border:0; box-shadow:0 2px 8px rgba(184,255,154,.28)
+    #board .letter:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(184,255,154,.35);
     }
-    #wheel{
-      position:relative; margin:14px auto; width:min(520px,90vw);
-      height:min(520px,90vw); border-radius:24px;
-      display:grid;place-items:center;
-      background: radial-gradient(300px 220px at 50% 30%, rgba(184,255,154,.08), transparent 60%), var(--panel-bg-2);
-      border:1px solid var(--panel-bd); touch-action:none;
-    }
-    #trail{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:24px}
-    .letter{
-      position:absolute; width:74px;height:74px;border-radius:999px;display:grid;place-items:center;
-      font-weight:900;font-size:28px;color:#0b0d10;
-      background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
-      box-shadow:0 10px 22px rgba(184,255,154,.22); user-select:none; cursor:pointer; z-index:2
-    }
-    .letter.flash{outline:3px solid var(--azbry-ring); transform:translateY(-2px)}
-    .center-badge{
-      width:88px;height:88px;border-radius:999px;display:grid;place-items:center;
-      background:rgba(255,255,255,.05); border:1px solid var(--panel-bd); color:#d0d9e4; font-weight:800; z-index:1
-    }
+
     .current{margin-top:8px;text-align:center;font-weight:900;letter-spacing:.6px;color:#dbe7f2}
+
     @media (max-width:560px){
-      #board{grid-template-columns:repeat(12,28px); grid-auto-rows:28px; gap:5px}
-      .slot{width:28px;height:28px;border-radius:7px;font-size:13px}
-      .letter{width:64px;height:64px;font-size:24px}
-      .center-badge{width:78px;height:78px}
+      #board .letter{width:50px;height:50px;font-size:20px}
     }
   </style>
 </head>
@@ -73,7 +65,7 @@
         <h1>Word Connect (Aktifkan Situs Dekstop)</h1>
         <div><span class="tag">Azbry</span><span class="tag">Febry Wesker</span></div>
       </div>
-      <div class="tag">Level: <span id="levelNum">1</span></div>
+      <div class="tag">Level: <span id="level">1</span></div>
     </header>
 
     <div class="hint-bar" id="topHint">Hint: Geser huruf untuk membentuk kata.</div>
@@ -82,36 +74,27 @@
       <div id="board"></div>
     </section>
 
-    <section>
-      <div id="wheel">
-        <canvas id="trail"></canvas>
-        <div class="center-badge" id="badge">⟳</div>
-      </div>
-      <div class="current">Kata: <span id="curWord">—</span></div>
+    <div class="current">Kata: <span id="currentWord">—</span></div>
 
-      <div class="panel">
-        <div class="controls">
-          <!-- hanya tombol shuffle + skor -->
-          <button class="btn" id="btnShuffle">Shuffle</button>
-          <div style="margin-left:auto;font-weight:800">
-            Skor: <span id="score">0</span> • Best: <span id="best">0</span>
-          </div>
-        </div>
-
-        <div class="move-log">
-          <h4>Log</h4>
-          <pre id="log"></pre>
-        </div>
-      </div>
-    </section>
-
-    <div class="license">
-      <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>
-      <a class="cta" href="/" rel="home">Kembali ke Home</a>
+    <div class="panel" style="margin-top:14px;">
+      <button class="btn" id="shuffleBtn">Shuffle</button>
+      <span style="margin-left:10px;font-weight:800;">Skor: <span id="score">0</span> • Best: <span id="best">0</span></span>
     </div>
+
+    <div style="margin-top:12px;">
+      <h4>Log</h4>
+      <pre id="log" style="font-size:13px;background:rgba(255,255,255,.02);border-radius:10px;padding:10px;"></pre>
+    </div>
+
+    <footer style="margin-top:24px;text-align:center;color:#b8c0cc;font-size:13px;">
+      © <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD<br>
+      <a href="/" class="btn" style="margin-top:8px;">Kembali ke Home</a>
+    </footer>
   </main>
 
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-  <script src="/assets/js/wordconnect.js" defer></script>
+  <script src="js/wordconnect.js"></script>
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
 </body>
 </html>
