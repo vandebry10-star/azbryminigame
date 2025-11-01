@@ -1,4 +1,4 @@
-/* Azbry • Word Connect (hidden board + drag gesture) */
+/* Azbry • Word Connect (repeat letters + drag trail) */
 (() => {
   // ===== LEVELS =====
   const LEVELS = [
@@ -13,6 +13,7 @@
   const el = {
     board: document.getElementById('board'),
     wheel: document.getElementById('wheel'),
+    trail: document.getElementById('trail'),
     badge: document.getElementById('badge'),
     curWord: document.getElementById('curWord'),
     score: document.getElementById('score'),
@@ -25,6 +26,7 @@
     btnHint: document.getElementById('btnHint'),
     btnReset: document.getElementById('btnReset'),
   };
+  const ctx = el.trail.getContext('2d');
 
   // ===== STATE =====
   const state = {
@@ -35,15 +37,23 @@
     usedWords: new Set(),
     grid: [], gridW: 12, gridH: 12,
     selecting: false,
+    lastNode: null,
+    points: [], // trail points {x,y}
   };
 
   // ===== UTILS =====
   const log = (m) => el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent;
   const norm = s => (s||'').toUpperCase().replace(/[^A-Z]/g,'');
   const rand = arr => arr[Math.floor(Math.random()*arr.length)];
+  const save = () => { localStorage.setItem('azbry-wc-level', state.level); localStorage.setItem('azbry-wc-score', state.score); localStorage.setItem('azbry-wc-best', state.best); };
+  const updateHUD = () => { el.levelNum.textContent = state.level; el.score.textContent = state.score; el.best.textContent = state.best; };
 
-  function save(){ localStorage.setItem('azbry-wc-level', state.level); localStorage.setItem('azbry-wc-score', state.score); localStorage.setItem('azbry-wc-best', state.best); }
-  function updateHUD(){ el.levelNum.textContent = state.level; el.score.textContent = state.score; el.best.textContent = state.best; }
+  // resize canvas to wheel size
+  function fitCanvas(){
+    const r = el.wheel.getBoundingClientRect();
+    el.trail.width = Math.round(r.width);
+    el.trail.height = Math.round(r.height);
+  }
 
   // ===== GRID GEN =====
   const blankGrid = (w,h)=>Array.from({length:h},()=>Array.from({length:w},()=>''));  
@@ -86,28 +96,23 @@
       for (let x=0;x<W;x++){
         const ch = state.grid[y][x];
         if (!ch){
-          // slot tidak dipakai → tidak dibuat (agar rapih)
           const ph = document.createElement('div');
-          ph.className = 'slot';
-          ph.style.visibility='hidden';
+          ph.className = 'slot'; ph.style.visibility='hidden';
           el.board.appendChild(ph);
           continue;
         }
         const cell = document.createElement('div');
-        cell.className = 'slot';            // kosong default
-        cell.dataset.letter = ch;           // simpan huruf (disembunyikan)
-        cell.textContent = '';              // tidak tampil duluan
-        cell.dataset.x = x; cell.dataset.y = y;
+        cell.className = 'slot';      // kosong = belum terbuka
+        cell.dataset.letter = ch;     // simpan huruf
+        cell.textContent = '';        // tidak tampil dulu
         el.board.appendChild(cell);
       }
     }
   }
 
-  // cari posisi kata di grid
   function findPositions(word){
     word = norm(word);
     const H = state.grid.length, W = state.grid[0].length;
-    // horizontal
     for (let y=0;y<H;y++){
       for (let x=0;x<=W - word.length;x++){
         let ok = true;
@@ -115,7 +120,6 @@
         if (ok) return Array.from({length:word.length},(_,i)=>({x:x+i,y}));
       }
     }
-    // vertical
     for (let x=0;x<W;x++){
       for (let y=0;y<=H - word.length;y++){
         let ok = true;
@@ -138,7 +142,7 @@
     return true;
   }
 
-  // ===== WHEEL =====
+  // ===== WHEEL / INPUT =====
   function layoutWheel(letters){
     [...el.wheel.querySelectorAll('.letter')].forEach(n=>n.remove());
     const R = (el.wheel.clientWidth/2) - 56;
@@ -150,26 +154,69 @@
       const b = document.createElement('div');
       b.className = 'letter'; b.textContent = ch;
       b.style.left = x+'px'; b.style.top = y+'px';
-      // tap click fallback
-      b.addEventListener('click', () => addLetter(b, ch));
+      // click → boleh pilih berulang
+      b.addEventListener('click', () => addLetter(b, ch, true));
       el.wheel.appendChild(b);
     });
+    fitCanvas();
   }
 
-  function addLetter(node, ch){
-    if (node.classList.contains('sel')) return;
+  function getCenterOnCanvas(node){
+    const wr = el.wheel.getBoundingClientRect();
+    const nr = node.getBoundingClientRect();
+    return { x: (nr.left - wr.left) + nr.width/2, y: (nr.top - wr.top) + nr.height/2 };
+  }
+
+  function drawTrail(previewPoint=null){
+    ctx.clearRect(0,0,el.trail.width, el.trail.height);
+    if (state.points.length === 0) return;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(184,255,154,0.95)';
+    ctx.shadowColor = 'rgba(184,255,154,0.65)';
+    ctx.shadowBlur = 14;
+
+    ctx.beginPath();
+    ctx.moveTo(state.points[0].x, state.points[0].y);
+    for (let i=1;i<state.points.length;i++){
+      ctx.lineTo(state.points[i].x, state.points[i].y);
+    }
+    if (previewPoint){
+      ctx.lineTo(previewPoint.x, previewPoint.y);
+    }
+    ctx.stroke();
+  }
+
+  function addLetter(node, ch, flash=false){
     state.selected.push(ch);
-    node.classList.add('sel');
     el.curWord.textContent = state.selected.join('');
+    // trail
+    const p = getCenterOnCanvas(node);
+    state.points.push(p);
+    drawTrail();
+    // anim flash
+    if (flash){
+      node.classList.add('flash');
+      setTimeout(()=>node.classList.remove('flash'), 160);
+    }
   }
+
   function clearSelection(){
-    state.selected = []; el.curWord.textContent = '—';
-    [...el.wheel.querySelectorAll('.letter.sel')].forEach(n=>n.classList.remove('sel'));
+    state.selected = [];
+    state.points = [];
+    state.lastNode = null;
+    el.curWord.textContent = '—';
+    ctx.clearRect(0,0,el.trail.width, el.trail.height);
   }
+
   function shuffleLetters(){
     const lvl = LEVELS[state.level-1];
-    const s = lvl.letters.split(''); for (let i=s.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; }
-    lvl.letters = s.join(''); layoutWheel(lvl.letters);
+    const s = lvl.letters.split('');
+    for (let i=s.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [s[i],s[j]]=[s[j],s[i]]; }
+    lvl.letters = s.join('');
+    layoutWheel(lvl.letters);
+    clearSelection();
   }
 
   // ===== DRAG / SLIDE GESTURE =====
@@ -178,27 +225,31 @@
     return els.find(e => e.classList && e.classList.contains('letter'));
   }
   function startSelect(e){
-    state.selecting = true; clearSelection();
+    state.selecting = true;
+    clearSelection();
     updateSelect(e);
   }
   function endSelect(){
     if (!state.selecting) return;
     state.selecting = false;
-    // auto-submit saat lepas
-    submit();
+    drawTrail(); // finalize
+    submit();    // auto-submit
   }
   function updateSelect(e){
     if (!state.selecting) return;
-    const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
-    const node = letterAtPoint(p.clientX, p.clientY);
-    if (node && !node.classList.contains('sel')){
+    const pt = (e.touches && e.touches[0]) ? e.touches[0] : e;
+    const node = letterAtPoint(pt.clientX, pt.clientY);
+    if (node && node !== state.lastNode){
+      state.lastNode = node;
       addLetter(node, node.textContent.trim());
     }
+    // preview line ke pointer
+    const wr = el.wheel.getBoundingClientRect();
+    drawTrail({ x: pt.clientX - wr.left, y: pt.clientY - wr.top });
   }
   el.wheel.addEventListener('pointerdown', startSelect);
   window.addEventListener('pointermove', updateSelect);
   window.addEventListener('pointerup', endSelect);
-  // touch fallback (Safari lama)
   el.wheel.addEventListener('touchstart', startSelect, {passive:false});
   el.wheel.addEventListener('touchmove', (e)=>{ e.preventDefault(); updateSelect(e); }, {passive:false});
   window.addEventListener('touchend', endSelect);
@@ -265,8 +316,9 @@
   el.btnShuffle.onclick = shuffleLetters;
   el.btnHint.onclick = hint;
   el.btnReset.onclick = () => { state.score=0; state.best=Math.max(state.best,0); loadLevel(1); save(); log('Reset permainan.'); };
-  window.addEventListener('resize', () => layoutWheel(LEVELS[state.level-1].letters));
+  window.addEventListener('resize', () => { layoutWheel(LEVELS[state.level-1].letters); fitCanvas(); });
 
   // ===== INIT =====
+  fitCanvas();
   loadLevel(state.level);
 })();
