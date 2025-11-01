@@ -2,12 +2,32 @@
 (() => {
   // ===== LEVELS =====
   const LEVELS = [
-    { letters: 'KRGUSN', words: ['RUKUN','GURU','SUKU','KURUN','URUS','RUSUK','GUS','KUR','SUNGKUR','UNGU'] },
-    { letters: 'PINARE', words: ['AIR','PAIN','PERAN','NAIK','RAIN','PEAR'] },
-    { letters: 'LAMBER', words: ['AMAL','RAMAL','LAMB','BERLAR','LAMBER'] },
-    { letters: 'SATURN', words: ['SATU','TURUN','RATUS','SANTUR'] },
-    { letters: 'TANJIR', words: ['JARI','TANI','RANTAI','JARIT'] },
-  ];
+  // ===== EASY (1–7) =====
+  { letters: 'KANAM', words: ['MAKAN','AMAN','ANAK','KANA'] },
+  { letters: 'RAUMH', words: ['RUMAH','ARUM','HAMUR'] },
+  { letters: 'ARALI', words: ['AIR','LARI','ARIL','RIA'] },
+  { letters: 'SIPAL', words: ['LAPIS','SIAL','ALIS','ASLI','PASI'] },
+  { letters: 'URKBU', words: ['BUKU','BURUK','KUBUR'] },
+  { letters: 'TURID', words: ['TIDUR','DIRI','RUDI'] },
+  { letters: 'MNIUM', words: ['MINUM','IMUN','MIMI'] },
+
+  // ===== MEDIUM (8–14) =====
+  { letters: 'RAGAP', words: ['PAGAR','AGAR','RAGA','PARA'] },
+  { letters: 'GABUN', words: ['BUNGA','GUNA','UBAN'] },
+  { letters: 'KPOKI', words: ['KOPI','PIKO'] },
+  { letters: 'SNEJA', words: ['SENJA','JASA','ASEN'] },
+  { letters: 'MRKAU', words: ['KURMA','MUKA','ARUM'] },
+  { letters: 'NUJHA', words: ['HUJAN','ANJU','JAHU'] },
+  { letters: 'AJALN', words: ['JALAN','ALAN','AJAL'] },
+
+  // ===== HARD (15–20) =====
+  { letters: 'CEHRA', words: ['CERAH','ACER','ARCE','RAHCE'] },
+  { letters: 'LOEKS', words: ['SEKOL','LOKES','SOKEL'] },
+  { letters: 'APALK', words: ['KAPAL','KALA','ALAK'] },
+  { letters: 'AUBAY', words: ['BUAYA','ABU','AYA'] },
+  { letters: 'TRLUA', words: ['LARUT','TARU','ULAT'] },
+  { letters: 'GARSI', words: ['GARIS','SARI','RASI','ARIS'] },
+];
 
   // ===== ELEMENTS =====
   const el = {
