@@ -1,111 +1,122 @@
 <!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azbry Minigame • Word Connect</title>
+  <meta name="theme-color" content="#0b0d10" />
+  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <style>
+    body{
+      background:
+        linear-gradient(180deg, rgba(11,13,16,.65), rgba(11,13,16,.85)),
+        url("/assets/img/bg.png") center / cover fixed no-repeat;
+    }
+    .wrap{max-width:880px;margin:0 auto;padding:18px 16px 90px}
+    .hint-bar{
+      margin:8px 0 14px; padding:10px 14px; border-radius:12px;
+      background:rgba(184,255,154,.08); border:1px solid var(--panel-bd);
+      color:#dfffe0; font-weight:800; box-shadow:inset 0 1px 0 rgba(255,255,255,.04)
+    }
+    .board-wrap{
+      border:1px solid var(--panel-bd); border-radius:22px; padding:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+    #board{
+      display:grid; gap:6px; place-content:center;
+      grid-template-columns:repeat(12,32px); grid-auto-rows:32px;
+      min-height:260px; padding:10px; border-radius:16px;
+      background: rgba(255,255,255,.02); border:1px solid var(--panel-bd); overflow:auto;
+    }
+    .slot{
+      width:32px;height:32px;border-radius:8px;display:grid;place-items:center;
+      font-weight:900;letter-spacing:.3px;color:#cfe3d4;
+      background:rgba(184,255,154,.06); border:1px dashed rgba(184,255,154,.25);
+      box-shadow:0 0 10px rgba(184,255,154,.12)
+    }
+    .slot.revealed{
+      color:#0b0d10; background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
+      border:0; box-shadow:0 2px 8px rgba(184,255,154,.28)
+    }
 
-<html lang="id">  
-<head>  
-  <meta charset="utf-8" />  
-  <meta name="viewport" content="width=device-width, initial-scale=1" />  
-  <title>Azbry Minigame • Word Connect (Aktifkan Situs Dekstop)</title>  
-  <meta name="theme-color" content="#0b0d10" />  
-  <link rel="stylesheet" href="/assets/css/azbry.css">  
-  <style>  
-    body {  
-      background:  
-        linear-gradient(180deg, rgba(11,13,16,.65), rgba(11,13,16,.85)),  
-        url("/assets/img/bg.png") center / cover fixed no-repeat;  
-    }  
-    .wrap{max-width:880px;margin:0 auto;padding:18px 16px 90px}  
-    .hint-bar{  
-      margin:8px 0 14px; padding:10px 14px; border-radius:12px;  
-      background:rgba(184,255,154,.08); border:1px solid var(--panel-bd);  
-      color:#dfffe0; font-weight:800; box-shadow:inset 0 1px 0 rgba(255,255,255,.04)  
-    }  
-    .board-wrap{  
-      border:1px solid var(--panel-bd); border-radius:22px; padding:14px;  
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));  
-      box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);  
-    }  
-    #board{aspect-ratio:auto !important; display:grid; gap:6px; place-content:center;  
-      grid-template-columns:repeat(12,32px); grid-auto-rows:32px;  
-      min-height:260px; padding:10px; border-radius:16px;  
-      background: rgba(255,255,255,.02); border:1px solid var(--panel-bd); overflow:auto;  
-    }  
-    .slot{  
-      width:32px;height:32px;border-radius:8px;display:grid;place-items:center;  
-      font-weight:900;letter-spacing:.3px;color:#cfe3d4;  
-      background:rgba(184,255,154,.06); border:1px dashed rgba(184,255,154,.25);  
-      box-shadow:0 0 10px rgba(184,255,154,.12)  
-    }  
-    .slot.revealed{  
-      color:#0b0d10; background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));  
-      border:0; box-shadow:0 2px 8px rgba(184,255,154,.28)  
-    }  
-    #wheel{  
-      position:relative; margin:14px auto; width:min(520px,90vw);  
-      height:min(520px,90vw); border-radius:24px;  
-      display:grid;place-items:center;  
-      background: radial-gradient(300px 220px at 50% 30%, rgba(184,255,154,.08), transparent 60%), var(--panel-bg-2);  
-      border:1px solid var(--panel-bd); touch-action:none;  
-    }  
-    #trail{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:24px}  
-    .letter{  
-      position:absolute; width:74px;height:74px;border-radius:999px;display:grid;place-items:center;  
-      font-weight:900;font-size:28px;color:#0b0d10;  
-      background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));  
-      box-shadow:0 10px 22px rgba(184,255,154,.22); user-select:none; cursor:pointer; z-index:2  
-    }  
-    .letter.flash{outline:3px solid var(--azbry-ring); transform:translateY(-2px)}  
-    .center-badge{  
-      width:88px;height:88px;border-radius:999px;display:grid;place-items:center;  
-      background:rgba(255,255,255,.05); border:1px solid var(--panel-bd); color:#d0d9e4; font-weight:800; z-index:1  
-    }  
-    .current{margin-top:8px;text-align:center;font-weight:900;letter-spacing:.6px;color:#dbe7f2}  
-    @media (max-width:560px){  
-      #board{grid-template-columns:repeat(12,28px); grid-auto-rows:28px; gap:5px}  
-      .slot{width:28px;height:28px;border-radius:7px;font-size:13px}  
-      .letter{width:64px;height:64px;font-size:24px}  
-      .center-badge{width:78px;height:78px}  
-    }  
-  </style>  
-</head>  
-<body>  
-  <main class="wrap">  
-    <header class="top-header">  
-      <div class="title">  
-        <h1>Word Connect (Aktifkan Situs Dekstop)</h1>  
-        <div><span class="tag">Azbry</span><span class="tag">Febry Wesker</span></div>  
-      </div>  
-      <div class="tag">Level: <span id="levelNum">1</span></div>  
-    </header>  <div class="hint-bar" id="topHint">Hint: Geser huruf untuk membentuk kata.</div>  
+    /* ===== Wheel (roda huruf) ===== */
+    #wheel{
+      position:relative; margin:14px auto; width:min(520px,90vw);
+      height:min(520px,90vw); border-radius:24px;
+      display:grid;place-items:center;
+      background: radial-gradient(300px 220px at 50% 30%, rgba(184,255,154,.08), transparent 60%), var(--panel-bg-2);
+      border:1px solid var(--panel-bd); touch-action:none;
+    }
+    #trail{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; border-radius:24px}
+    .letter{
+      position:absolute; width:74px;height:74px;border-radius:999px;display:grid;place-items:center;
+      font-weight:900;font-size:28px;color:#0b0d10;
+      background:linear-gradient(180deg,var(--azbry-accent),var(--azbry-accent-2));
+      box-shadow:0 10px 22px rgba(184,255,154,.22); user-select:none; cursor:pointer; z-index:2
+    }
+    .letter.flash{outline:3px solid var(--azbry-ring); transform:translateY(-2px)}
+    .center-badge{
+      width:88px;height:88px;border-radius:999px;display:grid;place-items:center;
+      background:rgba(255,255,255,.05); border:1px solid var(--panel-bd); color:#d0d9e4; font-weight:800; z-index:1
+    }
+    .current{margin-top:8px;text-align:center;font-weight:900;letter-spacing:.6px;color:#dbe7f2}
 
-<section class="board-wrap">  
-  <div id="board"></div>  
-</section>  
+    @media (max-width:560px){
+      #board{grid-template-columns:repeat(12,28px); grid-auto-rows:28px; gap:5px}
+      .slot{width:28px;height:28px;border-radius:7px;font-size:13px}
+      .letter{width:64px;height:64px;font-size:24px}
+      .center-badge{width:78px;height:78px}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top-header">
+      <div class="title">
+        <h1>Word Connect</h1>
+        <div><span class="tag">Azbry</span><span class="tag">Neon Dark</span></div>
+      </div>
+      <div class="tag">Level: <span id="levelNum">1</span></div>
+    </header>
 
-<section>  
-  <div id="wheel">  
-    <canvas id="trail"></canvas>  
-    <div class="center-badge" id="badge">⟳</div>  
-  </div>  
-  <div class="current">Kata: <span id="curWord">—</span></div>  
+    <div class="hint-bar" id="topHint">Hint: Geser huruf untuk membentuk kata.</div>
 
-  <div class="panel">  
-    <div class="controls">  
-      <!-- hanya tombol shuffle + skor -->  
-      <button class="btn" id="btnShuffle">Shuffle</button>  
-      <div style="margin-left:auto;font-weight:800">  
-        Skor: <span id="score">0</span> • Best: <span id="best">0</span>  
-      </div>  
-    </div>  
+    <!-- Papan kata (grid reveal) -->
+    <section class="board-wrap">
+      <div id="board"></div>
+    </section>
 
-    <div class="move-log">  
-      <h4>Log</h4>  
-      <pre id="log"></pre>  
-    </div>  
-  </div>  
-</section>  
+    <!-- Roda huruf + trail -->
+    <section>
+      <div id="wheel">
+        <canvas id="trail"></canvas>
+        <div class="center-badge" id="badge">⟳</div>
+      </div>
+      <div class="current">Kata: <span id="curWord">—</span></div>
 
-<div class="license">  
-  <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>  
-  <a class="cta" href="/" rel="home">Kembali ke Home</a>  
-</div>
-</main>
+      <div class="panel">
+        <div class="controls">
+          <button class="btn" id="btnShuffle">Shuffle</button>
+          <div style="margin-left:auto;font-weight:800">
+            Skor: <span id="score">0</span> • Best: <span id="best">0</span>
+          </div>
+        </div>
+
+        <div class="move-log">
+          <h4>Log</h4>
+          <pre id="log"></pre>
+        </div>
+      </div>
+    </section>
+
+    <div class="license">
+      <div>© <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD</div>
+      <a class="cta" href="/" rel="home">Kembali ke Home</a>
+    </div>
+  </main>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="/assets/js/wordconnect.js" defer></script>
+</body>
+</html>
