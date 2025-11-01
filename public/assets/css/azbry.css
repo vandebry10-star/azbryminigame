@@ -27,7 +27,9 @@ html, body{
   margin:0;
   padding:0;
   color:#eaf1e9;
-  background: linear-gradient(180deg, var(--azbry-bg-1) 0%, var(--azbry-bg-2) 100%);
+  background:
+    linear-gradient(180deg, rgba(11,13,16,.65), rgba(11,13,16,.85)),
+    url("/assets/img/bg.png") center / cover fixed no-repeat;
   font-family: Inter, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
