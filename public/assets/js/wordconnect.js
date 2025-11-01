@@ -1,7 +1,11 @@
-/* Azbry • Word Connect (clean version — auto submit, no manual buttons) */
-(() => {
-  // ===== LEVELS =====
-  const LEVELS = [
+/* =====================================================
+   Azbry • Word Connect (persist progress)
+   - Auto submit saat lepas drag
+   - Simpan level, skor, dan best di localStorage
+   - Roda huruf + garis trail
+   ===================================================== */
+
+const LEVELS = [
   { letters: 'BATIK', words: ['BATIK','BAKTI','IKAT','TIBA','KITA','TIKA','BAKI'] },
   { letters: 'SAKIT', words: ['SAKIT','SIKAT','TAKSI','AKSI','KATA','TIKA','SITA'] },
   { letters: 'PASIR', words: ['PASIR','SIRAP','PRIA','RAPI','SARI','ASRI','IRIS'] },
@@ -23,28 +27,28 @@
   { letters: 'TANJUR', words: ['TANJUR','TARUN','JUTA','JARUT','TARU','JURAT'] },
   { letters: 'RAMBUT', words: ['RAMBUT','TARUM','BURAM','TARU','RATU','TUBA'] },
 ];
-
+(() => {
   // ===== ELEMENTS =====
   const el = {
     board: document.getElementById('board'),
     wheel: document.getElementById('wheel'),
     trail: document.getElementById('trail'),
     badge: document.getElementById('badge'),
-    curWord: document.getElementById('curWord'),
+    curWord: document.getElementById('curWord') || document.getElementById('currentWord'),
     score: document.getElementById('score'),
     best: document.getElementById('best'),
-    levelNum: document.getElementById('levelNum'),
+    levelNum: document.getElementById('levelNum') || document.getElementById('level'),
     log: document.getElementById('log'),
-    btnShuffle: document.getElementById('btnShuffle'),
+    btnShuffle: document.getElementById('btnShuffle') || document.getElementById('shuffleBtn'),
     topHint: document.getElementById('topHint')
   };
   const ctx = el.trail.getContext('2d');
 
-  // ===== STATE =====
+  // ===== STATE (persist) =====
   const state = {
     level: Number(localStorage.getItem('azbry-wc-level') || 1),
     score: Number(localStorage.getItem('azbry-wc-score') || 0),
-    best: Number(localStorage.getItem('azbry-wc-best') || 0),
+    best:  Number(localStorage.getItem('azbry-wc-best')  || 0),
     selected: [],
     usedWords: new Set(),
     grid: [], gridW: 12, gridH: 12,
@@ -53,11 +57,16 @@
     points: [],
   };
 
+  const save = () => {
+    localStorage.setItem('azbry-wc-level', state.level);
+    localStorage.setItem('azbry-wc-score', state.score);
+    localStorage.setItem('azbry-wc-best',  state.best);
+  };
+
   // ===== UTILS =====
   const log = (m) => el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent;
   const norm = s => (s||'').toUpperCase().replace(/[^A-Z]/g,'');
   const rand = arr => arr[Math.floor(Math.random()*arr.length)];
-  const save = () => { localStorage.setItem('azbry-wc-level', state.level); localStorage.setItem('azbry-wc-score', state.score); localStorage.setItem('azbry-wc-best', state.best); };
   const updateHUD = () => { el.levelNum.textContent = state.level; el.score.textContent = state.score; el.best.textContent = state.best; };
   const setTopHint = text => { if (el.topHint) el.topHint.textContent = text; };
 
@@ -68,7 +77,7 @@
     el.trail.height = Math.max(1, Math.round(r.height));
   }
 
-  // ===== GRID =====
+  // ===== GRID BUILD =====
   const blankGrid = (w,h)=>Array.from({length:h},()=>Array.from({length:w},()=>''));  
 
   function placeWord(grid, word){
@@ -108,17 +117,14 @@
     for (let y=0;y<H;y++){
       for (let x=0;x<W;x++){
         const ch = state.grid[y][x];
-        if (!ch){
-          const ph = document.createElement('div');
-          ph.className = 'slot';
-          ph.style.visibility = 'hidden';
-          el.board.appendChild(ph);
-          continue;
-        }
         const cell = document.createElement('div');
         cell.className = 'slot';
-        cell.dataset.letter = ch;
-        cell.textContent = '';
+        if (ch){
+          cell.dataset.letter = ch;
+          cell.textContent = '';
+        } else {
+          cell.style.visibility = 'hidden';
+        }
         el.board.appendChild(cell);
       }
     }
@@ -308,7 +314,7 @@
   }
 
   // ===== BUTTONS =====
-  el.btnShuffle.onclick = shuffleLetters;
+  el.btnShuffle && (el.btnShuffle.onclick = shuffleLetters);
 
   window.addEventListener('resize', () => {
     fitCanvas();
