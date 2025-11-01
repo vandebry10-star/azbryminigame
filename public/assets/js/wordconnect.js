@@ -2,31 +2,34 @@
 (() => {
   // ===== LEVELS =====
   const LEVELS = [
-  // ===== EASY (1–7) =====
-  { letters: 'KANAM', words: ['MAKAN','AMAN','ANAK','KANA'] },
-  { letters: 'RAUMH', words: ['RUMAH','ARUM','HAMUR'] },
-  { letters: 'ARALI', words: ['AIR','LARI','ARIL','RIA'] },
-  { letters: 'SIPAL', words: ['LAPIS','SIAL','ALIS','ASLI','PASI'] },
-  { letters: 'URKBU', words: ['BUKU','BURUK','KUBUR'] },
-  { letters: 'TURID', words: ['TIDUR','DIRI','RUDI'] },
-  { letters: 'MNIUM', words: ['MINUM','IMUN','MIMI'] },
+  // ===== EASY =====
+  { letters: 'BATIK', words: ['BATIK','BAKTI','IKAT','TIBA','KITA','TIKA','BAKI'] },
+  { letters: 'SAKIT', words: ['SAKIT','SIKAT','TAKSI','AKSI','KATA','TIKA','SITA'] },
+  { letters: 'PASIR', words: ['PASIR','SIRAP','PRIA','RAPI','SARI','ASRI','IRIS'] },
+  { letters: 'MELATI', words: ['MELATI','TELAI','ELIT','TALI','LIMA','TEMA','MATA'] },
+  { letters: 'IKLAN', words: ['IKLAN','KAIN','NAIK','KALI','KIAN','LAIN','IKAL'] },
+  { letters: 'RUMAH', words: ['RUMAH','HUMAR','ARUM','HURA','UMAR','HARI'] }, // 'arum' = wangi; 'hari' umum
 
-  // ===== MEDIUM (8–14) =====
-  { letters: 'RAGAP', words: ['PAGAR','AGAR','RAGA','PARA'] },
-  { letters: 'GABUN', words: ['BUNGA','GUNA','UBAN'] },
-  { letters: 'KPOKI', words: ['KOPI','PIKO'] },
-  { letters: 'SNEJA', words: ['SENJA','JASA','ASEN'] },
-  { letters: 'MRKAU', words: ['KURMA','MUKA','ARUM'] },
-  { letters: 'NUJHA', words: ['HUJAN','ANJU','JAHU'] },
-  { letters: 'AJALN', words: ['JALAN','ALAN','AJAL'] },
+  // ===== MEDIUM =====
+  { letters: 'KAPUR', words: ['KAPUR','PAKU','RUPA','PURA','AKU','KURA','ARPU'] },
+  { letters: 'SEPEDA', words: ['SEPEDA','SEPA','SAPA','SEDA','PELA','LEPAS','PELAS'] },
+  { letters: 'GARIS', words: ['GARIS','SARI','RASI','ASRI','IRIS','RIGA'] },
+  { letters: 'SENJA', words: ['SENJA','JASA','SENA','NESA','JAN','ESA'] },
+  { letters: 'KOPIAH', words: ['KOPIAH','KOPI','OPAK','PAKAI','PAI','PAK'] },
+  { letters: 'TELUR', words: ['TELUR','LUTE','RETUL','TULER','LRT','TELU'] }, // (TELUR, LUTE) umum; sisanya variasi
+  { letters: 'GARAMU', words: ['GARAM','AGAR','RAGA','AMAR','ARUM','RAMA'] },
 
-  // ===== HARD (15–20) =====
-  { letters: 'CEHRA', words: ['CERAH','ACER','ARCE','RAHCE'] },
-  { letters: 'LOEKS', words: ['SEKOL','LOKES','SOKEL'] },
-  { letters: 'APALK', words: ['KAPAL','KALA','ALAK'] },
-  { letters: 'AUBAY', words: ['BUAYA','ABU','AYA'] },
-  { letters: 'TRLUA', words: ['LARUT','TARU','ULAT'] },
-  { letters: 'GARSI', words: ['GARIS','SARI','RASI','ARIS'] },
+  // ===== MEDIUM–HARD =====
+  { letters: 'KAMBING', words: ['KAMBING','BINGKA','BINGKAI','KAM','BING','BINA'] },
+  { letters: 'CABAIK', words: ['CABAI','BACA','BAIK','AKIB','BIA','ABA','KACI'] },
+  { letters: 'ROTANG', words: ['ROTAN','TANG','TARONG','RONTGA','RONA','TARO','TANGOR'] },
+  { letters: 'SAYUR', words: ['SAYUR','RASA','SURA','AYU','RAYA','SURAU'] },
+  { letters: 'NASIRO', words: ['NASI','SION','SARI','RONA','ORANG','ARIS','RISA'] },
+  { letters: 'LAPANG', words: ['LAPANG','PALANG','LAGAN','LAGA','LAPA','PALA','LANG'] },
+
+  // ===== HARD =====
+  { letters: 'TANJUR', words: ['TANJUR','TARUN','TURNA','JUTA','JARUT','TARU','JURAT'] },
+  { letters: 'RAMBUT', words: ['RAMBUT','TARUM','TURAM','BURAM','TARU','RATU','TUBA'] },
 ];
 
   // ===== ELEMENTS =====
