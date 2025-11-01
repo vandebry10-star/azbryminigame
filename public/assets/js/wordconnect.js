@@ -1,4 +1,4 @@
-/* Azbry • Word Connect (fix: letters appear on load + trail + hint bar) */
+/* Azbry • Word Connect (robust render) */
 (() => {
   // ===== LEVELS =====
   const LEVELS = [
@@ -25,8 +25,12 @@
     btnClear: document.getElementById('btnClear'),
     btnHint: document.getElementById('btnHint'),
     btnReset: document.getElementById('btnReset'),
-    topHint: document.getElementById('topHint')
+    topHint: document.getElementById('topHint'),
   };
+
+  // jaga2: kalau ada CSS global .board { aspect-ratio:1/1 } -> matikan
+  if (el.board) el.board.style.aspectRatio = 'auto';
+
   const ctx = el.trail.getContext('2d');
 
   // ===== STATE =====
@@ -39,22 +43,22 @@
     grid: [], gridW: 12, gridH: 12,
     selecting: false,
     lastNode: null,
-    points: []
+    points: [],
   };
 
   // ===== UTILS =====
-  const log = (m) => el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent;
+  const log = (m) => { if (el.log) el.log.textContent = `[${new Date().toLocaleTimeString()}] ${m}\n` + el.log.textContent; };
   const norm = s => (s||'').toUpperCase().replace(/[^A-Z]/g,'');
   const rand = arr => arr[Math.floor(Math.random()*arr.length)];
   const save = () => { localStorage.setItem('azbry-wc-level', state.level); localStorage.setItem('azbry-wc-score', state.score); localStorage.setItem('azbry-wc-best', state.best); };
   const updateHUD = () => { el.levelNum.textContent = state.level; el.score.textContent = state.score; el.best.textContent = state.best; };
-  const setTopHint = text => { if (el.topHint) el.topHint.textContent = text; };
+  const setTopHint = t => { if (el.topHint) el.topHint.textContent = t; };
 
   // ===== CANVAS =====
   function fitCanvas(){
     const r = el.wheel.getBoundingClientRect();
-    el.trail.width = Math.round(r.width);
-    el.trail.height = Math.round(r.height);
+    el.trail.width = Math.max(1, Math.round(r.width));
+    el.trail.height = Math.max(1, Math.round(r.height));
   }
 
   // ===== GRID GEN =====
@@ -98,15 +102,17 @@
       for (let x=0;x<W;x++){
         const ch = state.grid[y][x];
         if (!ch){
-          const ph = document.createElement('div');
-          ph.className = 'slot'; ph.style.visibility='hidden';
-          el.board.appendChild(ph);
+          // slot tidak dipakai -> spacer kecil
+          const s = document.createElement('div');
+          s.className = 'slot';
+          s.style.visibility = 'hidden';
+          el.board.appendChild(s);
           continue;
         }
         const cell = document.createElement('div');
-        cell.className = 'slot';
-        cell.dataset.letter = ch;
-        cell.textContent = '';
+        cell.className = 'slot';        // kosong default (jawaban disembunyikan)
+        cell.dataset.letter = ch;       // simpan huruf
+        cell.textContent = '';          // tidak tampil dulu
         el.board.appendChild(cell);
       }
     }
@@ -144,12 +150,14 @@
     return true;
   }
 
-  // ===== WHEEL =====
-  function layoutWheel(letters){
-    if (!el.wheel) return;
+  // ===== WHEEL (robust) =====
+  function layoutWheelOnce(letters){
+    // hapus huruf lama
     [...el.wheel.querySelectorAll('.letter')].forEach(n=>n.remove());
-    const R = (el.wheel.clientWidth/2) - 56;
-    const cx = el.wheel.clientWidth/2, cy = el.wheel.clientHeight/2;
+    const w = el.wheel.clientWidth, h = el.wheel.clientHeight;
+    if (w < 40 || h < 40) return false; // belum siap
+    const R = (w/2) - 56;
+    const cx = w/2, cy = h/2;
     const arr = letters.split(''); const N = arr.length;
     arr.forEach((ch,i)=>{
       const ang = (i/N)*Math.PI*2 - Math.PI/2;
@@ -157,10 +165,23 @@
       const b = document.createElement('div');
       b.className = 'letter'; b.textContent = ch;
       b.style.left = x+'px'; b.style.top = y+'px';
+      b.style.zIndex = 2;
       b.addEventListener('click', () => addLetter(b, ch, true));
       el.wheel.appendChild(b);
     });
-    fitCanvas();
+    return true;
+  }
+
+  // coba layout ulang sampai berhasil (max 20x)
+  function layoutWheel(letters){
+    let tries = 0;
+    const tick = () => {
+      fitCanvas();
+      if (layoutWheelOnce(letters)) return;
+      if (++tries > 20) { log('Gagal layout wheel (width 0).'); return; }
+      requestAnimationFrame(tick);
+    };
+    tick();
   }
 
   const getCenterOnCanvas = node => {
@@ -332,8 +353,10 @@
   // ===== INIT =====
   fitCanvas();
   loadLevel(state.level);
-  // 🔧 fix huruf muncul
-  window.addEventListener("load", () => {
-    setTimeout(() => layoutWheel(LEVELS[state.level - 1].letters), 200);
+  window.addEventListener('load', () => {
+    // jaga2: paksa render ulang setelah page fully loaded
+    layoutWheel(LEVELS[state.level-1].letters);
+    // fallback terakhir
+    setTimeout(() => layoutWheel(LEVELS[state.level-1].letters), 200);
   });
 })();
