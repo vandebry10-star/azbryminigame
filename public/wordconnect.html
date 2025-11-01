@@ -9,9 +9,16 @@
   <style>
     :root{ --stage-max: 880px; }
 
+    /* ===== background pakai asset ===== */
+    body{
+      background:
+        linear-gradient(180deg, rgba(11,13,16,.65), rgba(11,13,16,.85)),
+        url("/assets/img/bg.png") center / cover fixed no-repeat;
+    }
+
     .wrap { max-width: var(--stage-max); margin: 0 auto; padding: 18px 16px 90px; }
 
-    /* Crossword board */
+    /* ===== BOARD (jawaban disembunyikan default) ===== */
     .board-wrap{ border:1px solid var(--panel-bd); border-radius:22px; padding:14px;
       background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
       box-shadow: 0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
@@ -24,39 +31,44 @@
       background: rgba(255,255,255,.02); border:1px solid var(--panel-bd);
       overflow:auto;
     }
-    .cell{
+    /* slot kosong (belum terbuka) */
+    .slot{
       width:32px; height:32px; border-radius:8px; display:grid; place-items:center;
-      font-weight:900; letter-spacing:.3px; color:#0b0d10;
-      background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
-      border:0; box-shadow: 0 2px 8px rgba(184,255,154,.18);
+      font-weight:900; letter-spacing:.3px; color:#cfe3d4;
+      background: rgba(184,255,154,.06);
+      border:1px dashed rgba(184,255,154,.25);
+      box-shadow: 0 0 10px rgba(184,255,154,.12);
     }
-    .cell.empty{ background: transparent; border: 1px dashed rgba(255,255,255,.08); color:#c8d3de; }
-    .cell.lock{ color:#0b0d10; }
+    /* ketika terisi */
+    .slot.revealed{
+      color:#0b0d10;
+      background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+      border:0; box-shadow: 0 2px 8px rgba(184,255,154,.28);
+    }
 
-    /* Wheel */
+    /* ===== WHEEL ===== */
     .wheel{
       margin: 14px auto; width:min(520px, 90vw); aspect-ratio:1/1; border-radius:24px;
       display:grid; place-items:center; position:relative;
       background: radial-gradient(300px 220px at 50% 30%, rgba(184,255,154,.08), transparent 60%), var(--panel-bg-2);
       border:1px solid var(--panel-bd);
+      touch-action: none;  /* buat gesture lancar di mobile */
     }
     .letter{
       position:absolute; width:74px; height:74px; border-radius:999px; display:grid; place-items:center;
       font-weight:900; font-size:28px; color:#0b0d10;
       background: linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
-      box-shadow: 0 10px 22px rgba(184,255,154,.22); cursor:pointer;
-      user-select:none; touch-action:none;
+      box-shadow: 0 10px 22px rgba(184,255,154,.22); cursor:pointer; user-select:none;
     }
     .letter.sel{ outline: 3px solid var(--azbry-ring); transform: translateY(-2px); }
+
     .center-badge{
       width:88px;height:88px;border-radius:999px;display:grid;place-items:center;
       background:rgba(255,255,255,.05); border:1px solid var(--panel-bd); color:#d0d9e4;
-      font-weight:800;
+      font-weight:800; user-select:none;
     }
 
-    .current{
-      margin-top:8px; text-align:center; font-weight:900; letter-spacing:.6px; color:#dbe7f2;
-    }
+    .current{ margin-top:8px; text-align:center; font-weight:900; letter-spacing:.6px; color:#dbe7f2; }
 
     .controls{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center; }
     .btn{ padding:10px 14px; border-radius:12px; font-weight:800; border:1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); color:#e8f0fb; cursor:pointer; }
@@ -68,7 +80,7 @@
 
     @media (max-width:560px){
       .board{ grid-template-columns: repeat(12, 28px); grid-auto-rows: 28px; gap:5px; }
-      .cell{ width:28px; height:28px; border-radius:7px; font-size:13px; }
+      .slot{ width:28px; height:28px; border-radius:7px; font-size:13px; }
       .letter{ width:64px;height:64px; font-size:24px; }
       .center-badge{ width:78px;height:78px; }
     }
@@ -79,10 +91,7 @@
     <header class="top-header">
       <div class="title">
         <h1>Word Connect</h1>
-        <div>
-          <span class="tag">Azbry</span>
-          <span class="tag">Neon Dark</span>
-        </div>
+        <div><span class="tag">Azbry</span><span class="tag">Neon Dark</span></div>
       </div>
       <div class="tag">Level: <span id="levelNum">1</span></div>
     </header>
@@ -94,11 +103,8 @@
     <section>
       <div class="wheel" id="wheel">
         <div class="center-badge" id="badge">⟳</div>
-        <!-- huruf ditempatkan via JS melingkar -->
       </div>
-      <div class="current">
-        Kata: <span id="curWord">—</span>
-      </div>
+      <div class="current">Kata: <span id="curWord">—</span></div>
 
       <div class="panel">
         <div class="controls">
