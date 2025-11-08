@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Azbry Minigame • Sudoku</title>
+  <meta name="theme-color" content="#0b0d10"/>
+  <link rel="stylesheet" href="/assets/css/azbry.css">
+  <style>
+    body{
+      background:
+        linear-gradient(180deg, rgba(11,13,16,.65), rgba(11,13,16,.85)),
+        url("/assets/img/bg.png") center / cover fixed no-repeat;
+    }
+    .wrap{max-width:980px;margin:0 auto;padding:18px 16px 90px}
+    .hint-bar{
+      margin:8px 0 14px; padding:10px 14px; border-radius:12px;
+      background:rgba(184,255,154,.08); border:1px solid var(--panel-bd);
+      color:#dfffe0; font-weight:800; box-shadow:inset 0 1px 0 rgba(255,255,255,.04)
+    }
+
+    /* ==== Board ==== */
+    .board-outer{
+      margin:12px auto 16px; padding:14px; border-radius:22px;
+      border:1px solid var(--panel-bd);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      box-shadow:0 10px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      max-width:min(92vw,580px);
+    }
+    .board{
+      display:grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap:2px;
+      background:rgba(255,255,255,.06);
+      padding:2px; border-radius:12px;
+    }
+    .cell{
+      aspect-ratio:1/1; display:grid; place-items:center;
+      font-weight:900; letter-spacing:.3px; font-size:clamp(16px, 3.6vw, 22px);
+      border-radius:8px; user-select:none; cursor:pointer;
+      color:#dfe8f2; background:rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      position:relative;
+      transition:transform .06s ease;
+    }
+    .cell.fixed{
+      background:rgba(184,255,154,.10);
+      border-color: rgba(184,255,154,.25);
+      color:#eaffea;
+    }
+    .cell.selected{ outline:2px solid var(--azbry-ring); }
+    .cell.peer{ background:rgba(184,255,154,.06); }
+    .cell.conflict{ background:#3a1d20; border-color:#f28b8b; color:#ffdede; }
+    /* blok tebal */
+    .cell[data-r="2"], .cell[data-r="5"]{ border-bottom:2px solid rgba(255,255,255,.22); }
+    .cell[data-c="2"], .cell[data-c="5"]{ border-right: 2px solid rgba(255,255,255,.22); }
+
+    /* notes (pencil) */
+    .notes{
+      position:absolute; inset:3px; display:grid; grid-template-columns:repeat(3,1fr);
+      gap:2px; font-size:10px; color:#9fb3a2; pointer-events:none;
+    }
+    .note{ display:grid; place-items:center; opacity:.85; }
+
+    /* ==== Controls ==== */
+    .controls{
+      display:grid; gap:12px; margin:14px auto; max-width:min(92vw,580px);
+    }
+    .topbar{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      padding:12px; border:1px solid var(--panel-bd); border-radius:var(--radius-16);
+      background:var(--panel-bg-2);
+    }
+    .pad{
+      display:grid; grid-template-columns:repeat(5,1fr); gap:8px;
+      padding:12px; border:1px solid var(--panel-bd); border-radius:var(--radius-16);
+      background:var(--panel-bg-2);
+    }
+    .key{
+      padding:12px 0; border-radius:12px; font-weight:900; letter-spacing:.3px;
+      border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.04);
+      color:#eaf1e9; cursor:pointer; text-align:center; font-size:18px;
+    }
+    .key.accent{
+      background:linear-gradient(180deg, var(--azbry-accent), var(--azbry-accent-2));
+      color:var(--azbry-ink); border-color:transparent; box-shadow:0 0 12px rgba(184,255,154,.25);
+    }
+    .key.ghost{ background:rgba(255,255,255,.02) }
+    .meta{ color:#b8c0cc; font-weight:800 }
+
+    @media (max-width:560px){
+      .key{ font-size:16px }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top-header">
+      <div class="title">
+        <h1>Sudoku</h1>
+        <div><span class="tag">Azbry</span><span class="tag">FebryWesker</span></div>
+      </div>
+      <div class="tag">
+        Level: <select id="difficulty" style="background:transparent;border:0;color:#dfe8f2;font-weight:800">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="hint-bar" id="hint">Isi semua kotak 1–9. Tidak boleh ada angka ganda di baris, kolom, atau kotak 3×3.</div>
+
+    <section class="board-outer">
+      <div class="board" id="board"></div>
+    </section>
+
+    <section class="controls">
+      <div class="topbar">
+        <div class="meta">⏱️ <span id="timer">00:00</span></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn" id="btnNotes">Notes: OFF</button>
+          <button class="btn" id="btnErase">Erase</button>
+          <button class="btn" id="btnHint">Hint</button>
+          <button class="btn accent" id="btnCheck">Check</button>
+          <button class="btn dark" id="btnNew">New Game</button>
+        </div>
+      </div>
+
+      <div class="pad" id="numpad">
+        <!-- 1..9 + 0 (hapus cepat) -->
+        <button class="key accent" data-k="1">1</button>
+        <button class="key accent" data-k="2">2</button>
+        <button class="key accent" data-k="3">3</button>
+        <button class="key accent" data-k="4">4</button>
+        <button class="key accent" data-k="5">5</button>
+        <button class="key accent" data-k="6">6</button>
+        <button class="key accent" data-k="7">7</button>
+        <button class="key accent" data-k="8">8</button>
+        <button class="key accent" data-k="9">9</button>
+        <button class="key ghost" data-k="0">⌫</button>
+      </div>
+    </section>
+
+    <footer class="license">
+      © <span id="year"></span> FebryWesker — Azbry Minigame • Azbry-MD
+    </footer>
+  </main>
+
+  <script src="/assets/js/sudoku.js" defer></script>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
