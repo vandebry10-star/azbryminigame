@@ -13,6 +13,7 @@
   --bg:#0b0d10; --panel:#111418; --ink:#e6e8ec; --muted:#98a2b3;
   --accent:#b8ff9a; --accent2:#8ee887; --ring:rgba(184,255,154,.22);
   --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+  --music-btn-bg: linear-gradient(180deg, var(--accent), var(--accent2));
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -23,7 +24,7 @@ body{
     radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
     linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
 }
-.wrap{max-width:980px;margin:0 auto;padding:26px 18px 90px}
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 120px}
 header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px}
 .brand h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,4vw,28px)}
 .sub{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.25px}
@@ -31,6 +32,15 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
   display:inline-flex;gap:8px;align-items:center;background:rgba(184,255,154,.09);
   color:#dfffe0;border:1px solid var(--ring);padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.3px
 }
+
+/* Music controls at header */
+.music-controls{display:flex;align-items:center;gap:8px}
+.music-btn{
+  padding:8px 12px;border-radius:12px;font-weight:800;border:0;cursor:pointer;
+  background:var(--music-btn-bg); color:#0b0d10; box-shadow:0 10px 26px rgba(184,255,154,.25);
+}
+.music-toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;font-weight:800;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);color:#dfe8f2;cursor:pointer}
+.music-slider{width:150px}
 
 /* ===== Special section ===== */
 .special-grid{
@@ -89,47 +99,66 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
 .fade{opacity:0;transform:translateY(6px);animation:fade .5s ease-out forwards}
 .fade.d2{animation-delay:.07s}.fade.d3{animation-delay:.14s}.fade.d4{animation-delay:.21s}
 @keyframes fade{to{opacity:1;transform:none}}
+/* small music slider style */
+.music-slider::-webkit-slider-runnable-track{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.music-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:999px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3);margin-top:-4px}
+.music-slider{appearance:none;background:transparent;height:6px;border-radius:6px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <header class="top-header" style="margin-bottom:28px;">
-  <div class="title">
-    <div class="sub" style="letter-spacing:1px; font-weight:700; color:#a7b2be; margin-bottom:6px;">
-      AZBRY-MD • FebryWesker
-    </div>
+      <div class="title">
+        <div class="sub" style="letter-spacing:1px; font-weight:700; color:#a7b2be; margin-bottom:6px;">
+          AZBRY-MD • FebryWesker
+        </div>
 
-    <h1 style="
-      font-size:clamp(38px, 6.4vw, 72px);
-      font-weight:900;
-      letter-spacing:0.6px;
-      color:var(--azbry-accent);
-      text-shadow:
-        0 0 12px var(--azbry-accent),
-        0 0 26px var(--azbry-ring),
-        0 0 42px rgba(184,255,154,.35);
-      font-family:'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
-      margin:0 0 8px 0;
-    ">
-      Azbry Minigame
-    </h1>
+        <h1 style="
+          font-size:clamp(38px, 6.4vw, 72px);
+          font-weight:900;
+          letter-spacing:0.6px;
+          color:var(--azbry-accent);
+          text-shadow:
+            0 0 12px var(--azbry-accent),
+            0 0 26px var(--azbry-ring),
+            0 0 42px rgba(184,255,154,.35);
+          font-family:'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+          margin:0 0 8px 0;
+        ">
+          Azbry Minigame
+        </h1>
 
-    <p style="
-      margin-top:4px;
-      color:#dfe8f2;
-      font-weight:700;
-      font-size:clamp(16px, 2.6vw, 19px);
-      line-height:1.6;
-      text-shadow:0 0 8px rgba(184,255,154,.25);
-    ">
-      💡 Disarankan menggunakan <b>mode situs desktop</b><br>
-      💡 Recommended to enable <b>desktop site mode</b>
-    </p>
-  </div>
+        <p style="
+          margin-top:4px;
+          color:#dfe8f2;
+          font-weight:700;
+          font-size:clamp(16px, 2.6vw, 19px);
+          line-height:1.6;
+          text-shadow:0 0 8px rgba(184,255,154,.25);
+        ">
+          💡 Disarankan menggunakan <b>mode situs desktop</b><br>
+          💡 Recommended to enable <b>desktop site mode</b>
+        </p>
+      </div>
 
-  <span class="badge" style="font-weight:800;">Have fun!</span>
+      <div class="music-controls">
+        <!-- Music toggle -->
+        <button id="musicToggle" class="music-toggle" aria-pressed="false" title="Toggle background music">
+          🔈 Music Off
+        </button>
+
+        <!-- Volume slider -->
+        <input id="musicVol" class="music-slider" type="range" min="0" max="1" step="0.01" value="0.30" aria-label="Music volume" title="Adjust music volume" />
+
+        <!-- Small quick on button -->
+        <button id="musicQuickOn" class="music-btn" title="Turn music ON">
+          On
+        </button>
+
+        <span class="badge" style="font-weight:800;">Have fun!</span>
+      </div>
     </header>
-    
+
     <!-- ===== SPECIAL (URUTAN SESUAI REQUEST) ===== -->
     <section class="special-grid fade d2">
       <!-- 1) Tap Runner (Special) -->
@@ -167,9 +196,9 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
       </article>
 
       <article class="card">
-  <h3>🧮 Sudoku</h3>
-  <p>Isi angka 1–9 tanpa duplikat di baris, kolom, dan kotak 3×3. Ada notes, hint, dan tiga tingkat.</p>
-  <a class="btn" href="sudoku.html">Mainkan</a>
+        <h3>🧮 Sudoku</h3>
+        <p>Isi angka 1–9 tanpa duplikat di baris, kolom, dan kotak 3×3. Ada notes, hint, dan tiga tingkat.</p>
+        <a class="btn" href="sudoku.html">Mainkan</a>
       </article>
 
       <article class="card">
@@ -240,6 +269,13 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
         <p>Hitung persentase “cocok-cocokan” dan kepribadian—fun only.</p>
         <a class="btn" href="tests.html">Mainkan</a>
       </article>
+
+      <!-- NEW: 15) Color Sort (Neon) -->
+      <article class="card">
+        <h3>🔬 Color Sort (Neon)</h3>
+        <p>Satisfying color sorting dalam tabung neon gaya Azbry. Klik tabung asal → klik tabung tujuan. Ada undo, reset, dan next level.</p>
+        <a class="btn" href="sort.html">Mainkan</a>
+      </article>
     </section>
 
     <footer class="footer fade d4">
@@ -251,8 +287,88 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
   <!-- Portofolio -->
   <a class="fab" href="yaya" target="_blank" rel="noopener">↗ Portofolio</a>
 
+  <!-- AUDIO element (background music) -->
+  <audio id="bgm" src="/assets/audio/bg.mp3" loop preload="auto"></audio>
+
 <script>
 document.getElementById('y').textContent = new Date().getFullYear();
+
+/* ===== Music controls ===== */
+(function(){
+  const audio = document.getElementById('bgm');
+  const toggle = document.getElementById('musicToggle');
+  const quick = document.getElementById('musicQuickOn');
+  const vol = document.getElementById('musicVol');
+  const KEY_ON = 'azbry_music_on';
+  const KEY_VOL = 'azbry_music_vol';
+  const DEFAULT_VOL = 0.30;
+
+  // init values from storage
+  let musicOn = localStorage.getItem(KEY_ON) !== 'off';
+  let musicVol = parseFloat(localStorage.getItem(KEY_VOL));
+  if (isNaN(musicVol)) musicVol = DEFAULT_VOL;
+
+  // set UI initial
+  vol.value = musicVol;
+  audio.volume = musicVol;
+  toggle.textContent = musicOn ? '🔊 Music On' : '🔈 Music Off';
+  toggle.setAttribute('aria-pressed', String(musicOn));
+
+  // helper to try start audio (some browsers require user gesture)
+  const tryPlay = async () => {
+    try{
+      await audio.play();
+    }catch(e){
+      // nothing — user needs to click
+    }
+  };
+
+  // start after first user interaction if musicOn
+  function unlockOnce(){
+    if (musicOn) tryPlay();
+    window.removeEventListener('pointerdown', unlockOnce);
+    window.removeEventListener('keydown', unlockOnce);
+  }
+  window.addEventListener('pointerdown', unlockOnce, { once:true });
+  window.addEventListener('keydown', unlockOnce, { once:true });
+
+  // toggle handler
+  toggle.addEventListener('click', async () => {
+    musicOn = !musicOn;
+    toggle.textContent = musicOn ? '🔊 Music On' : '🔈 Music Off';
+    toggle.setAttribute('aria-pressed', String(musicOn));
+    localStorage.setItem(KEY_ON, musicOn ? 'on' : 'off');
+    if (musicOn) {
+      try { await audio.play(); } catch(e){}
+    } else {
+      audio.pause();
+    }
+  });
+
+  // quick on (explicit)
+  quick.addEventListener('click', async () => {
+    musicOn = true;
+    toggle.textContent = '🔊 Music On';
+    toggle.setAttribute('aria-pressed', 'true');
+    localStorage.setItem(KEY_ON, 'on');
+    try { await audio.play(); } catch(e){}
+  });
+
+  // volume change
+  vol.addEventListener('input', () => {
+    const v = parseFloat(vol.value);
+    audio.volume = v;
+    localStorage.setItem(KEY_VOL, String(v));
+  });
+
+  // visibility resume
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && musicOn) {
+      // resume audio if suspended
+      try { audio.play().catch(()=>{}); } catch(e){}
+    }
+  });
+})();
 </script>
 </body>
 </html>
