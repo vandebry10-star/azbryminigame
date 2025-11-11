@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Azbry • Color Sort Neon</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0b0d10; --bg2:#0f1418;
+  --panel:#11161b; --bd:rgba(255,255,255,.06);
+  --ink:#e8f3e7; --muted:#aeb9c5;
+  --accent:#b8ff9a; --accent2:#94ef89; --ring:rgba(184,255,154,.22);
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Helvetica,sans-serif; color:var(--ink);
+  background:
+    radial-gradient(900px 600px at 20% -10%, rgba(184,255,154,.06), transparent 50%),
+    radial-gradient(900px 600px at 120% 30%, rgba(184,255,154,.05), transparent 40%),
+    linear-gradient(180deg,var(--bg1),var(--bg2));
+}
+.wrap{max-width:980px;margin:0 auto;padding:22px 16px 80px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent);text-shadow:0 0 16px var(--ring)}
+.badge{padding:8px 12px;border:1px solid var(--bd);border-radius:999px;color:#cfead6;background:rgba(184,255,154,.09);font-weight:800}
+.panel{
+  border:1px solid var(--bd); background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+  border-radius:var(--radius); box-shadow:0 14px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.03);
+}
+
+.topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px}
+.btn{
+  padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);color:#eaf3ea;font-weight:800;cursor:pointer;transition:.18s;
+}
+.btn:hover{transform:translateY(-1px);opacity:.95}
+.btn.accent{background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#0b0d10; border-color:transparent;box-shadow:0 10px 26px rgba(184,255,154,.28)}
+.stat{margin-left:auto;font-weight:800;color:#d8e9dc}
+
+.board{margin-top:14px;padding:18px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.tube{
+  position:relative; height:260px; border-radius:16px; padding:10px 10px 14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));
+  border:1px solid var(--bd); display:flex;align-items:flex-end;justify-content:center; cursor:pointer;
+  transition:.12s; overflow:hidden;
+}
+.tube::after{
+  content:""; position:absolute; inset:0; border-radius:16px;
+  box-shadow:inset 0 0 0 1px rgba(184,255,154,.12);
+  pointer-events:none;
+}
+.tube.sel{outline:3px solid var(--ring)}
+.slot{
+  width:86%; height:46px; margin-top:8px; border-radius:12px;
+  display:grid; place-items:center; font-weight:900; letter-spacing:.3px; color:#0b0d10;
+  box-shadow:0 10px 22px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.2) inset;
+}
+.glow{box-shadow:0 8px 26px rgba(184,255,154,.35), inset 0 0 0 1px rgba(0,0,0,.15)}
+
+.footer{margin-top:16px;padding:10px;text-align:center;color:var(--muted)}
+.hint{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(184,255,154,.08);border:1px solid var(--bd);color:#dfffe4;font-weight:800}
+
+@media (max-width:560px){
+  .tube{height:220px}
+  .slot{height:40px}
+}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Azbry • Color Sort Neon</h1>
+      <span class="badge">Satisfying • Glow</span>
+    </header>
+
+    <div class="panel topbar">
+      <button class="btn accent" id="btnShuffle">Shuffle</button>
+      <button class="btn" id="btnUndo">Undo</button>
+      <button class="btn" id="btnReset">Reset</button>
+      <button class="btn" id="btnNext">Next Level</button>
+      <div class="stat">Level <span id="lv">1</span> • Move <span id="mv">0</span></div>
+    </div>
+
+    <div class="hint">Hint: klik tabung asal → klik tabung tujuan. Satukan warna per tabung.</div>
+
+    <section id="board" class="board"></section>
+
+    <div class="footer">© Azbry Neon Dark • FebryWesker</div>
+  </main>
+
+<script>
+(() => {
+  // ---------- Sound (WebAudio ping) ----------
+  let actx;
+  function ping(freq=640, dur=0.06, gain=0.08){
+    try{
+      if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      o.frequency.value = freq; o.type = "sine";
+      g.gain.value = gain;
+      o.connect(g); g.connect(actx.destination);
+      o.start();
+      o.stop(actx.currentTime + dur);
+    }catch(_){} // silent if blocked
+  }
+
+  // ---------- Levels (tiap angka = kode warna) ----------
+  const LEVELS = [
+    // level 1 – 4 warna x4 + 2 tabung kosong
+    { colors: 4, height: 4, tubes: 6, data: [1,2,3,4, 1,2,3,4, 1,2,3,4, 1,2,3,4] },
+    // level 2 – 5 warna
+    { colors: 5, height: 4, tubes: 7, data: [1,1,2,2,3,3,4,4,5,5,1,2,3,4,5,1,2,3,4,5] },
+    // level 3 – 6 warna
+    { colors: 6, height: 4, tubes: 8, data: [1,2,3,4,5,6, 1,2,3,4,5,6, 1,2,3,4,5,6, 1,2,3,4,5,6] }
+  ];
+
+  // Palet neon
+  const PALET = {
+    1: ["#B8FF9A","#8EE887"], // hijau Azbry
+    2: ["#9ad1ff","#83bfff"],
+    3: ["#feb4ff","#f090ff"],
+    4: ["#ffd69a","#ffb870"],
+    5: ["#a2ffea","#79f5d8"],
+    6: ["#d4ff9a","#b8ff6a"]
+  };
+
+  // ---------- State ----------
+  let curLevel = 0;
+  let height = 4;
+  let tubes = []; // array of stacks (bawah -> atas)
+  let moves = 0;
+  let sel = -1;
+  const history = []; // for undo (deep copy)
+
+  const elBoard = document.getElementById('board');
+  const elLv = document.getElementById('lv');
+  const elMv = document.getElementById('mv');
+
+  const rand = (arr)=>arr[Math.floor(Math.random()*arr.length)];
+  function shuffleArray(a){
+    for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] }
+    return a;
+  }
+
+  function cloneState(){
+    return tubes.map(t=>t.slice());
+  }
+
+  // ---------- Rendering ----------
+  function render(){
+    elBoard.innerHTML = "";
+    tubes.forEach((stack,idx)=>{
+      const t = document.createElement('div');
+      t.className = 'tube panel'+(sel===idx?' sel':'');
+      t.dataset.idx = idx;
+      // draw slots from bottom
+      const temp = stack.slice().reverse();
+      for(let i=0;i<height;i++){
+        const v = temp[i] ?? 0;
+        const s = document.createElement('div');
+        s.className = 'slot';
+        if(v){
+          s.style.background = `linear-gradient(180deg, ${PALET[v][0]}, ${PALET[v][1]})`;
+          s.classList.add('glow');
+        }else{
+          s.style.background = 'rgba(184,255,154,.08)';
+          s.style.border = '1px dashed rgba(184,255,154,.18)';
+          s.style.color = '#cfead6';
+          s.textContent = '';
+        }
+        t.appendChild(s);
+      }
+      elBoard.appendChild(t);
+    });
+    elMv.textContent = moves;
+    elLv.textContent = (curLevel+1);
+  }
+
+  // ---------- Rules ----------
+  function canMove(from, to){
+    if(from===to) return false;
+    const A = tubes[from], B = tubes[to];
+    if(A.length===0) return false;
+    if(B.length>=height) return false;
+
+    const ball = A[A.length-1];
+    if(B.length===0) return true;
+    const top = B[B.length-1];
+    return top===ball && B.length<height;
+  }
+
+  function move(from, to){
+    if(!canMove(from,to)) return false;
+    history.push(cloneState());
+    const ball = tubes[from].pop();
+    tubes[to].push(ball);
+    moves++; ping(700, .05, .06);
+    render();
+    checkWin();
+    return true;
+  }
+
+  function isSolved(){
+    return tubes.every(st=>{
+      return st.length===0 || (st.length===height && st.every(v=>v===st[0]));
+    });
+  }
+
+  function checkWin(){
+    if(isSolved()){
+      ping(520,.08,.08); ping(720,.08,.08); ping(960,.1,.1);
+      setTimeout(()=>alert('Level Clear! 🎉'), 10);
+    }
+  }
+
+  // ---------- Init Level ----------
+  function loadLevel(id){
+    const L = LEVELS[id % LEVELS.length];
+    curLevel = id % LEVELS.length;
+    height = L.height;
+    moves = 0; sel = -1; history.length = 0;
+
+    // build stacks
+    const pool = L.data.slice();
+    shuffleArray(pool);
+    const tubeCount = L.tubes;
+    tubes = Array.from({length:tubeCount},()=>[]);
+    // fill first (tubeCount-2) with balls; last 2 empty
+    let idx = 0;
+    for(let t=0; t<tubeCount-2; t++){
+      for(let h=0; h<height; h++){
+        tubes[t].push(pool[idx++]);
+      }
+    }
+    render();
+  }
+
+  // ---------- Events ----------
+  elBoard.addEventListener('click', (e)=>{
+    const t = e.target.closest('.tube'); if(!t) return;
+    const i = +t.dataset.idx;
+    if(sel===-1){
+      // pilih tabung asal yang ada isinya
+      if(tubes[i].length===0){ ping(180,.04,.05); return }
+      sel = i; ping(420,.04,.06);
+    }else{
+      if(i===sel){ sel=-1; render(); return }
+      move(sel, i);
+      sel = -1;
+    }
+    render();
+  });
+
+  document.getElementById('btnShuffle').addEventListener('click', ()=>{
+    // shuffle legal: acak ulang state awal
+    loadLevel(curLevel);
+  });
+  document.getElementById('btnUndo').addEventListener('click', ()=>{
+    const prev = history.pop();
+    if(prev){
+      tubes = prev; moves=Math.max(0,moves-1); ping(300,.05,.05); render();
+    }else ping(160,.04,.05);
+  });
+  document.getElementById('btnReset').addEventListener('click', ()=>loadLevel(curLevel));
+  document.getElementById('btnNext').addEventListener('click', ()=>loadLevel(curLevel+1));
+
+  // ---------- Start ----------
+  loadLevel(0);
+})();
+</script>
+</body>
+</html>
