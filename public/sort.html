@@ -5,14 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Azbry • Color Sort Neon</title>
 
-<!-- Tema global Azbry (pakai bg assets/img/bg.png dari css tsb) -->
 <link rel="stylesheet" href="/assets/css/azbry.css">
 
 <style>
-/* ====== Hanya styling komponen game (tanpa mengubah background azbry.css) ====== */
 :root{
-  --ink:#eaf3ea;
-  --muted:#aeb9c5;
+  --ink:#eaf3ea; --muted:#aeb9c5;
   --bd:rgba(255,255,255,.06);
   --ring:rgba(184,255,154,.22);
   --accent:#b8ff9a; --accent2:#94ef89;
@@ -21,7 +18,7 @@
 .wrap{max-width:980px;margin:0 auto;padding:22px 16px 90px}
 header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent);text-shadow:0 0 16px var(--ring)}
-.badge{padding:8px 12px;border:1px solid var(--bd);border-radius:999px;color:#cfead6;background:rgba(184,255,154,.09);font-weight:800}
+.badge{padding:10px 14px;border:1px solid var(--bd);border-radius:24px;color:#cfead6;background:rgba(184,255,154,.09);font-weight:800}
 
 .panel{
   border:1px solid var(--bd);
@@ -38,60 +35,74 @@ h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent)
 .stat{margin-left:auto;font-weight:800;color:#d8e9dc}
 .hint{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(184,255,154,.08);border:1px solid var(--bd);color:#dfffe4;font-weight:800}
 
-/* ====== GRID ====== */
-.board{margin-top:14px;padding:18px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+/* GRID */
+.board{margin-top:14px;padding:18px;display:grid;gap:22px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 
-/* ====== TABUNG GAYA TEST-TUBE ======
-   - .tube = rangka luar
-   - .tube::before = bibir/mulut tabung
-   - .glass = rongga kaca di dalam
-*/
+/* TABUNG */
 .tube{
   position:relative; height:300px; cursor:pointer;
-  display:flex; align-items:flex-end; justify-content:center; padding:14px 0 16px;
-  border-radius:26px; background:transparent;
-}
-.tube::before{
-  /* bibir mulut tabung (oval tipis) */
-  content:""; position:absolute; top:6px; left:50%; transform:translateX(-50%);
-  width:76%; height:18px; border-radius:999px;
-  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.6));
-  box-shadow:0 2px 0 rgba(0,0,0,.2), inset 0 0 0 2px rgba(0,0,0,.15);
-  opacity:.85;
+  display:flex; align-items:flex-end; justify-content:center; padding:16px 0 18px;
+  border-radius:26px; background:transparent; transition:.18s ease;
 }
 .tube.sel{outline:3px solid var(--ring); border-radius:28px}
+.tube.tiltL .glass{transform:rotate(-6deg); transform-origin:20% 0}
+.tube.tiltR .glass{transform:rotate(6deg); transform-origin:80% 0}
 
-/* Rongga kaca berbentuk pipa: tebal dinding abu terang, bawah membulat */
+/* bibir mulut tabung (lebih tipis) */
+.tube::before{
+  content:""; position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  width:84%; height:14px; border-radius:999px;
+  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.65));
+  box-shadow:0 1px 0 rgba(0,0,0,.25), inset 0 0 0 2px rgba(0,0,0,.12);
+}
+
+/* rongga kaca */
 .glass{
   position:absolute; inset:18px 28px 14px; border-radius:20px 20px 48px 48px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); /* isi */
-  border:8px solid rgba(220,230,236,.9);           /* dinding kaca putih */
-  box-shadow:
-    inset 0 0 0 2px rgba(0,0,0,.12),               /* tepi dalam */
-    0 10px 22px rgba(0,0,0,.35);                   /* bayangan luar */
+  background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.015));
+  border:8px solid rgba(235,240,244,.95);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.13), 0 12px 24px rgba(0,0,0,.35);
+  transition:transform .28s ease;
   pointer-events:none;
 }
 
-/* Slot cairan di dalam kaca */
+/* area tumpukan cairan */
 .stack{
   position:absolute; left:50%; bottom:24px; transform:translateX(-50%);
-  width: calc(100% - 28px - 28px - 16px);          /* (inset L+R + tebal dinding + margin) */
+  width: calc(100% - 28px - 28px - 16px);
   display:flex; flex-direction:column-reverse; align-items:center; gap:8px;
 }
 .slot{
   width:100%; height:46px; border-radius:12px; display:grid; place-items:center;
   font-weight:900; letter-spacing:.3px; color:#0b0d10;
   box-shadow:0 6px 16px rgba(0,0,0,.25), inset 0 0 0 1px rgba(0,0,0,.12);
+  transition:transform .22s ease, opacity .22s ease;
 }
 .slot.empty{
   background:transparent; border:1px dashed rgba(184,255,154,.18);
   color:#cfead6;
 }
-/* segmen paling bawah: dasar melengkung mengikuti test tube */
 .slot.bottom{ border-bottom-left-radius:36px; border-bottom-right-radius:36px }
 
-/* mobile tweak */
+/* “ghost” untuk animasi terbang */
+.ghost{
+  position:fixed; z-index:50; pointer-events:none; will-change:transform,left,top;
+  box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 1px rgba(0,0,0,.12);
+  border-radius:12px;
+}
+
+/* splash kecil di tujuan */
+.splash{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:24px; width:0; height:0; border-radius:12px; opacity:0; pointer-events:none;
+}
+.splash.show{animation:splash .35s ease}
+@keyframes splash{
+  0%{width:10%; height:8px; opacity:.0}
+  40%{width:110%; height:10px; opacity:.35}
+  100%{width:100%; height:0; opacity:0}
+}
+
 @media (max-width:560px){
   .tube{height:260px}
   .slot{height:40px}
@@ -123,10 +134,19 @@ h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent)
 
 <script>
 (() => {
-  // ====== WebAudio blip ======
-  let actx; function ping(f=640,d=.06,g=.08){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();const o=actx.createOscillator(),ga=actx.createGain();o.frequency.value=f;o.type="sine";ga.gain.value=g;o.connect(ga);ga.connect(actx.destination);o.start();o.stop(actx.currentTime+d)}catch(_){}}
+  /* ====== Audio kecil ====== */
+  let actx;
+  function blip(f=620,d=.06,g=.07){
+    try{
+      if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)();
+      const o=actx.createOscillator(), ga=actx.createGain();
+      o.type="sine"; o.frequency.value=f; ga.gain.value=g;
+      o.connect(ga); ga.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime+d);
+    }catch(_){}
+  }
 
-  // ====== Level data ======
+  /* ====== Level data ====== */
   const LEVELS = [
     { colors:4, height:4, tubes:6, data:[1,2,3,4, 1,2,3,4, 1,2,3,4, 1,2,3,4] },
     { colors:5, height:4, tubes:7, data:[1,1,2,2,3,3,4,4,5,5,1,2,3,4,5,1,2,3,4,5] },
@@ -137,39 +157,35 @@ h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent)
     4:["#ffd69a","#ffb870"], 5:["#a2ffea","#79f5d8"], 6:["#d4ff9a","#b8ff6a"]
   };
 
-  // ====== State ======
-  let curLevel=0, height=4, tubes=[], moves=0, sel=-1;
-  const history=[];
+  /* ====== Utils ====== */
   const rand=a=>a[Math.floor(Math.random()*a.length)];
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-  function clone(){return tubes.map(t=>t.slice())}
+  const clone = (t)=>t.map(s=>s.slice());
 
+  /* ====== State ====== */
+  let curLevel=0, height=4, tubes=[], moves=0, sel=-1;
+  const history=[];
   const elBoard=document.getElementById('board'), elLv=document.getElementById('lv'), elMv=document.getElementById('mv');
 
-  // ====== Render ======
+  /* ====== Render ====== */
   function render(){
     elBoard.innerHTML="";
     tubes.forEach((stack,idx)=>{
       const tube=document.createElement('div'); tube.className='tube'+(sel===idx?' sel':''); tube.dataset.idx=idx;
-
-      // inner glass visual
       const glass=document.createElement('div'); glass.className='glass'; tube.appendChild(glass);
+      const spl=document.createElement('div'); spl.className='splash'; tube.appendChild(spl);
 
-      // stack area
       const stWrap=document.createElement('div'); stWrap.className='stack';
-
-      // dari bawah ke atas => i=0 posisi bawah
       for(let i=0;i<height;i++){
-        const s=document.createElement('div'); s.className='slot';
+        const slot=document.createElement('div'); slot.className='slot';
         if(i<stack.length){
           const v=stack[i]; // bottom-first
-          s.style.background=`linear-gradient(180deg, ${PALET[v][0]}, ${PALET[v][1]})`;
-          s.classList.remove('empty');
-          if(i===0) s.classList.add('bottom'); // segmen paling bawah membulat
+          slot.style.background=`linear-gradient(180deg, ${PALET[v][0]}, ${PALET[v][1]})`;
+          if(i===0) slot.classList.add('bottom');
         }else{
-          s.classList.add('empty');
+          slot.classList.add('empty');
         }
-        stWrap.appendChild(s);
+        stWrap.appendChild(slot);
       }
       tube.appendChild(stWrap);
       elBoard.appendChild(tube);
@@ -177,54 +193,106 @@ h1{margin:0;font-size:clamp(20px,3.6vw,28px);font-weight:900;color:var(--accent)
     elMv.textContent=moves; elLv.textContent=(curLevel+1);
   }
 
-  // ====== Rules ======
+  /* ====== Rules ====== */
   function canMove(from,to){
     if(from===to) return false;
     const A=tubes[from], B=tubes[to];
     if(A.length===0) return false;
     if(B.length>=height) return false;
-    const ball=A[A.length-1];
+    const topA=A[A.length-1];
     if(B.length===0) return true;
-    return B[B.length-1]===ball;
+    return B[B.length-1]===topA;
   }
+
+  /* ====== Animate transfer ====== */
+  function animateTransfer(from,to,done){
+    // elemen UI posisi asal & tujuan
+    const tubeEls=[...document.querySelectorAll('.tube')];
+    const tFrom=tubeEls[from], tTo=tubeEls[to];
+    const sFromTop = tFrom.querySelector('.stack').children[height - tubes[from].length]; // index DOM atas
+    const sToNext  = tTo.querySelector('.stack').children[height - tubes[to].length - 1] || tTo.querySelector('.stack').children[0];
+
+    // clone ghost
+    const rectFrom=sFromTop.getBoundingClientRect();
+    const ghost=sFromTop.cloneNode(true);
+    ghost.classList.add('ghost');
+    ghost.style.left=rectFrom.left+'px';
+    ghost.style.top=rectFrom.top+'px';
+    ghost.style.width=rectFrom.width+'px';
+    ghost.style.height=rectFrom.height+'px';
+    document.body.appendChild(ghost);
+
+    // tilt visual
+    tFrom.classList.add('tiltL');
+    const rectTo=sToNext.getBoundingClientRect();
+
+    // animasi ke tujuan (sedikit arc)
+    const dx=rectTo.left-rectFrom.left, dy=rectTo.top-rectFrom.top;
+    const dur=260;
+    ghost.animate([
+      { transform:'translate(0,0)', offset:0 },
+      { transform:`translate(${dx*0.6}px, ${dy-30}px)`, offset:.6 },
+      { transform:`translate(${dx}px, ${dy}px)` }
+    ], { duration:dur, easing:'cubic-bezier(.16,1,.3,1)' });
+
+    setTimeout(()=>{
+      ghost.remove();
+      tFrom.classList.remove('tiltL'); tTo.classList.add('tiltR');
+      // splash kecil
+      const splash=tTo.querySelector('.splash'); splash.style.background=sFromTop.style.background; splash.classList.add('show');
+      setTimeout(()=>{ splash.classList.remove('show'); tTo.classList.remove('tiltR'); }, 320);
+      done();
+    }, dur);
+  }
+
   function move(from,to){
-    if(!canMove(from,to)) return false;
-    history.push(clone());
-    const ball=tubes[from].pop();
-    tubes[to].push(ball);
-    moves++; ping(700,.05,.06);
-    render(); checkWin(); return true;
+    if(!canMove(from,to)) { blip(180,.05,.06); return false; }
+    // commit setelah animasi selesai
+    const before=clone(tubes);
+    const v=tubes[from][tubes[from].length-1];
+    animateTransfer(from,to,()=>{
+      history.push(before);
+      tubes[from].pop(); tubes[to].push(v);
+      moves++; blip(700,.05,.06);
+      render(); checkWin();
+    });
+    return true;
   }
+
   function isSolved(){
     return tubes.every(st => st.length===0 || (st.length===height && st.every(v=>v===st[0])));
   }
   function checkWin(){
     if(isSolved()){
-      ping(520,.08,.08); ping(720,.08,.08); ping(960,.1,.1);
+      blip(520,.08,.08); blip(720,.08,.08); blip(960,.1,.1);
       setTimeout(()=>alert('Level Clear! 🎉'),10);
     }
   }
 
-  // ====== Init ======
+  /* ====== Init & events ====== */
   function loadLevel(id){
     const L=LEVELS[id%LEVELS.length];
     curLevel=id%LEVELS.length; height=L.height; moves=0; sel=-1; history.length=0;
     const pool=L.data.slice(); shuffle(pool);
     tubes=Array.from({length:L.tubes},()=>[]);
-    // isi (sisakan 2 kosong)
     let k=0; for(let t=0;t<L.tubes-2;t++){ for(let h=0;h<height;h++) tubes[t].push(pool[k++]) }
     render();
   }
 
-  // ====== Events ======
   elBoard.addEventListener('click',e=>{
     const T=e.target.closest('.tube'); if(!T) return; const i=+T.dataset.idx;
-    if(sel===-1){ if(tubes[i].length===0){ ping(180,.04,.05); return } sel=i; ping(420,.04,.06) }
-    else{ if(i===sel){ sel=-1; render(); return } move(sel,i); sel=-1 }
-    render();
+    if(sel===-1){ if(tubes[i].length===0){ blip(200,.05,.05); return } sel=i; blip(420,.04,.06); document.querySelectorAll('.tube').forEach(x=>x.classList.remove('sel')); T.classList.add('sel'); }
+    else{
+      document.querySelectorAll('.tube').forEach(x=>x.classList.remove('sel'));
+      if(i===sel){ sel=-1; render(); return }
+      move(sel,i); sel=-1;
+    }
   });
+
   document.getElementById('btnShuffle').addEventListener('click',()=>loadLevel(curLevel));
-  document.getElementById('btnUndo').addEventListener('click',()=>{const p=history.pop(); if(p){tubes=p;moves=Math.max(0,moves-1);ping(300,.05,.05);render()}else ping(160,.04,.05)});
+  document.getElementById('btnUndo').addEventListener('click',()=>{
+    const p=history.pop(); if(p){ tubes=p; moves=Math.max(0,moves-1); blip(300,.05,.05); render(); } else blip(160,.05,.05);
+  });
   document.getElementById('btnReset').addEventListener('click',()=>loadLevel(curLevel));
   document.getElementById('btnNext').addEventListener('click',()=>loadLevel(curLevel+1));
 
