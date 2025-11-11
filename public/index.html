@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Azbry-MD • Mini Games</title>
-<meta name="description" content="Koleksi mini game bertema Azbry: Tap Runner, Tebak Gambar, Azbry Chess.com, Ular Tangga, Tebak-tebakan, Game Tebak, Wordle Lite, Tic-Tac-Toe, BrainGood, Mafia Hat, BreakBry, Morse Suite, Test Persentase, Word Connect, Sudoku.">
+<meta name="description" content="Koleksi mini game bertema Azbry: Tap Runner, Tebak Gambar, Azbry Chess.com, Ular Tangga, Tebak-tebakan, Game Tebak, Wordle Lite, Tic-Tac-Toe, BrainGood, Mafia Hat, BreakBry, Morse Suite, dan Test Persentase.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
@@ -23,8 +23,8 @@ body{
     radial-gradient(900px 600px at 110% 30%, rgba(184,255,154,.05), transparent 35%),
     linear-gradient(180deg,#0b0d10 0%, #0b0d10 40%, #0a0c0e 100%);
 }
-.wrap{max-width:980px;margin:0 auto;padding:26px 18px 120px}
-header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px;gap:12px}
+.wrap{max-width:980px;margin:0 auto;padding:26px 18px 90px}
+header{display:flex;justify-content:space-between;align-items:center;margin:4px 0 18px}
 .brand h1{margin:0;font-weight:800;letter-spacing:.2px;font-size:clamp(22px,4vw,28px)}
 .sub{color:var(--muted);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.25px}
 .badge{
@@ -33,9 +33,7 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
 }
 
 /* ===== Special section ===== */
-.special-grid{
-  display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:14px
-}
+.special-grid{ display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:14px }
 .special{
   position:relative; grid-column:span 12; border-radius:22px; padding:18px 18px 16px;
   background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), var(--panel);
@@ -49,35 +47,19 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
               radial-gradient(600px 200px at 110% 140%, rgba(184,255,154,.12), transparent 40%);
   pointer-events:none;
 }
-.special h3{
-  margin:2px 0 10px; font-size:clamp(20px,3.6vw,24px); font-weight:900;
-  letter-spacing:.2px; color:#e9ffef; text-shadow:0 0 14px var(--ring)
-}
+.special h3{ margin:2px 0 10px; font-size:clamp(20px,3.6vw,24px); font-weight:900;
+  letter-spacing:.2px; color:#e9ffef; text-shadow:0 0 14px var(--ring) }
 .special p{margin:0 0 14px;color:var(--muted)}
 .special .btn{
   display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;font-weight:800;text-decoration:none;cursor:pointer;
   color:#0b0d10;background:linear-gradient(180deg,var(--accent),var(--accent2));border:0;
   box-shadow:0 6px 22px rgba(184,255,154,.25), inset 0 0 0 1px rgba(0,0,0,.12)
 }
-.special .tagline{
-  position:absolute; right:14px; bottom:14px; font-size:12px; font-weight:800; letter-spacing:.25px;
-  color:#cfead0; opacity:.85;
-}
-.special.chess{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    linear-gradient(120deg, rgba(40,50,64,.65), rgba(17,20,24,.8));
-}
-.special.runner{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    linear-gradient(120deg, rgba(22,28,24,.75), rgba(12,15,14,.88));
-}
-.special.tg{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
-    linear-gradient(120deg, rgba(24,32,20,.75), rgba(12,15,12,.88));
-}
+.special .tagline{ position:absolute; right:14px; bottom:14px; font-size:12px; font-weight:800; letter-spacing:.25px; color:#cfead0; opacity:.85; }
+.special.chess{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(40,50,64,.65), rgba(17,20,24,.8)); }
+.special.runner{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(22,28,24,.75), rgba(12,15,14,.88)); }
+.special.tg{ background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)), linear-gradient(120deg, rgba(24,32,20,.75), rgba(12,15,12,.88)); }
+
 @media (min-width:860px){ .special{grid-column:span 4} }
 
 /* ===== Cards ===== */
@@ -106,186 +88,165 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
 .fade.d2{animation-delay:.07s}.fade.d3{animation-delay:.14s}.fade.d4{animation-delay:.21s}
 @keyframes fade{to{opacity:1;transform:none}}
 
-/* ===== Music Control (TOP-RIGHT) ===== */
-.music-control{
-  position:fixed;top:12px;right:12px;z-index:99;
-  background:rgba(17,20,24,.92);
-  border:1px solid rgba(184,255,154,.25);
-  padding:8px 12px;border-radius:12px;
-  display:flex;align-items:center;gap:10px;
-  box-shadow:0 6px 26px rgba(0,0,0,.45)
+/* ===== Music widget ===== */
+#musicWrap{position:fixed;right:16px;top:16px;display:flex;gap:8px;z-index:50;align-items:center}
+#musicBtn{
+  padding:10px 12px;border-radius:12px;border:0;cursor:pointer;font-weight:800;color:#0b0d10;
+  background:linear-gradient(180deg,#b8ff9a,#94ef89);box-shadow:0 10px 26px rgba(184,255,154,.28)
 }
-.music-control button{
-  background:linear-gradient(180deg,var(--accent),var(--accent2));
-  color:#0b0d10;font-weight:800;border:0;border-radius:8px;padding:6px 10px;cursor:pointer
+#musicVol{
+  appearance:none;width:120px;height:10px;border-radius:999px;background:rgba(255,255,255,.12);outline:0;border:1px solid rgba(255,255,255,.08)
 }
-.music-control input[type=range]{accent-color:#b8ff9a}
-
-/* ===== Overlay Game ===== */
-#gameOverlay{
-  position:fixed; inset:0; z-index:60;
-  display:none; place-items:center;
-  background:rgba(11,13,16,.86);
-  backdrop-filter: blur(6px);
-}
-#gameOverlay.show{display:grid;}
-#gameBox{
-  width:min(98vw, 920px);
-  height:min(92vh, 740px);
-  background:#0b0d10;
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:16px; overflow:hidden;
-  box-shadow:0 18px 60px rgba(0,0,0,.55), 0 0 40px rgba(184,255,154,.22);
-  position:relative;
-}
-#gameFrame{width:100%;height:100%;border:0;background:#0b0d10;}
-#closeOverlay{
-  position:absolute;top:10px;right:10px;
-  padding:8px 12px;border-radius:10px;border:0;cursor:pointer;
-  font-weight:800;color:#0b0d10;
-  background:linear-gradient(180deg,#b8ff9a,#94ef89);
-  box-shadow:0 10px 26px rgba(184,255,154,.3);
-}
+#musicVol::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:999px;background:#b8ff9a;border:0;box-shadow:0 2px 10px rgba(184,255,154,.35)}
+#musicVol::-moz-range-thumb{width:18px;height:18px;border-radius:999px;background:#b8ff9a;border:0;box-shadow:0 2px 10px rgba(184,255,154,.35)}
 </style>
 </head>
 <body>
+  <div id="musicWrap">
+    <button id="musicBtn">🔊 Music On</button>
+    <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.35" title="Volume">
+  </div>
+
   <div class="wrap">
     <header class="top-header" style="margin-bottom:28px;">
-      <div class="title">
-        <div class="sub" style="letter-spacing:1px; font-weight:700; color:#a7b2be; margin-bottom:6px;">
-          AZBRY-MD • FebryWesker
-        </div>
-        <h1 style="
-          font-size:clamp(38px, 6.4vw, 72px);
-          font-weight:900; letter-spacing:.6px; color:var(--accent);
-          text-shadow:0 0 12px var(--accent), 0 0 26px var(--ring), 0 0 42px rgba(184,255,154,.35);
-          margin:0 0 8px 0;">Azbry Minigame</h1>
-        <p style="margin-top:4px;color:#dfe8f2;font-weight:700;font-size:clamp(16px, 2.6vw, 19px);line-height:1.6;text-shadow:0 0 8px rgba(184,255,154,.25);">
-          💡 Disarankan menggunakan <b>mode situs desktop</b><br>
-          💡 Recommended to enable <b>desktop site mode</b>
-        </p>
-      </div>
-      <span class="badge">Have fun!</span>
+  <div class="title">
+    <div class="sub" style="letter-spacing:1px; font-weight:700; color:#a7b2be; margin-bottom:6px;">
+      AZBRY-MD • FebryWesker
+    </div>
+
+    <h1 style="
+      font-size:clamp(38px, 6.4vw, 72px);
+      font-weight:900;
+      letter-spacing:0.6px;
+      color:#b8ff9a;
+      text-shadow:
+        0 0 12px #b8ff9a,
+        0 0 26px rgba(184,255,154,.18),
+        0 0 42px rgba(184,255,154,.35);
+      font-family:'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+      margin:0 0 8px 0;
+    ">
+      Azbry Minigame
+    </h1>
+
+    <p style="
+      margin-top:4px;
+      color:#dfe8f2;
+      font-weight:700;
+      font-size:clamp(16px, 2.6vw, 19px);
+      line-height:1.6;
+      text-shadow:0 0 8px rgba(184,255,154,.25);
+    ">
+      💡 Disarankan menggunakan <b>mode situs desktop</b><br>
+      💡 Recommended to enable <b>desktop site mode</b>
+    </p>
+  </div>
+
+  <span class="badge" style="font-weight:800;">Have fun!</span>
     </header>
 
-    <!-- ===== 3 SPECIAL (URUTAN SESUAI REQUEST) ===== -->
+    <!-- ===== SPECIAL ===== -->
     <section class="special-grid fade d2">
-      <!-- 1) Tap Runner -->
       <article class="special runner">
         <h3>🕊️ Tap Runner</h3>
-        <p>Terbang melewati rintangan. Capai skor <b>50</b> untuk reward. Kontrol tap, fisik ringan, tema neon hijau.</p>
-        <a class="btn" href="https://azbrymd-nasiuduk.vercel.app/" target="_blank" rel="noopener" data-no-overlay>Mainkan</a>
+        <p>Terbang melewati rintangan. Capai skor <b>50</b> untuk membuka reward spesial. Kontrol sekali tap, fisik ringan, tema neon hijau.</p>
+        <a class="btn" href="https://azbrymd-nasiuduk.vercel.app/" target="_blank" rel="noopener">Mainkan</a>
         <div class="tagline">Special</div>
       </article>
 
-      <!-- 2) Tebak Gambar (API) -->
       <article class="special tg">
         <h3>🖼️ Tebak Gambar (API)</h3>
-        <p>Bank soal 1000+ dari server. Hint, timer, skor. Gambar responsif tanpa kepotong.</p>
+        <p>Bank soal 1000+ langsung dari server. Hint, timer, dan skor. Gambar full-responsive tanpa kepotong.</p>
         <a class="btn" href="tebakgambar.html">Mainkan</a>
         <div class="tagline">Special</div>
       </article>
 
-      <!-- 3) Azbry Chess.com -->
       <article class="special chess">
         <h3>♟️ Azbry Chess.com</h3>
-        <p>VS Player atau VS Azbry-MD (AI). Papan neon, undo/redo, board-only, hasil akhir ber-taunt.</p>
+        <p>Main catur <b>VS Player</b> atau <b>VS Azbry-MD (AI)</b>. Papan neon, undo/redo, mode board-only, dan hasil akhir ber-taunt.</p>
         <a class="btn" href="chess.html">Mainkan</a>
         <div class="tagline">Special</div>
       </article>
     </section>
 
-    <!-- ===== LIST GAME LAIN ===== -->
+    <!-- ===== LIST GAME ===== -->
     <section class="grid fade d3">
-      <!-- 4) Ular Tangga -->
+      <article class="card">
+        <h3>🧵 Word Connect</h3>
+        <p>Susun huruf jadi kata bermakna! Geser huruf, temukan semua kata tersembunyi, dan naikkan levelmu.</p>
+        <a class="btn" href="wordconnect.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>🧮 Sudoku</h3>
+        <p>Isi angka 1–9 tanpa duplikat di baris, kolom, dan kotak 3×3. Ada notes, hint, dan tiga tingkat.</p>
+        <a class="btn" href="sudoku.html">Mainkan</a>
+      </article>
+
+      <article class="card">
+        <h3>🧪 Color Sort (Satisfying)</h3>
+        <p>Pilah warna di tabung reaksi! Tuang warna sejenis hingga setiap tabung bersih.</p>
+        <a class="btn" href="sort.html">Mainkan</a>
+      </article>
+
       <article class="card">
         <h3>🎲 Ular Tangga</h3>
-        <p>2 pemain, dadu 1–6, tangga & ular klasik. Harus <b>pas 100</b> untuk menang.</p>
+        <p>2 pemain, dadu 1-6, tangga & ular klasik. Harus <b>pas 100</b> untuk menang.</p>
         <a class="btn" href="ulartangga.html">Mainkan</a>
       </article>
 
-      <!-- 5) Tebak Gambar (local variant / non-API jika ada) -->
-      <article class="card">
-        <h3>🖼️ Tebak Gambar (Local)</h3>
-        <p>Varian lokal dengan set gambar custom kamu.</p>
-        <a class="btn" href="tebakgambar-local.html">Mainkan</a>
-      </article>
-
-      <!-- 6) Tebak-tebakan -->
       <article class="card">
         <h3>🧩 Tebak-tebakan</h3>
         <p>Satu sesi 5 soal acak. Ringan tapi bikin mikir—cocok buat pemanasan.</p>
         <a class="btn" href="synword.html">Mainkan</a>
       </article>
 
-      <!-- 7) Game Tebak -->
       <article class="card">
         <h3>❓ Game Tebak</h3>
-        <p>Kumpulan mode: Tebak Kata, Asah Otak, Family100, Sambung Kata, dsb.</p>
+        <p>Kumpulan mode: Tebak Kata, Asah Otak, Family100, Sambung Kata, dan lainnya.</p>
         <a class="btn" href="gametebak.html">Mainkan</a>
       </article>
 
-      <!-- 8) Wordle Lite -->
       <article class="card">
         <h3>🗯️ Wordle Lite</h3>
-        <p>Tebak 5 huruf. Hijau=tepat, Kuning=ada tapi salah posisi, Abu=tidak ada.</p>
+        <p>Tebak 5 huruf: Hijau = tepat, Kuning = ada salah posisi, Abu = tidak ada.</p>
         <a class="btn" href="wordle.html">Mainkan</a>
       </article>
 
-      <!-- 9) Tic-Tac-Toe (Impossible) -->
       <article class="card">
         <h3>❌⭕ Tic-Tac-Toe (Impossible)</h3>
         <p>AI minimax tingkat dewa. Berani coba minimal seri?</p>
         <a class="btn" href="tictactoe.html">Mainkan</a>
       </article>
 
-      <!-- 10) BrainGood -->
       <article class="card">
         <h3>🧠 BrainGood</h3>
-        <p>Ingat 15 angka muncul berurutan. Tes memori singkat & seru.</p>
+        <p>Ingat 15 angka yang muncul berurutan. Tes memori singkat, seru, dan menantang.</p>
         <a class="btn" href="gamehack.html">Mainkan</a>
       </article>
 
-      <!-- 11) Mafia Hat -->
       <article class="card">
         <h3>🎯 Mafia Hat</h3>
-        <p>4 siluet: 3 mafia & 1 orang baik. Kamu punya 3 peluru—tebak yang benar.</p>
+        <p>4 siluet, 3 mafia & 1 orang baik. Kamu punya 3 peluru—tebak yang benar.</p>
         <a class="btn" href="aim.html">Mainkan</a>
       </article>
 
-      <!-- 12) BreakBry -->
       <article class="card">
         <h3>🧱 BreakBry</h3>
         <p>Pantulkan bola dan hancurkan semua balok. Kontrol paddle presisi.</p>
         <a class="btn" href="breakbry.html">Mainkan</a>
       </article>
 
-      <!-- 13) Morse Suite (Learning) -->
       <article class="card">
         <h3>📡 Morse Suite (Learning)</h3>
         <p>Decode, Type Transmission, & Signal Lock. Mode belajar + tantangan.</p>
         <a class="btn" href="morse.html">Mainkan</a>
       </article>
 
-      <!-- 14) Test Persentase (For Fun) -->
       <article class="card">
         <h3>📝 Test Persentase (For Fun)</h3>
         <p>Hitung persentase “cocok-cocokan” dan kepribadian—fun only.</p>
         <a class="btn" href="tests.html">Mainkan</a>
-      </article>
-
-      <!-- BONUS: Word Connect -->
-      <article class="card">
-        <h3>🧵 Word Connect</h3>
-        <p>Geser huruf, bentuk kata, buka semua level. UI neon hijau.</p>
-        <a class="btn" href="wordconnect.html">Mainkan</a>
-      </article>
-
-      <!-- BONUS: Sudoku -->
-      <article class="card">
-        <h3>🧮 Sudoku</h3>
-        <p>Isi angka 1–9 tanpa duplikat. Ada notes, hint, tiga tingkat.</p>
-        <a class="btn" href="sudoku.html">Mainkan</a>
       </article>
     </section>
 
@@ -296,78 +257,94 @@ header{display:flex;justify-content:space-between;align-items:center;margin:4px 
   </div>
 
   <!-- Portofolio -->
-  <a class="fab" href="https://febrywesker-portofolio.vercel.app/" target="_blank" rel="noopener" data-no-overlay>↗ Portofolio</a>
-
-  <!-- ===== Music Control (TOP RIGHT) ===== -->
-  <div class="music-control">
-    <button id="musicToggle">⏸</button>
-    <input id="volume" type="range" min="0" max="1" step="0.01" value="0.4" title="Volume">
-  </div>
-  <audio id="bgm" src="assets/audio/bg.mp3" autoplay loop></audio>
-
-  <!-- ===== Overlay container ===== -->
-  <div id="gameOverlay" aria-hidden="true">
-    <div id="gameBox">
-      <button id="closeOverlay" aria-label="Close">✕ Close</button>
-      <iframe id="gameFrame" allow="autoplay; fullscreen"></iframe>
-    </div>
-  </div>
+  <a class="fab" href="yaya" target="_blank" rel="noopener">↗ Portofolio</a>
 
 <script>
 document.getElementById('y').textContent = new Date().getFullYear();
 
-/* === Musik === */
-const bgm = document.getElementById('bgm');
-const toggle = document.getElementById('musicToggle');
-const volume = document.getElementById('volume');
-bgm.volume = 0.4;
-toggle.onclick = ()=>{
-  if (bgm.paused){ bgm.play(); toggle.textContent='⏸'; }
-  else { bgm.pause(); toggle.textContent='▶'; }
-};
-volume.oninput = ()=>{ bgm.volume = volume.value; };
+/* ======= MUSIC (WebAudio) ======= */
+(() => {
+  const KEY_ON = 'azbry_music_on';
+  const KEY_VOL = 'azbry_music_vol';
+  const SRC = '/assets/audio/bg.mp3';
 
-/* === Overlay System === */
-(function () {
-  const overlay = document.getElementById('gameOverlay');
-  const frame   = document.getElementById('gameFrame');
-  const close   = document.getElementById('closeOverlay');
+  const btn = document.getElementById('musicBtn');
+  const vol = document.getElementById('musicVol');
 
-  function openGame(url){
-    frame.src = url;
-    overlay.classList.add('show');
-    overlay.setAttribute('aria-hidden','false');
+  let ctx, gain, buffer, srcNode;
+  let wantOn = (localStorage.getItem(KEY_ON) !== 'off');
+  let volVal = parseFloat(localStorage.getItem(KEY_VOL) || '0.35');
+  vol.value = String(volVal);
+
+  function setBtn() { btn.textContent = wantOn ? '🔊 Music On' : '🔈 Music Off'; }
+
+  async function boot() {
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      gain = ctx.createGain(); gain.gain.value = 0; gain.connect(ctx.destination);
+      const res = await fetch(SRC, {cache:'force-cache'});
+      const arr = await res.arrayBuffer();
+      buffer = await ctx.decodeAudioData(arr);
+    }
   }
-  function closeGame(){
-    frame.src = 'about:blank';
-    overlay.classList.remove('show');
-    overlay.setAttribute('aria-hidden','true');
+  function startLoop() {
+    if (!buffer) return;
+    stopLoop();
+    srcNode = ctx.createBufferSource();
+    srcNode.buffer = buffer; srcNode.loop = true; srcNode.connect(gain); srcNode.start(0);
   }
-  close.addEventListener('click', closeGame);
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeGame(); });
-  window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeGame(); });
+  function stopLoop() { try{ srcNode && srcNode.stop(); }catch(e){} srcNode=null; }
 
-  // AUTO overlay untuk semua link .html same-origin (kecuali index)
-  document.addEventListener('click', (e)=>{
-    const a = e.target.closest('a[href]');
-    if (!a) return;
+  async function turnOn(){
+    await boot();
+    if (ctx.state === 'suspended') await ctx.resume();
+    startLoop();
+    const now = ctx.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(volVal, now + .5);
+    localStorage.setItem(KEY_ON,'on'); setBtn();
+  }
+  function turnOff(){
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(gain.gain.value, now);
+    gain.gain.linearRampToValueAtTime(0, now + .35);
+    setTimeout(stopLoop, 380);
+    localStorage.setItem(KEY_ON,'off'); setBtn();
+  }
 
-    // opt-out manual
-    if (a.hasAttribute('data-no-overlay')) return;
+  // First interaction unlock
+  ['pointerdown','keydown'].forEach(ev => window.addEventListener(ev, ()=>{
+    if (wantOn) turnOn();
+  }, {once:true}));
 
-    const href = a.getAttribute('href');
-    if (!href) return;
+  btn.addEventListener('click', ()=>{
+    wantOn = !wantOn;
+    if (wantOn) turnOn(); else turnOff();
+  });
 
-    const url = new URL(href, location.href);
-    const isSameOrigin = url.origin === location.origin;
-    const isHTML       = /\.html?$/i.test(url.pathname);
-    const isIndex      = /\/(index\.html?)?$/.test(url.pathname);
-
-    if (isSameOrigin && isHTML && !isIndex) {
-      e.preventDefault();
-      openGame(url.href);
+  vol.addEventListener('input', e=>{
+    volVal = parseFloat(e.target.value || '0.35');
+    localStorage.setItem(KEY_VOL, String(volVal));
+    if (gain && ctx) {
+      const now = ctx.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(gain.gain.value, now);
+      gain.gain.linearRampToValueAtTime(wantOn ? volVal : 0, now + .12);
     }
   });
+
+  document.addEventListener('visibilitychange', async ()=>{
+    if (!document.hidden && wantOn && ctx) {
+      if (ctx.state === 'suspended') await ctx.resume();
+      if (!srcNode) startLoop();
+    }
+  });
+
+  // Init label & (optional) auto-on
+  setBtn(); if (wantOn) turnOn().catch(()=>{});
 })();
 </script>
 </body>
