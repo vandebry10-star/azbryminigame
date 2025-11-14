@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+  <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#000000" />
 <style>
 :root{
   --bg:#0b0d10; --panel:#111418; --ink:#e6e8ec; --muted:#98a2b3;
@@ -346,6 +349,12 @@ document.getElementById('y').textContent = new Date().getFullYear();
   // Init label & (optional) auto-on
   setBtn(); if (wantOn) turnOn().catch(()=>{});
 })();
+  <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .catch((err) => console.error("SW registration failed:", err));
+  }
 </script>
 </body>
 </html>
